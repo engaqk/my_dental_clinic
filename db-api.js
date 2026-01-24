@@ -14,7 +14,7 @@ class DatabaseAPI {
             },
             // New "My Dental Clinic"
             'my_dental_clinic': {
-                url: 'https://qukrklsgctpkihninqdb.supabase.co',
+                url: 'https://qukrklsgctpkiyninqdb.supabase.co',
                 key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1a3JrbHNnY3Rwa2l5bmlucWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNDk1NjEsImV4cCI6MjA4NDgyNTU2MX0.DsVh4WLQu86gxl91opf_tltCoZTs863rUETECdtY1JA'
             }
         };
