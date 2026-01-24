@@ -1,7 +1,12 @@
 -- ==========================================
 -- SUPER DENTAL CLINIC - SCHEMA + DATA SCRIPT
 -- Run this in your Supabase SQL Editor
+-- WARNING: This will reset tables!
 -- ==========================================
+
+DROP TABLE IF EXISTS public.appointments;
+DROP TABLE IF EXISTS public.settings;
+DROP TABLE IF EXISTS public.staff_profiles;
 
 -- 1. Create APPOINTMENTS Table
 CREATE TABLE IF NOT EXISTS public.appointments (
