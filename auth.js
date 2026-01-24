@@ -170,3 +170,44 @@ function toggleDashboard() {
         mainContent.style.display = 'block';
     }
 }
+
+// Listen for Auth State Changes (e.g., Password Recovery)
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.dbAPI && window.dbAPI.supabase) {
+        window.dbAPI.supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                document.getElementById('updatePasswordModal').style.display = 'flex';
+            }
+        });
+    }
+
+    // Handle Password Update Form
+    const updatePasswordForm = document.getElementById('updatePasswordForm');
+    if (updatePasswordForm) {
+        updatePasswordForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('newPassword').value;
+            const msg = document.getElementById('updatePasswordMessage');
+            const btn = e.target.querySelector('button');
+
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+
+            const { error } = await window.dbAPI.updateUser({ password: newPassword });
+
+            if (error) {
+                msg.style.color = 'red';
+                msg.textContent = 'Error: ' + error.message;
+                btn.disabled = false;
+                btn.textContent = 'Update Password';
+            } else {
+                msg.style.color = 'green';
+                msg.textContent = 'Password updated successfully! Logging you in...';
+                setTimeout(() => {
+                    document.getElementById('updatePasswordModal').style.display = 'none';
+                    showLoginModal(); // Show login to re-authenticate with new password
+                }, 2000);
+            }
+        });
+    }
+});

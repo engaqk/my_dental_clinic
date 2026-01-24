@@ -30,6 +30,8 @@
             <nav>
                 <ul>
                     <li><a href="#home" onclick="showSection('home')">Home</a></li>
+                    <li><a href="#about" id="navAbout" onclick="showSection('about')" style="display: none;">About
+                            Us</a></li>
                     <li><a href="#appointment" onclick="showSection('appointment')" class="btn-primary">Book
                             Appointment</a></li>
                     <li><a href="#" onclick="toggleDashboard()">Staff Dashboard</a></li>
@@ -50,6 +52,19 @@
                 <p>Experience world-class dental and cosmetic care in Dahod. We combine advanced technology with
                     aesthetic expertise.</p>
                 <a href="#appointment" onclick="showSection('appointment')" class="btn-primary">Book Your Visit</a>
+            </div>
+        </section>
+
+        </section>
+
+        <!-- About Us Section (Dynamic) -->
+        <section id="about" class="about-section"
+            style="display: none; padding: 4rem 1rem; background-color: var(--accent-color);">
+            <div class="container" style="max-width: 800px;">
+                <h2 class="section-title">About Us</h2>
+                <div id="aboutContent"
+                    style="white-space: pre-wrap; font-size: 1.1rem; line-height: 1.8; color: #555; background: white; padding: 2rem; border-radius: 15px; box-shadow: var(--glass-shadow);">
+                </div>
             </div>
         </section>
 
@@ -267,6 +282,22 @@
         </div>
     </div>
 
+    <!-- Update Password Modal (For Reset Flow) -->
+    <div id="updatePasswordModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Set New Password</h2>
+            <form id="updatePasswordForm" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="form-group">
+                    <label for="newPassword">New Password</label>
+                    <input type="password" id="newPassword" required placeholder="Enter new password" minlength="6">
+                </div>
+                <button type="submit" class="btn-primary">Update Password</button>
+            </form>
+            <p id="updatePasswordMessage" style="color: green; margin-top: 1rem; display: none; text-align: center;">
+            </p>
+        </div>
+    </div>
+
     <!-- Settings Modal (Super Admin Only) -->
     <div id="settingsModal" class="modal">
         <div class="modal-content">
@@ -299,6 +330,10 @@
                 <div class="form-group">
                     <label for="settingAdminPass">Admin Password</label>
                     <input type="text" id="settingAdminPass" placeholder="password">
+                </div>
+                <div class="form-group">
+                    <label for="settingAboutText">About Us Content (Leave empty to hide page)</label>
+                    <textarea id="settingAboutText" rows="4" placeholder="Describe your clinic..."></textarea>
                 </div>
                 <button type="submit" class="btn-primary">Save Changes</button>
             </form>

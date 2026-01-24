@@ -512,6 +512,7 @@ window.openSettingsModal = function () {
 
     document.getElementById('settingAdminUser').value = settings.adminUser || "drashtijani1812@gmail.com";
     document.getElementById('settingAdminPass').value = settings.adminPass || "drashti@123";
+    document.getElementById('settingAboutText').value = settings.aboutText || ""; // Load About Text
 
     modal.style.display = 'flex';
 };
@@ -530,7 +531,8 @@ if (settingsForm) {
             primaryColor: document.getElementById('settingPrimaryColor').value,
             secondaryColor: document.getElementById('settingSecondaryColor').value,
             adminUser: document.getElementById('settingAdminUser').value,
-            adminPass: document.getElementById('settingAdminPass').value
+            adminPass: document.getElementById('settingAdminPass').value,
+            aboutText: document.getElementById('settingAboutText').value
         };
 
         applySettings(settings);
@@ -565,7 +567,8 @@ async function loadClinicSettings() {
                     primaryColor: data.primary_color,
                     secondaryColor: data.secondary_color,
                     adminUser: data.admin_user,
-                    adminPass: data.admin_pass
+                    adminPass: data.admin_pass,
+                    aboutText: data.about_text // Map from DB
                 };
                 // Cache locally
                 localStorage.setItem('clinicSettings', JSON.stringify(settings));
@@ -602,6 +605,16 @@ function applySettings(settings) {
     }
     if (settings.secondaryColor) {
         document.documentElement.style.setProperty('--secondary-color', settings.secondaryColor);
+    }
+
+    // About Page Logic
+    const aboutNav = document.getElementById('navAbout');
+    const aboutContent = document.getElementById('aboutContent');
+    if (settings.aboutText && settings.aboutText.trim() !== "") {
+        if (aboutNav) aboutNav.style.display = 'block';
+        if (aboutContent) aboutContent.innerText = settings.aboutText;
+    } else {
+        if (aboutNav) aboutNav.style.display = 'none';
     }
 }
 

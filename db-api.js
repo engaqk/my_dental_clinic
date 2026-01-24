@@ -304,6 +304,15 @@ class SupabaseDB {
         return { data, error };
     }
 
+    // Update User (e.g. for Password Reset)
+    async updateUser(attributes) {
+        if (!this.useSupabase) {
+            return { error: { message: 'Cannot update user in offline mode' } };
+        }
+        const { data, error } = await this.supabase.auth.updateUser(attributes);
+        return { data, error };
+    }
+
     // Get App Settings
     async getSettings() {
         if (!this.useSupabase) {
@@ -345,7 +354,8 @@ class SupabaseDB {
                         primary_color: settings.primaryColor,
                         secondary_color: settings.secondaryColor,
                         admin_user: settings.adminUser,
-                        admin_pass: settings.adminPass
+                        admin_pass: settings.adminPass,
+                        about_text: settings.aboutText
                     })
                     .eq('id', existing.id);
                 if (error) throw error;
@@ -359,7 +369,8 @@ class SupabaseDB {
                         primary_color: settings.primaryColor,
                         secondary_color: settings.secondaryColor,
                         admin_user: settings.adminUser,
-                        admin_pass: settings.adminPass
+                        admin_pass: settings.adminPass,
+                        about_text: settings.aboutText
                     }]);
                 if (error) throw error;
             }

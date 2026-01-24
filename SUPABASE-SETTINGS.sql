@@ -35,3 +35,6 @@ USING (true);
 CREATE POLICY "Allow insert settings" 
 ON settings FOR INSERT 
 WITH CHECK (true);
+
+-- 5. Add About Text Column (Update)
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS about_text TEXT;
