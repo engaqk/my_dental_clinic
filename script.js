@@ -610,11 +610,15 @@ function applySettings(settings) {
     // About Page Logic
     const aboutNav = document.getElementById('navAbout');
     const aboutContent = document.getElementById('aboutContent');
+    const aboutSection = document.getElementById('about');
+
     if (settings.aboutText && settings.aboutText.trim() !== "") {
         if (aboutNav) aboutNav.style.display = 'block';
+        if (aboutSection) aboutSection.style.display = 'block'; // Show entire section
         if (aboutContent) aboutContent.innerText = settings.aboutText;
     } else {
         if (aboutNav) aboutNav.style.display = 'none';
+        if (aboutSection) aboutSection.style.display = 'none';
     }
 }
 
