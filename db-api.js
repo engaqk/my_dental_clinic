@@ -20,10 +20,10 @@ class DatabaseAPI {
         };
 
         // Determine which DB to use
-        const path = window.location.pathname;
+        const currentUrl = window.location.href.toLowerCase();
         let selectedConfig = CONFIG['default'];
 
-        if (path.includes('my_dental_clinic')) {
+        if (currentUrl.includes('my_dental_clinic')) {
             console.log('Using Database: My Dental Clinic');
             selectedConfig = CONFIG['my_dental_clinic'];
         } else {
