@@ -417,4 +417,4 @@ class DatabaseAPI {
 }
 
 // Export singleton instance
-window.dbAPI = new SupabaseDB();
+window.dbAPI = new DatabaseAPI();
