@@ -1,19 +1,49 @@
 // Supabase Database Integration - Free & Open Source
-// Get your Supabase credentials from: https://supabase.com/dashboard/project/_/settings/api
-
-const SUPABASE_URL = 'https://nndyapaaveycsucwipoh.supabase.co'; // Replace with your Supabase project URL
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZHlhcGFhdmV5Y3N1Y3dpcG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2NTIxOTksImV4cCI6MjA4NDIyODE5OX0.FbfLDY46GzTApTqlD1JUnmB2-zxywIAvH2PtT7r5N9k'; // Replace with your anon/public key
-
-class SupabaseDB {
+// Get your Supabase credentials from: https://supabase.com/dashboard/project/_// Database API Wrapper
+class DatabaseAPI {
     constructor() {
-        this.useSupabase = SUPABASE_URL !== 'YOUR_SUPABASE_URL' && SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY';
+        this.supabase = null;
+        this.useSupabase = true;
 
-        if (this.useSupabase) {
-            // Initialize Supabase client
-            this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            console.log('✅ Connected to Supabase database');
+        // Configuration for Multi-Tenancy (Switch DB based on URL)
+        const CONFIG = {
+            // Default / Old Clinic
+            'default': {
+                url: 'https://nndyapaaveycsucwipoh.supabase.co',
+                key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uZHlhcGFhdmV5Y3N1Y3dpcG9oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg2NTIxOTksImV4cCI6MjA4NDIyODE5OX0.FbfLDY46GzTApTqlD1JUnmB2-zxywIAvH2PtT7r5N9k'
+            },
+            // New "My Dental Clinic"
+            'my_dental_clinic': {
+                url: 'https://qukrklsgctpkihninqdb.supabase.co',
+                key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF1a3JrbHNnY3Rwa2l5bmlucWRiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkyNDk1NjEsImV4cCI6MjA4NDgyNTU2MX0.DsVh4WLQu86gxl91opf_tltCoZTs863rUETECdtY1JA'
+            }
+        };
+
+        // Determine which DB to use
+        const path = window.location.pathname;
+        let selectedConfig = CONFIG['default'];
+
+        if (path.includes('my_dental_clinic')) {
+            console.log('Using Database: My Dental Clinic');
+            selectedConfig = CONFIG['my_dental_clinic'];
         } else {
-            console.log('📦 Using localStorage (configure Supabase for cloud database)');
+            console.log('Using Database: Dr. Drashtis Default');
+        }
+
+        const SUPABASE_URL = selectedConfig.url;
+        const SUPABASE_ANON_KEY = selectedConfig.key;
+
+        try {
+            if (typeof supabase !== 'undefined') {
+                this.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('Supabase connected successfully');
+            } else {
+                console.warn('Supabase JS not loaded, falling back to local storage');
+                this.useSupabase = false;
+            }
+        } catch (error) {
+            console.error('Supabase initialization failed:', error);
+            this.useSupabase = false;
         }
     }
 
