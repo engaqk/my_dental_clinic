@@ -76,6 +76,9 @@ class DatabaseAPI {
             }));
         } catch (error) {
             console.error('Supabase error:', error);
+            if (error.code === '42P01' || (error.message && error.message.includes('relation "public.appointments" does not exist'))) {
+                alert('CRITICAL ERROR: Database tables not found!\n\nPlease run the "FULL_DB_SETUP.sql" script in your Supabase SQL Editor.');
+            }
             return JSON.parse(localStorage.getItem('dentalAppointments')) || [];
         }
     }
