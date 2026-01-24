@@ -298,7 +298,7 @@ class SupabaseDB {
         }
 
         const { data, error } = await this.supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin + window.location.pathname,
+            redirectTo: window.location.href.split('?')[0].split('#')[0],
         });
 
         return { data, error };
