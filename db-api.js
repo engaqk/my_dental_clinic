@@ -231,6 +231,7 @@ class DatabaseAPI {
                 .neq('status', 'Cancelled');
 
             if (error) throw error;
+            console.log(`[DEBUG] getBookedTimeSlots(${date}) =>`, data);
 
             return data.map(item => {
                 // Supabase (Postgres) returns TIME as HH:MM:SS
