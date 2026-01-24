@@ -85,3 +85,13 @@ CREATE POLICY "Allow public insert staff" ON staff_profiles FOR INSERT WITH CHEC
 INSERT INTO staff_profiles (name, role, email)
 SELECT 'Dr. Admin', 'Doctor', 'admin@example.com'
 WHERE NOT EXISTS (SELECT 1 FROM staff_profiles);
+
+-- 6. (Optional) Insert Sample Appointments
+-- Uncomment the lines below if you want dummy data to test with
+/*
+INSERT INTO appointments (patient_name, phone, date, time, status, treatment)
+VALUES 
+('John Doe', '9876543210', CURRENT_DATE, '10:00', 'Scheduled', 'Dental Cleaning'),
+('Jane Smith', '9123456789', CURRENT_DATE + 1, '11:00', 'Confirmed', 'Consultation'),
+('Rahul Gupta', '9988776655', CURRENT_DATE + 2, '16:00', 'Completed', 'Root Canal');
+*/
