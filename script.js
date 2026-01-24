@@ -487,14 +487,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function checkSuperAdmin() {
     try {
-        const user = JSON.parse(sessionStorage.getItem('staffUser'));
         const btn = document.getElementById('settingsBtn');
-        if (user && user.role === 'super_admin' && btn) {
+        if (!btn) return;
+
+        const userStr = sessionStorage.getItem('staffUser');
+        const user = userStr ? JSON.parse(userStr) : null;
+
+        // STRICT CHECK
+        if (user && user.role === 'super_admin') {
+            console.log('Super Admin detected: Showing settings.');
             btn.style.display = 'inline-block';
-        } else if (btn) {
+        } else {
+            console.log('Not Super Admin: Hiding settings.');
             btn.style.display = 'none';
+            btn.style.setProperty('display', 'none', 'important'); // Force hide
         }
-    } catch (e) { }
+    } catch (e) {
+        console.error('Check Super Admin Error:', e);
+    }
 }
 
 // Global for access from auth.js
