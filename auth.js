@@ -64,6 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof loadAppointments === 'function') {
                         loadAppointments();
                     }
+                    // Validate Super Admin Access immediately
+                    if (typeof window.checkSuperAdmin === 'function') window.checkSuperAdmin();
                 } else {
                     throw new Error('Invalid credentials');
                 }
@@ -143,6 +145,9 @@ async function logout() {
 
         // Update UI
         document.getElementById('dashboard').style.display = 'none';
+        const stBtn = document.getElementById('settingsBtn');
+        if (stBtn) stBtn.style.display = 'none';
+
         document.getElementById('main-content').style.display = 'block';
         showSection('home');
     }
