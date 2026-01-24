@@ -64,6 +64,26 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof loadAppointments === 'function') {
                         loadAppointments();
                     }
+
+                    // Sync Password: If login succeeded, update 'adminPass' in settings to match 
+                    // (This handles cases where password was reset via email but settings/fallback was old)
+                    try {
+                        const localSettings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
+                        const defaultUser = localSettings.adminUser || 'drashtijani1812@gmail.com';
+                        // Check if we logged in as the admin (via 'admin' alias or direct email)
+                        if (username === 'admin' || username === defaultUser) {
+                            if (localSettings.adminPass !== password) {
+                                console.log('Syncing new password to settings...');
+                                localSettings.adminPass = password;
+                                localStorage.setItem('clinicSettings', JSON.stringify(localSettings));
+                                // Also try to sync to cloud if possible
+                                if (window.dbAPI && window.dbAPI.saveSettings) {
+                                    window.dbAPI.saveSettings(localSettings);
+                                }
+                            }
+                        }
+                    } catch (e) { console.error('Auto-sync password failed:', e); }
+
                     // Validate Super Admin Access immediately
                     if (typeof window.checkSuperAdmin === 'function') window.checkSuperAdmin();
                 } else {
