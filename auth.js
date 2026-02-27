@@ -44,8 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
             errorMsg.style.display = 'none';
 
             try {
+                // Map "admin" to the primary email for convenience
+                let actualUsername = username;
+                if (username.toLowerCase() === 'admin') {
+                    actualUsername = 'drashtijani1812@gmail.com';
+                }
+
                 // Use Supabase authentication
-                const { user, error } = await window.dbAPI.signIn(username, password);
+                const { user, error } = await window.dbAPI.signIn(actualUsername, password);
 
                 if (error) {
                     throw error;
