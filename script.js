@@ -188,8 +188,8 @@ function showBookingModal(appointment) {
     // Generate Google Calendar Link
     // Format: https://calendar.google.com/calendar/render?action=TEMPLATE&text=TEXT&dates=DATES&details=DETAILS&location=LOCATION
     const title = encodeURIComponent(`Dentist Appointment: ${appointment.reason}`);
-    const details = encodeURIComponent(`Appointment with Dr. Drashti's Clinic.\nPatient: ${appointment.name}\nReason: ${appointment.reason}`);
-    const location = encodeURIComponent("Dr. Drashti's Advanced Dental and Cosmetic Clinic, Dahod");
+    const details = encodeURIComponent(`Appointment with My Dental Clinic.\\nPatient: ${appointment.name}\\nReason: ${appointment.reason}`);
+    const location = encodeURIComponent("My Dental Clinic - Advance Dental clinic");
 
     // Dates need to be YYYYMMDDTHHMMSSZ
     // Currently just setting for "Now" + 1 hour for simplicity, or we could ask user for date time.
@@ -514,8 +514,8 @@ window.openSettingsModal = function () {
     const modal = document.getElementById('settingsModal');
     const settings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
 
-    document.getElementById('settingClinicName').value = settings.name || "Dr. Drashti's";
-    document.getElementById('settingSubtitle').value = settings.subtitle || "Advanced Dental & Cosmetic Clinic";
+    document.getElementById('settingClinicName').value = settings.name || "My Dental Clinic";
+    document.getElementById('settingSubtitle').value = settings.subtitle || "Advance Dental clinic";
     // Set default colors if not set (using our new Teal default)
     document.getElementById('settingPrimaryColor').value = settings.primaryColor || "#26A69A";
     document.getElementById('settingSecondaryColor').value = settings.secondaryColor || "#42A5F5";
@@ -603,7 +603,7 @@ function applySettings(settings) {
         document.title = settings.name;
         const footerP = document.getElementById('footerCopyright');
         if (footerP) {
-            footerP.innerHTML = `&copy; 2026 ${settings.name}, Dahod. All rights reserved.`;
+            footerP.innerHTML = `&copy; 2026 ${settings.name}${settings.subtitle ? ' - ' + settings.subtitle : ''}. All rights reserved.`;
         }
     }
     if (settings.subtitle) {
