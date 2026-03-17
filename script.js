@@ -176,6 +176,8 @@ form.addEventListener('submit', async (e) => {
     if (success) {
         form.reset();
         initializeDateTimePickers(); // Reset date/time pickers
+        // Send Notification to Admin
+        window.dbAPI.sendEmailNotification(appointment);
         // Show Modal instead of alert
         showBookingModal(appointment);
     }
@@ -546,7 +548,12 @@ window.openSettingsModal = function () {
 
     document.getElementById('settingAdminUser').value = settings.adminUser || "drashtijani1812@gmail.com";
     document.getElementById('settingAdminPass').value = settings.adminPass || "drashti@123";
-    document.getElementById('settingAboutText').value = settings.aboutText || ""; // Load About Text
+    document.getElementById('settingAboutText').value = settings.aboutText || "";
+    
+    // Load Email Settings
+    document.getElementById('settingEmailServiceId').value = settings.emailServiceId || "";
+    document.getElementById('settingEmailTemplateId').value = settings.emailTemplateId || "";
+    document.getElementById('settingEmailPublicKey').value = settings.emailPublicKey || "";
 
     modal.style.display = 'flex';
 };
@@ -566,7 +573,10 @@ if (settingsForm) {
             secondaryColor: document.getElementById('settingSecondaryColor').value,
             adminUser: document.getElementById('settingAdminUser').value,
             adminPass: document.getElementById('settingAdminPass').value,
-            aboutText: document.getElementById('settingAboutText').value
+            aboutText: document.getElementById('settingAboutText').value,
+            emailServiceId: document.getElementById('settingEmailServiceId').value,
+            emailTemplateId: document.getElementById('settingEmailTemplateId').value,
+            emailPublicKey: document.getElementById('settingEmailPublicKey').value
         };
 
         applySettings(settings);
@@ -602,7 +612,10 @@ async function loadClinicSettings() {
                     secondaryColor: data.secondary_color,
                     adminUser: data.admin_user,
                     adminPass: data.admin_pass,
-                    aboutText: data.about_text // Map from DB
+                    aboutText: data.about_text,
+                    emailServiceId: data.email_service_id,
+                    emailTemplateId: data.email_template_id,
+                    emailPublicKey: data.email_public_key
                 };
                 // Cache locally
                 localStorage.setItem('clinicSettings', JSON.stringify(settings));

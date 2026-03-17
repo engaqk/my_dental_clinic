@@ -309,11 +309,63 @@ class DatabaseAPI {
         if (!this.useFirebase) return true;
 
         try {
-            await this.db.collection('settings').doc('clinic').set(settings, { merge: true });
+            await this.db.collection('settings').doc('clinic').set({
+                clinic_name: settings.name,
+                subtitle: settings.subtitle,
+                primary_color: settings.primaryColor,
+                secondary_color: settings.secondaryColor,
+                admin_user: settings.adminUser,
+                admin_pass: settings.adminPass,
+                about_text: settings.aboutText,
+                email_service_id: settings.emailServiceId,
+                email_template_id: settings.emailTemplateId,
+                email_public_key: settings.emailPublicKey
+            }, { merge: true });
             return true;
         } catch (error) {
             console.error('Error saving settings to Firebase:', error);
             return false;
+        }
+    }
+
+    // Send Email Notification to Admin
+    async sendEmailNotification(appointment) {
+        try {
+            const settings = await this.getSettings();
+            
+            // Map settings (handle both DB and local formats)
+            const serviceId = settings.email_service_id || settings.emailServiceId;
+            const templateId = settings.email_template_id || settings.emailTemplateId;
+            const publicKey = settings.email_public_key || settings.emailPublicKey;
+            const adminEmail = settings.admin_user || settings.adminUser || 'drashtijani1812@gmail.com';
+            const clinicName = settings.clinic_name || settings.name || 'My Dental Clinic';
+
+            if (!serviceId || !templateId || !publicKey) {
+                console.warn('Email notifications not configured in Settings.');
+                return;
+            }
+
+            // Initialize EmailJS
+            if (typeof emailjs !== 'undefined') {
+                emailjs.init(publicKey);
+
+                const templateParams = {
+                    to_email: adminEmail,
+                    clinic_name: clinicName,
+                    patient_name: appointment.name,
+                    appointment_date: appointment.appointmentDate,
+                    appointment_time: appointment.appointmentTime,
+                    patient_mobile: appointment.mobile,
+                    patient_place: appointment.place,
+                    treatment_reason: appointment.reason,
+                    booking_id: appointment.id
+                };
+
+                const response = await emailjs.send(serviceId, templateId, templateParams);
+                console.log('Admin notification sent!', response.status, response.text);
+            }
+        } catch (error) {
+            console.error('Failed to send email notification:', error);
         }
     }
 }
