@@ -191,17 +191,28 @@ function showBookingModal(appointment) {
     const details = encodeURIComponent(`Appointment with My Dental Clinic.\\nPatient: ${appointment.name}\\nReason: ${appointment.reason}`);
     const location = encodeURIComponent("My Dental Clinic - Advance Dental clinic");
 
-    // Dates need to be YYYYMMDDTHHMMSSZ
-    // Currently just setting for "Now" + 1 hour for simplicity, or we could ask user for date time.
-    // Since form relies on "today", let's assume "Time to be confirmed" but link creates a slot for Today + 1 hour from now.
-    const now = new Date();
-    const start = now.toISOString().replace(/-|:|\.\d\d\d/g, "");
-    const end = new Date(now.getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+    // Dates need to be YYYYMMDDTHHMMSSZ (UTC or local time without zone)
+    // appointment.appointmentDate is YYYY-MM-DD
+    // appointment.appointmentTime is HH:mm
+    const datePart = appointment.appointmentDate.replace(/-/g, "");
+    const timePart = appointment.appointmentTime.replace(/:/g, "") + "00";
+    
+    const start = `${datePart}T${timePart}`;
+    // Add 30 minutes for the end time (matching our slot duration)
+    const endHour = parseInt(appointment.appointmentTime.split(':')[0]);
+    const endMin = (parseInt(appointment.appointmentTime.split(':')[1]) + 30);
+    const endMinStr = endMin >= 60 ? (endMin - 60).toString().padStart(2, '0') : endMin.toString().padStart(2, '0');
+    const endHourStr = endMin >= 60 ? (endHour + 1).toString().padStart(2, '0') : endHour.toString().padStart(2, '0');
+    const end = `${datePart}T${endHourStr}${endMinStr}00`;
 
     const href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
 
-    linkBtn.href = href;
+    if (linkBtn) linkBtn.href = href;
     modal.style.display = "flex";
+}
+
+function closeBookingModal() {
+    closeModal();
 }
 
 function closeModal() {
@@ -267,9 +278,22 @@ async function loadAppointments() {
         // Sort by newest first
         filtered.sort((a, b) => b.id - a.id).forEach(app => {
             // Calendar Link
-            const now = new Date();
-            const start = now.toISOString().replace(/-|:|\.\d\d\d/g, "");
-            const end = new Date(now.getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+            // Dynamic Calendar Link based on session time
+            let start = "", end = "";
+            if (app.appointmentDate && app.appointmentTime) {
+                const datePart = app.appointmentDate.replace(/-/g, "");
+                const timePart = app.appointmentTime.replace(/:/g, "") + "00";
+                start = `${datePart}T${timePart}`;
+                const endHour = parseInt(app.appointmentTime.split(':')[0]);
+                const endMin = (parseInt(app.appointmentTime.split(':')[1]) + 30);
+                const endMinStr = endMin >= 60 ? (endMin - 60).toString().padStart(2, '0') : endMin.toString().padStart(2, '0');
+                const endHourStr = endMin >= 60 ? (endHour + 1).toString().padStart(2, '0') : endHour.toString().padStart(2, '0');
+                end = `${datePart}T${endHourStr}${endMinStr}00`;
+            } else {
+                const now = new Date();
+                start = now.toISOString().replace(/-|:|\.\d\d\d/g, "");
+                end = new Date(now.getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+            }
             const title = encodeURIComponent(`Patient: ${app.name} (${app.reason})`);
             const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=Mobile: ${app.mobile}&location=Clinic`;
 

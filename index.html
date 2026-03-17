@@ -278,7 +278,12 @@
             <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Booking Confirmed!</h2>
             <p>Your appointment has been successfully scheduled.</p>
             <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">We look forward to seeing you.</p>
-            <button onclick="closeBookingModal()" class="btn-primary" style="margin-top: 1.5rem;">Done</button>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
+                <a id="calendarLink" target="_blank" class="btn-primary" style="background-color: #4CAF50; text-decoration: none;">
+                    <i class="fab fa-google"></i> Add to Calendar
+                </a>
+                <button onclick="closeBookingModal()" class="btn-primary" style="background-color: #999;">Done</button>
+            </div>
         </div>
     </div>
 
