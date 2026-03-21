@@ -1006,3 +1006,52 @@ function getOrCreateInlineError(input) {
 function printSchedule() {
     window.print();
 }
+
+/* --- PWA SMART INSTALL BANNER LOGIC --- */
+
+let deferredPWAInstallPrompt = null;
+
+window.addEventListener('load', () => {
+    const banner = document.getElementById('pwaInstallBanner');
+    if (!banner) return;
+
+    // Check if dismissed in this session
+    if (sessionStorage.getItem('pwa_banner_dismissed')) return;
+
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (isStandalone) return;
+
+    // Detect iOS
+    const ua = navigator.userAgent;
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) && !window.navigator.standalone;
+
+    if (isIOS) {
+        document.getElementById('pwaDesc').innerHTML = 'Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>';
+        document.getElementById('pwaIosInstruct').style.display = 'block';
+        setTimeout(() => banner.style.display = 'flex', 3000);
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPWAInstallPrompt = e;
+        const btn = document.getElementById('pwaInstallBtn');
+        if (btn) btn.style.display = 'block';
+        banner.style.display = 'flex';
+    });
+});
+
+async function handlePWAInstall() {
+    if (!deferredPWAInstallPrompt) return;
+    deferredPWAInstallPrompt.prompt();
+    const { outcome } = await deferredPWAInstallPrompt.userChoice;
+    if (outcome === 'accepted') {
+        dismissPWABanner();
+        deferredPWAInstallPrompt = null;
+    }
+}
+
+function dismissPWABanner() {
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.style.display = 'none';
+    sessionStorage.setItem('pwa_banner_dismissed', '1');
+}

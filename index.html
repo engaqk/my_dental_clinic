@@ -445,6 +445,24 @@
     <script src="theme-switcher.js?v=2.3"></script>
     <script src="script.js?v=2.3" defer></script>
 
+    <!-- PWA Install Banner -->
+    <div id="pwaInstallBanner" class="pwa-banner" role="dialog" aria-label="Install App">
+        <div class="pwa-icon">D</div>
+        <div class="pwa-content">
+            <p class="pwa-title">Install My Dental Clinic</p>
+            <p id="pwaDesc" class="pwa-desc">Add to your home screen for faster access.</p>
+        </div>
+        <div class="pwa-actions">
+            <button id="pwaInstallBtn" onclick="handlePWAInstall()" class="pwa-install-btn" style="display: none;">Install</button>
+            <div id="pwaIosInstruct" style="display: none; background: #E0F2F1; padding: 6px; border-radius: 8px; color: var(--primary-color);">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+            <button onclick="dismissPWABanner()" class="pwa-close-btn" aria-label="Dismiss">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- PWA & Auto-Refresh Logic (Pulse Suite Update) -->
     <script>
         if ('serviceWorker' in navigator) {
