@@ -367,35 +367,64 @@ class DatabaseAPI {
         }
     }
 
-    // Get Marketing Contacts
+    // Get Marketing Contacts (Firestore + localStorage fallback merged)
     async getMarketingContacts() {
-        if (!this.useFirebase) return [];
+        // Always load local contacts first
+        let localContacts = [];
+        try {
+            localContacts = JSON.parse(localStorage.getItem('marketing_contacts_local') || '[]');
+        } catch(e) {}
+
+        if (!this.useFirebase) return localContacts;
+
         try {
             const snapshot = await this.db.collection('marketing_contacts').get();
-            const contacts = [];
-            snapshot.forEach(doc => contacts.push({ id: doc.id, ...doc.data() }));
-            return contacts;
+            const firestoreContacts = [];
+            snapshot.forEach(doc => firestoreContacts.push({ id: doc.id, ...doc.data() }));
+
+            // Merge: add local-only contacts not yet in Firestore
+            const firestoreMobiles = new Set(firestoreContacts.map(c => c.mobile));
+            const localOnly = localContacts.filter(c => !firestoreMobiles.has(c.mobile));
+            return [...firestoreContacts, ...localOnly];
         } catch (error) {
-            console.error('Error fetching marketing contacts:', error);
-            return [];
+            console.warn('Firestore blocked, using local contacts:', error.code);
+            return localContacts;
         }
     }
 
-    // Add Marketing Contact
+    // Add Marketing Contact (saves locally first, then syncs to Firestore)
     async addMarketingContact(contact) {
+        // Always save to localStorage immediately
+        try {
+            const local = JSON.parse(localStorage.getItem('marketing_contacts_local') || '[]');
+            const isDup = local.some(c => c.mobile === contact.mobile);
+            if (!isDup) {
+                local.push({ id: 'local_' + Date.now(), name: contact.name, mobile: contact.mobile, source: 'Marketing' });
+                localStorage.setItem('marketing_contacts_local', JSON.stringify(local));
+            }
+        } catch(e) {}
+
         if (!this.useFirebase) return null;
+
         try {
             const docRef = await this.db.collection('marketing_contacts').add({
                 name: contact.name,
                 mobile: contact.mobile,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+            // Remove from local cache since it's now in Firestore
+            try {
+                let local = JSON.parse(localStorage.getItem('marketing_contacts_local') || '[]');
+                local = local.filter(c => c.mobile !== contact.mobile);
+                localStorage.setItem('marketing_contacts_local', JSON.stringify(local));
+            } catch(e) {}
             return { id: docRef.id, ...contact };
         } catch (error) {
             if (error.code === 'permission-denied') {
-                alert("DATABASE BLOCKED: You MUST copy the Security Rules from firestore.rules and paste them into your Firebase Console > Rules tab!");
+                console.warn('Firestore blocked - contact saved locally only. Update Firebase Rules to persist online.');
+            } else {
+                console.error('Error adding marketing contact:', error);
             }
-            console.error('Error adding marketing contact:', error);
             return null;
         }
     }

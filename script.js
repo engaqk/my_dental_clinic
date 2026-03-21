@@ -741,8 +741,8 @@ async function previewRecipients() {
 }
 
 function renderRecipientsTable() {
-    const tbody = document.getElementById('recipientsBody');
-    tbody.innerHTML = '';
+    const container = document.getElementById('recipientsBody');
+    container.innerHTML = '';
 
     const start = (currentPage - 1) * rowsPerPage;
     const end = start + rowsPerPage;
@@ -752,26 +752,52 @@ function renderRecipientsTable() {
     if (selectAllCheckbox) selectAllCheckbox.checked = false;
     toggleBulkDeleteBtn();
 
+    if (paginated.length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #aaa; padding: 2rem;">No contacts found. Add one above.</div>';
+    }
+
     paginated.forEach(r => {
-        const row = document.createElement('tr');
-        const isMarketing = r.source.includes('Marketing');
-        row.innerHTML = `
-            <td style="text-align:center;">
-                <input type="checkbox" class="recipient-checkbox" data-phone="${r.mobile}" onchange="updateSelectedRecipients()">
-            </td>
-            <td>${r.name}</td>
-            <td>${r.mobile}</td>
-            <td><span class="source-tag">${r.source}</span></td>
-            <td style="text-align: right;">
-                ${isMarketing ? `<button onclick="removeSingleRecipient('${r.mobile}', '${r.id}')" class="btn-primary" style="background: transparent; color: #dc3545; border: none; padding: 0; font-size: 1rem;"><i class="fas fa-trash"></i></button>` : ''}
-            </td>
+        const isMarketing = r.source && r.source.includes('Marketing');
+        const initial = (r.name || '?').charAt(0).toUpperCase();
+        const sourceColor = isMarketing ? '#26A69A' : r.source === 'Auth' ? '#7C3AED' : '#0d4b9f';
+
+        const card = document.createElement('div');
+        card.style.cssText = `
+            background: white;
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid #f0f0f0;
+            transition: box-shadow 0.2s;
+            position: relative;
         `;
-        tbody.appendChild(row);
+        card.onmouseenter = () => card.style.boxShadow = '0 4px 18px rgba(0,0,0,0.13)';
+        card.onmouseleave = () => card.style.boxShadow = '0 2px 10px rgba(0,0,0,0.07)';
+
+        card.innerHTML = `
+            <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; align-items: center;">
+                <input type="checkbox" class="recipient-checkbox" data-phone="${r.mobile}" onchange="updateSelectedRecipients()" style="cursor:pointer;">
+                ${isMarketing ? `<button onclick="removeSingleRecipient('${r.mobile}', '${r.id || ''}')" title="Delete" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:1rem;padding:0;">🗑</button>` : ''}
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${sourceColor}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; flex-shrink: 0;">${initial}</div>
+                <div style="min-width: 0;">
+                    <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;">${r.name || 'Unknown'}</div>
+                    <div style="font-size: 0.78rem; color: #555; font-family: monospace;">${r.mobile}</div>
+                </div>
+            </div>
+            <div>
+                <span style="font-size: 0.7rem; background: ${sourceColor}18; color: ${sourceColor}; padding: 2px 8px; border-radius: 20px; font-weight: 600;">${r.source || 'Unknown'}</span>
+            </div>
+        `;
+        container.appendChild(card);
     });
 
     const totalPages = Math.ceil(allRecipients.length / rowsPerPage);
     document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages || 1}`;
-    
     document.getElementById('prevPage').disabled = currentPage === 1;
     document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
 }
