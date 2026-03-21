@@ -1,0 +1,39 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper: Is staff logged in?
+    function isStaff() {
+      return request.auth != null;
+    }
+
+    // --- APPOINTMENTS RULES ---
+    match /appointments/{appointmentId} {
+      allow read: if isStaff(); // Only staff can see the full table
+      allow create: if true;    // Public booking (no login)
+      allow update, delete: if isStaff();
+    }
+
+    // --- SETTINGS RULES ---
+    // (Contains your SMS Gateway credentials)
+    match /settings/{settingId} {
+      allow read: if isStaff(); 
+      allow write: if isStaff();
+    }
+
+    // --- MARKETING & BROADCAST RULES ---
+    match /marketing_contacts/{id} {
+      allow read, write: if isStaff();
+    }
+    
+    match /broadcast_history/{id} {
+      allow read, write: if isStaff();
+    }
+
+    // --- GENERAL BACKFALL ---
+    match /{document=**} {
+      allow read, write: if isStaff();
+    }
+  }
+}

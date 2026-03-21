@@ -8,9 +8,9 @@ class DatabaseAPI {
 
         const firebaseConfig = {
             apiKey: "AIzaSyAW9f8YvUDWpTkaJiwjXSaancicOJcKnBk",
-            authDomain: "my-dental-clinic-wl.firebaseapp.com",
-            projectId: "my-dental-clinic-wl",
-            storageBucket: "my-dental-clinic-wl.firebasestorage.app",
+            authDomain: "dr-drashti-clinic-d1.firebaseapp.com",
+            projectId: "dr-drashti-clinic-d1",
+            storageBucket: "dr-drashti-clinic-d1.firebasestorage.app",
             messagingSenderId: "222622897500",
             appId: "1:222622897500:web:6f0b52907a052d5d91dd99",
             measurementId: "G-H67S5BWGTZ"
@@ -74,7 +74,11 @@ class DatabaseAPI {
             // Sort by createdAt / id descending to match old behavior
             return appointments.sort((a, b) => b.id - a.id);
         } catch (error) {
-            console.error('Firebase error:', error);
+            if (error.code === 'permission-denied') {
+                console.error('SECURITY RULES WARNING: Access to "appointments" collection is blocked by Firestore Security Rules.');
+            } else {
+                console.error('Firebase error:', error);
+            }
             return JSON.parse(localStorage.getItem('dentalAppointments')) || [];
         }
     }
@@ -177,19 +181,27 @@ class DatabaseAPI {
         }
 
         try {
-            const snapshot = await this.db.collection('appointments').get();
+            // Optimized query: Only fetch relevant slots for the day
+            const snapshot = await this.db.collection('appointments')
+                .where('appointmentDate', '==', date)
+                .where('status', '!=', 'Cancelled')
+                .get();
+
             const bookedSlots = [];
             snapshot.forEach(doc => {
                 const data = doc.data();
-                if ((data.appointmentDate === date || data.appointment_date === date) && data.status !== 'Cancelled' && (data.appointmentTime || data.appointment_time)) {
-                    // Normalize standard time formats
-                    const time = data.appointmentTime || data.appointment_time;
+                const time = data.appointmentTime || data.appointment_time;
+                if (time) {
                     bookedSlots.push(time.length > 5 ? time.substring(0, 5) : time);
                 }
             });
             return bookedSlots;
         } catch (error) {
-            console.error('Firebase error:', error);
+            if (error.code === 'failed-precondition') {
+                console.error('INDEX ERROR (getBookedTimeSlots): You must create a composite index in Firebase Console. Click the link in your console log.');
+            } else {
+                console.error('Firebase error (getBookedTimeSlots):', error);
+            }
             return [];
         }
     }
@@ -316,6 +328,7 @@ class DatabaseAPI {
                 secondary_color: settings.secondaryColor,
                 admin_user: settings.adminUser,
                 admin_pass: settings.adminPass,
+                admin_email: settings.adminEmail, // Added admin email
                 about_text: settings.aboutText
             }, { merge: true });
             return true;
@@ -323,6 +336,173 @@ class DatabaseAPI {
             console.error('Error saving settings to Firebase:', error);
             return false;
         }
+    }
+
+    // --- PULSE SMS & NOTIFICATION SUITE METHODS ---
+
+    // Get Gateway Settings
+    async getGatewaySettings() {
+        if (!this.useFirebase) return {};
+        try {
+            const doc = await this.db.collection('settings').doc('gateway').get();
+            return doc.exists ? doc.data() : {};
+        } catch (error) {
+            console.error('Error fetching gateway settings:', error);
+            return {};
+        }
+    }
+
+    // Save Gateway Settings
+    async saveGatewaySettings(settings) {
+        if (!this.useFirebase) return false;
+        try {
+            await this.db.collection('settings').doc('gateway').set(settings, { merge: true });
+            return true;
+        } catch (error) {
+            console.error('Error saving gateway settings:', error);
+            return false;
+        }
+    }
+
+    // Get Marketing Contacts
+    async getMarketingContacts() {
+        if (!this.useFirebase) return [];
+        try {
+            const snapshot = await this.db.collection('marketing_contacts').get();
+            const contacts = [];
+            snapshot.forEach(doc => contacts.push({ id: doc.id, ...doc.data() }));
+            return contacts;
+        } catch (error) {
+            console.error('Error fetching marketing contacts:', error);
+            return [];
+        }
+    }
+
+    // Add Marketing Contact
+    async addMarketingContact(contact) {
+        if (!this.useFirebase) return null;
+        try {
+            const docRef = await this.db.collection('marketing_contacts').add({
+                name: contact.name,
+                mobile: contact.mobile,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return { id: docRef.id, ...contact };
+        } catch (error) {
+            console.error('Error adding marketing contact:', error);
+            return null;
+        }
+    }
+
+    // Delete Marketing Contact
+    async deleteMarketingContact(id) {
+        if (!this.useFirebase) return false;
+        try {
+            await this.db.collection('marketing_contacts').doc(id).delete();
+            return true;
+        } catch (error) {
+            console.error('Error deleting marketing contact:', error);
+            return false;
+        }
+    }
+
+    // Delete Multiple Marketing Contacts
+    async deleteManyMarketingContacts(ids) {
+        if (!this.useFirebase || !ids.length) return false;
+        const batch = this.db.batch();
+        ids.forEach(id => {
+            const docRef = this.db.collection('marketing_contacts').doc(id);
+            batch.delete(docRef);
+        });
+        try {
+            await batch.commit();
+            return true;
+        } catch (error) {
+            console.error('Error in batch delete:', error);
+            return false;
+        }
+    }
+
+    // Aggregate Unique Phone Numbers from 3 Sources
+    async getBroadcastRecipients() {
+        if (!this.useFirebase) return [];
+        
+        const recipientMap = new Map(); // Use Map to keep unique by phone
+
+        try {
+            // Source 1: Appointments
+            const appts = await this.getAppointments();
+            appts.forEach(a => {
+                if (a.mobile && a.name) {
+                    const normalized = window.phoneUtils.normalize(a.mobile);
+                    if (!recipientMap.has(normalized)) {
+                        recipientMap.set(normalized, { name: a.name, mobile: normalized, source: 'Appointment' });
+                    }
+                }
+            });
+
+            // Source 2: Auth Directory (via Serverless API)
+            try {
+                const response = await fetch('/api/get-auth-users');
+                const authUsers = await response.json();
+                if (authUsers && Array.isArray(authUsers)) {
+                    authUsers.forEach(u => {
+                        if (u.phoneNumber || u.mobile) {
+                            const normalized = window.phoneUtils.normalize(u.phoneNumber || u.mobile);
+                            if (!recipientMap.has(normalized)) {
+                                recipientMap.set(normalized, { name: u.displayName || u.email || 'Auth User', mobile: normalized, source: 'Auth' });
+                            }
+                        }
+                    });
+                }
+            } catch (e) { console.warn('Auth directory fetch failed:', e); }
+
+            // Source 3: Marketing Contacts
+            const marketing = await this.getMarketingContacts();
+            marketing.forEach(m => {
+                if (m.mobile) {
+                    const normalized = window.phoneUtils.normalize(m.mobile);
+                    if (!recipientMap.has(normalized)) {
+                        // STORE THE ID so we can delete it later
+                        recipientMap.set(normalized, { id: m.id, name: m.name || 'Marketing Contact', mobile: normalized, source: 'Marketing' });
+                    }
+                }
+            });
+
+            return Array.from(recipientMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        } catch (error) {
+            console.error('Error aggregating recipients:', error);
+            return [];
+        }
+    }
+
+    // Log Broadcast History
+    async logBroadcast(batchId, recipientsCount, message, status = 'SENT') {
+        if (!this.useFirebase) return;
+        try {
+            await this.db.collection('broadcast_history').add({
+                batchId,
+                recipientsCount,
+                message,
+                status,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (error) {
+            console.error('Error logging broadcast:', error);
+        }
+    }
+
+    // Real-time Broadcast History Listener
+    onBroadcastHistoryChange(callback) {
+        if (!this.useFirebase) return () => {};
+        return this.db.collection('broadcast_history')
+            .orderBy('timestamp', 'desc')
+            .limit(20)
+            .onSnapshot(snapshot => {
+                const history = [];
+                snapshot.forEach(doc => history.push({ id: doc.id, ...doc.data() }));
+                callback(history);
+            });
     }
 }
 

@@ -178,8 +178,36 @@ form.addEventListener('submit', async (e) => {
         initializeDateTimePickers(); // Reset date/time pickers
         // Show Modal instead of alert
         showBookingModal(appointment);
+
+        // TRIGGER SERVERLESS NOTIFICATION
+        triggerBookingNotification(appointment);
     }
 });
+
+/**
+ * Trigger Serverless Notification API
+ */
+async function triggerBookingNotification(appointment) {
+    try {
+        const settings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
+        await fetch('/api/booking-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                appointmentId: appointment.id,
+                name: appointment.name,
+                mobile: window.phoneUtils.normalize(appointment.mobile),
+                date: appointment.appointmentDate,
+                time: appointment.appointmentTime,
+                reason: appointment.reason,
+                clinicName: settings.name || "My Dental Clinic"
+            })
+        });
+        console.log('Notification triggered successfully');
+    } catch (e) {
+        console.error('Failed to trigger notification:', e);
+    }
+}
 
 function showBookingModal(appointment) {
     const modal = document.getElementById('bookingModal');
@@ -534,15 +562,18 @@ function checkSuperAdmin() {
 // Global for access from auth.js
 window.checkSuperAdmin = checkSuperAdmin;
 
-window.openSettingsModal = function () {
+window.openSettingsModal = async function () {
     const modal = document.getElementById('settingsModal');
     const settings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
+    const gateway = await window.dbAPI.getGatewaySettings();
 
     document.getElementById('settingClinicName').value = settings.name || "My Dental Clinic";
     document.getElementById('settingSubtitle').value = settings.subtitle || "Advance Dental clinic";
-    // Set default colors if not set (using our new Teal default)
+    document.getElementById('settingAdminEmail').value = settings.adminEmail || "";
     document.getElementById('settingPrimaryColor').value = settings.primaryColor || "#26A69A";
-    document.getElementById('settingSecondaryColor').value = settings.secondaryColor || "#42A5F5";
+
+    document.getElementById('settingGatewayApiKey').value = gateway.apiKey || "";
+    document.getElementById('settingGatewayDeviceId').value = gateway.deviceId || "";
 
     document.getElementById('settingAdminUser').value = settings.adminUser || "drashtijani1812@gmail.com";
     document.getElementById('settingAdminPass').value = settings.adminPass || "drashti@123";
@@ -562,11 +593,16 @@ if (settingsForm) {
         const settings = {
             name: document.getElementById('settingClinicName').value,
             subtitle: document.getElementById('settingSubtitle').value,
+            adminEmail: document.getElementById('settingAdminEmail').value,
             primaryColor: document.getElementById('settingPrimaryColor').value,
-            secondaryColor: document.getElementById('settingSecondaryColor').value,
             adminUser: document.getElementById('settingAdminUser').value,
             adminPass: document.getElementById('settingAdminPass').value,
             aboutText: document.getElementById('settingAboutText').value
+        };
+
+        const gatewaySettings = {
+            apiKey: document.getElementById('settingGatewayApiKey').value,
+            deviceId: document.getElementById('settingGatewayDeviceId').value
         };
 
         applySettings(settings);
@@ -577,7 +613,10 @@ if (settingsForm) {
         btn.textContent = 'Saving...';
         btn.disabled = true;
 
-        await window.dbAPI.saveSettings(settings);
+        await Promise.all([
+            window.dbAPI.saveSettings(settings),
+            window.dbAPI.saveGatewaySettings(gatewaySettings)
+        ]);
 
         btn.textContent = originalText;
         btn.disabled = false;
@@ -598,8 +637,8 @@ async function loadClinicSettings() {
                 settings = {
                     name: data.clinic_name,
                     subtitle: data.subtitle,
+                    adminEmail: data.admin_email,
                     primaryColor: data.primary_color,
-                    secondaryColor: data.secondary_color,
                     adminUser: data.admin_user,
                     adminPass: data.admin_pass,
                     aboutText: data.about_text
@@ -664,6 +703,304 @@ function showSection(sectionId) {
     if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
     }
+}
+
+/* --- PULSE SMS ENGINE UI LOGIC --- */
+
+let allRecipients = [];
+let currentPage = 1;
+const rowsPerPage = 10;
+
+function showDashboardTab(tabName) {
+    const tabs = document.querySelectorAll('.dashboard-tab');
+    tabs.forEach(t => t.style.display = 'none');
+    
+    if (tabName === 'broadcast') {
+        document.getElementById('broadcastTab').style.display = 'block';
+        document.getElementById('broadcastBtn').style.background = '#0d4b9f';
+        // Add a back button/breadcrumb if needed
+        initBroadcastHistory();
+    } else {
+        document.getElementById('patientsTab').style.display = 'block';
+        document.getElementById('broadcastBtn').style.background = '#555';
+    }
+}
+
+async function previewRecipients() {
+    const previewEl = document.getElementById('recipientPreview');
+    previewEl.style.display = 'block';
+    previewEl.scrollIntoView({ behavior: 'smooth' });
+
+    document.getElementById('recipientsBody').innerHTML = '<tr><td colspan="3" style="text-align:center;">Loading recipients...</td></tr>';
+    
+    allRecipients = await window.dbAPI.getBroadcastRecipients();
+    document.getElementById('previewCount').textContent = allRecipients.length;
+    
+    currentPage = 1;
+    renderRecipientsTable();
+}
+
+function renderRecipientsTable() {
+    const tbody = document.getElementById('recipientsBody');
+    tbody.innerHTML = '';
+
+    const start = (currentPage - 1) * rowsPerPage;
+    const end = start + rowsPerPage;
+    const paginated = allRecipients.slice(start, end);
+
+    const selectAllCheckbox = document.getElementById('selectAllRecipients');
+    if (selectAllCheckbox) selectAllCheckbox.checked = false;
+    toggleBulkDeleteBtn();
+
+    paginated.forEach(r => {
+        const row = document.createElement('tr');
+        const isMarketing = r.source.includes('Marketing');
+        row.innerHTML = `
+            <td style="text-align:center;">
+                <input type="checkbox" class="recipient-checkbox" data-phone="${r.mobile}" onchange="updateSelectedRecipients()">
+            </td>
+            <td>${r.name}</td>
+            <td>${r.mobile}</td>
+            <td><span class="source-tag">${r.source}</span></td>
+            <td style="text-align: right;">
+                ${isMarketing ? `<button onclick="removeSingleRecipient('${r.mobile}', '${r.id}')" class="btn-primary" style="background: transparent; color: #dc3545; border: none; padding: 0; font-size: 1rem;"><i class="fas fa-trash"></i></button>` : ''}
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    const totalPages = Math.ceil(allRecipients.length / rowsPerPage);
+    document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages || 1}`;
+    
+    document.getElementById('prevPage').disabled = currentPage === 1;
+    document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
+}
+
+document.getElementById('prevPage')?.addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        renderRecipientsTable();
+    }
+});
+
+document.getElementById('nextPage')?.addEventListener('click', () => {
+    const totalPages = Math.ceil(allRecipients.length / rowsPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        renderRecipientsTable();
+    }
+});
+
+/* --- BROADCAST RECIPIENT DELETION LOGIC --- */
+
+function toggleSelectAllRecipients(source) {
+    const checkboxes = document.querySelectorAll('.recipient-checkbox');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+    updateSelectedRecipients();
+}
+
+function updateSelectedRecipients() {
+    toggleBulkDeleteBtn();
+}
+
+function toggleBulkDeleteBtn() {
+    const selected = document.querySelectorAll('.recipient-checkbox:checked').length;
+    const btn = document.getElementById('bulkDeleteBtn');
+    if (btn) btn.style.display = selected > 0 ? 'inline-block' : 'none';
+}
+
+async function removeSingleRecipient(phone, id) {
+    if (!confirm("Are you sure you want to delete this marketing contact?")) return;
+    
+    // UI update
+    allRecipients = allRecipients.filter(r => r.mobile !== phone);
+    renderRecipientsTable();
+    document.getElementById('previewCount').textContent = allRecipients.length;
+
+    // Database update
+    if (id && id !== 'undefined') {
+        try {
+            await window.dbAPI.deleteMarketingContact(id);
+        } catch (e) {
+            console.error("Failed to delete from DB:", e);
+        }
+    }
+}
+
+async function deleteSelectedRecipients() {
+    const selectedCheckboxes = document.querySelectorAll('.recipient-checkbox:checked');
+    const phonesToDelete = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-phone'));
+    
+    if (phonesToDelete.length === 0) return;
+    
+    // Identify which ones are marketing contacts to delete from DB
+    const marketingRecipients = allRecipients.filter(r => phonesToDelete.includes(r.mobile) && r.id);
+    const marketingIds = marketingRecipients.map(r => r.id);
+
+    if (!confirm(`Delete ${phonesToDelete.length} selected recipients?`)) return;
+
+    // UI Update
+    allRecipients = allRecipients.filter(r => !phonesToDelete.includes(r.mobile));
+    renderRecipientsTable();
+    document.getElementById('previewCount').textContent = allRecipients.length;
+
+    // Database Update
+    if (marketingIds.length > 0) {
+        try {
+            await window.dbAPI.deleteManyMarketingContacts(marketingIds);
+            alert("Marketing contacts deleted from database.");
+        } catch (e) {
+            console.error("Batch delete failed:", e);
+        }
+    }
+}
+
+async function sendBroadcast() {
+    const message = document.getElementById('broadcastMessage').value;
+    if (!message) {
+        alert('Please enter a message to broadcast.');
+        return;
+    }
+
+    if (allRecipients.length === 0) {
+        allRecipients = await window.dbAPI.getBroadcastRecipients();
+    }
+
+    if (allRecipients.length === 0) {
+        alert('No recipients found to send message to.');
+        return;
+    }
+
+    if (!confirm(`Are you sure you want to send this broadcast to ${allRecipients.length} recipients?`)) return;
+
+    const btn = document.getElementById('sendBroadcastBtn');
+    const originalText = btn.textContent;
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+
+    try {
+        const phones = allRecipients.map(r => r.mobile);
+        const response = await fetch('/api/send-bulk-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ recipients: phones, message })
+        });
+
+        const result = await response.json();
+        if (result.error) throw new Error(result.error);
+
+        alert(`Broadcast initiated! Sent: ${result.sent}, Failed: ${result.failed}`);
+        document.getElementById('broadcastMessage').value = '';
+    } catch (e) {
+        console.error('Broadcast failed:', e);
+        alert('Broadcast failed: ' + e.message);
+    } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+    }
+}
+
+function initBroadcastHistory() {
+    if (window.broadcastUnsubscribe) window.broadcastUnsubscribe();
+    
+    window.broadcastUnsubscribe = window.dbAPI.onBroadcastHistoryChange((history) => {
+        const list = document.getElementById('broadcastHistoryList');
+        if (history.length === 0) {
+            list.innerHTML = '<div style="text-align: center; color: #888; padding: 2rem;">No recent broadcasts.</div>';
+            return;
+        }
+
+        list.innerHTML = history.map(h => `
+            <div class="history-item" style="padding: 1rem; border-bottom: 1px solid #eee; background: white; margin-bottom: 0.5rem; border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                    <span style="font-weight: bold; color: var(--primary-color);">${h.timestamp?.toDate().toLocaleString() || 'Just now'}</span>
+                    <span class="status-badge ${h.status.toLowerCase()}" style="padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; background: ${h.status === 'DELIVERED' ? '#e6f4ea' : '#fce8e6'}; color: ${h.status === 'DELIVERED' ? '#1e7e34' : '#c5221f'};">
+                        ${h.status}
+                    </span>
+                </div>
+                <p style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #444;">${h.message}</p>
+                <div style="font-size: 0.8rem; color: #666;">
+                    <i class="fas fa-users"></i> ${h.recipientsCount} Recipients | 
+                    <i class="fas fa-check"></i> ${h.sentCount || h.recipientsCount} Sent |
+                    <i class="fas fa-times"></i> ${h.failedCount || 0} Failed
+                </div>
+            </div>
+        `).join('');
+    });
+}
+
+/**
+ * Pulse Manual Contact Add: Zero-Latency Logic
+ */
+async function addManualContact() {
+    const nameInput = document.getElementById('manualContactName');
+    const phoneInput = document.getElementById('manualContactPhone');
+    const errorEl = document.getElementById('manualContactError');
+    
+    const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim();
+
+    if (!name || phone.length !== 10) {
+        errorEl.textContent = "Please enter valid name and 10-digit number.";
+        errorEl.style.display = "block";
+        return;
+    }
+
+    errorEl.style.display = "none";
+    const normalized = window.phoneUtils.normalize(phone);
+
+    // Update local state immediately for ZERO-LATENCY feel
+    if (document.getElementById('recipientPreview').style.display === 'block') {
+        const isDuplicate = allRecipients.some(r => r.mobile === normalized);
+        if (!isDuplicate) {
+            allRecipients.push({ name: name, mobile: normalized, source: 'Marketing (Local Update)' });
+            allRecipients.sort((a,b) => a.name.localeCompare(b.name));
+            renderRecipientsTable();
+            document.getElementById('previewCount').textContent = allRecipients.length;
+        }
+    }
+
+    // Clear inputs and persist in background
+    nameInput.value = '';
+    phoneInput.value = '';
+    
+    try {
+        await window.dbAPI.addMarketingContact({ name, mobile: normalized });
+        console.log("Contact persisted in background via Marketing Persistence");
+    } catch (e) { console.error("Persistence failed:", e); }
+}
+
+// Character counter for broadcast
+document.getElementById('broadcastMessage')?.addEventListener('input', (e) => {
+    const len = e.target.value.length;
+    document.getElementById('charCount').textContent = `${len} characters${len > 160 ? ' (Multiple SMS)' : ''}`;
+});
+
+/* --- INPUT VALIDATION & MASKS --- */
+
+document.getElementById('mobile')?.addEventListener('input', function(e) {
+    const val = e.target.value;
+    const errorEl = getOrCreateInlineError(this);
+    
+    if (val && !/^[0-9]{10}$/.test(val)) {
+        errorEl.textContent = "Enter valid 10-digit number";
+        errorEl.style.display = "block";
+    } else {
+        errorEl.style.display = "none";
+    }
+});
+
+function getOrCreateInlineError(input) {
+    let error = input.parentElement.querySelector('.inline-error');
+    if (!error) {
+        error = document.createElement('div');
+        error.className = 'inline-error';
+        error.style.color = '#dc3545';
+        error.style.fontSize = '0.8rem';
+        error.style.marginTop = '4px';
+        input.parentElement.appendChild(error);
+    }
+    return error;
 }
 
 function printSchedule() {
