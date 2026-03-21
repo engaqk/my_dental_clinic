@@ -709,7 +709,7 @@ function showSection(sectionId) {
 
 let allRecipients = [];
 let currentPage = 1;
-const rowsPerPage = 10;
+const rowsPerPage = 10; // Modified to 10 per page
 
 function showDashboardTab(tabName) {
     const tabs = document.querySelectorAll('.dashboard-tab');
@@ -949,8 +949,15 @@ async function addManualContact() {
     errorEl.style.display = "none";
     const normalized = window.phoneUtils.normalize(phone);
 
+    // Ensure the preview is visible when we add a contact
+    const previewEl = document.getElementById('recipientPreview');
+    if (previewEl && previewEl.style.display !== 'block') {
+        previewEl.style.display = 'block';
+        previewEl.scrollIntoView({ behavior: 'smooth' });
+    }
+
     // Update local state immediately for ZERO-LATENCY feel
-    if (document.getElementById('recipientPreview').style.display === 'block') {
+    if (previewEl) {
         const isDuplicate = allRecipients.some(r => r.mobile === normalized);
         if (!isDuplicate) {
             allRecipients.push({ name: name, mobile: normalized, source: 'Marketing (Local Update)' });

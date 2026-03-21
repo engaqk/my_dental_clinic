@@ -95,12 +95,14 @@ class DatabaseAPI {
 
         try {
             const newId = (appointment.id || Date.now()).toString();
+            const normalizedMobile = window.phoneUtils ? window.phoneUtils.normalize(appointment.mobile) : appointment.mobile;
+            
             await this.db.collection('appointments').doc(newId).set({
                 id: parseInt(newId),
                 name: appointment.name,
                 place: appointment.place || '',
-                mobile: appointment.mobile,
-                phoneNumber: appointment.mobile, // Duplicate for compatibility
+                mobile: normalizedMobile,
+                phoneNumber: normalizedMobile, // Duplicate for compatibility
                 appointmentDate: appointment.appointmentDate,
                 appointmentTime: appointment.appointmentTime,
                 reason: appointment.reason || '',
@@ -390,6 +392,9 @@ class DatabaseAPI {
             });
             return { id: docRef.id, ...contact };
         } catch (error) {
+            if (error.code === 'permission-denied') {
+                alert("DATABASE BLOCKED: You MUST copy the Security Rules from firestore.rules and paste them into your Firebase Console > Rules tab!");
+            }
             console.error('Error adding marketing contact:', error);
             return null;
         }
