@@ -444,7 +444,7 @@ class DatabaseAPI {
 
             // Source 2: Auth Directory (via Serverless API)
             try {
-                const response = await fetch('/api/get-auth-users');
+                const response = await fetch('api/get-auth-users');
                 const authUsers = await response.json();
                 if (authUsers && Array.isArray(authUsers)) {
                     authUsers.forEach(u => {
