@@ -196,7 +196,7 @@ async function triggerBookingNotification(appointment) {
             body: JSON.stringify({
                 appointmentId: appointment.id,
                 name: appointment.name,
-                mobile: window.phoneUtils.normalize(appointment.mobile),
+                mobile: window.phoneUtils.normalizePhone(appointment.mobile),
                 date: appointment.appointmentDate,
                 time: appointment.appointmentTime,
                 reason: appointment.reason,
@@ -947,7 +947,7 @@ async function addManualContact() {
     }
 
     errorEl.style.display = "none";
-    const normalized = window.phoneUtils.normalize(phone);
+    const normalized = window.phoneUtils.normalizePhone(phone);
 
     // Ensure the preview is visible when we add a contact
     const previewEl = document.getElementById('recipientPreview');

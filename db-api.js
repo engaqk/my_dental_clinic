@@ -95,7 +95,7 @@ class DatabaseAPI {
 
         try {
             const newId = (appointment.id || Date.now()).toString();
-            const normalizedMobile = window.phoneUtils ? window.phoneUtils.normalize(appointment.mobile) : appointment.mobile;
+            const normalizedMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(appointment.mobile) : appointment.mobile;
             
             await this.db.collection('appointments').doc(newId).set({
                 id: parseInt(newId),
@@ -440,7 +440,7 @@ class DatabaseAPI {
             const appts = await this.getAppointments();
             appts.forEach(a => {
                 if (a.mobile && a.name) {
-                    const normalized = window.phoneUtils.normalize(a.mobile);
+                    const normalized = window.phoneUtils.normalizePhone(a.mobile);
                     if (!recipientMap.has(normalized)) {
                         recipientMap.set(normalized, { name: a.name, mobile: normalized, source: 'Appointment' });
                     }
@@ -454,7 +454,7 @@ class DatabaseAPI {
                 if (authUsers && Array.isArray(authUsers)) {
                     authUsers.forEach(u => {
                         if (u.phoneNumber || u.mobile) {
-                            const normalized = window.phoneUtils.normalize(u.phoneNumber || u.mobile);
+                            const normalized = window.phoneUtils.normalizePhone(u.phoneNumber || u.mobile);
                             if (!recipientMap.has(normalized)) {
                                 recipientMap.set(normalized, { name: u.displayName || u.email || 'Auth User', mobile: normalized, source: 'Auth' });
                             }
@@ -467,7 +467,7 @@ class DatabaseAPI {
             const marketing = await this.getMarketingContacts();
             marketing.forEach(m => {
                 if (m.mobile) {
-                    const normalized = window.phoneUtils.normalize(m.mobile);
+                    const normalized = window.phoneUtils.normalizePhone(m.mobile);
                     if (!recipientMap.has(normalized)) {
                         // STORE THE ID so we can delete it later
                         recipientMap.set(normalized, { id: m.id, name: m.name || 'Marketing Contact', mobile: normalized, source: 'Marketing' });
