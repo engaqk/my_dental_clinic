@@ -65,7 +65,7 @@ class DatabaseAPI {
                     appointmentTime: data.appointmentTime || data.appointment_time,
                     name: data.name,
                     place: data.place,
-                    mobile: data.mobile,
+                    mobile: data.mobile || data.phoneNumber || data.mobileNo || '', // Mapping all possible field names
                     reason: data.reason,
                     fee: parseFloat(data.fee) || 0,
                     status: data.status
@@ -100,6 +100,7 @@ class DatabaseAPI {
                 name: appointment.name,
                 place: appointment.place || '',
                 mobile: appointment.mobile,
+                phoneNumber: appointment.mobile, // Duplicate for compatibility
                 appointmentDate: appointment.appointmentDate,
                 appointmentTime: appointment.appointmentTime,
                 reason: appointment.reason || '',

@@ -1019,7 +1019,10 @@ window.addEventListener('load', () => {
     if (sessionStorage.getItem('pwa_banner_dismissed')) return;
 
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    if (isStandalone) return;
+    if (isStandalone) {
+        console.log("App running in standalone mode (PWA).");
+        return;
+    }
 
     // Detect iOS
     const ua = navigator.userAgent;
@@ -1027,17 +1030,21 @@ window.addEventListener('load', () => {
 
     if (isIOS) {
         document.getElementById('pwaDesc').innerHTML = 'Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>';
-        document.getElementById('pwaIosInstruct').style.display = 'block';
-        setTimeout(() => banner.style.display = 'flex', 3000);
+        const iosInstruct = document.getElementById('pwaIosInstruct');
+        if (iosInstruct) iosInstruct.style.display = 'block';
+        setTimeout(() => { banner.style.display = 'flex'; }, 3000);
     }
+});
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPWAInstallPrompt = e;
-        const btn = document.getElementById('pwaInstallBtn');
-        if (btn) btn.style.display = 'block';
-        banner.style.display = 'flex';
-    });
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent default Chrome prompt
+    e.preventDefault();
+    deferredPWAInstallPrompt = e;
+    const banner = document.getElementById('pwaInstallBanner');
+    const btn = document.getElementById('pwaInstallBtn');
+    if (banner) banner.style.display = 'flex';
+    if (btn) btn.style.display = 'block';
+    console.log("PWA Install Prompt captured and ready.");
 });
 
 async function handlePWAInstall() {
