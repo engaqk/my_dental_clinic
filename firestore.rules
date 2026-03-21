@@ -10,16 +10,19 @@ service cloud.firestore {
 
     // --- APPOINTMENTS RULES ---
     match /appointments/{appointmentId} {
-      allow read: if isStaff(); // Only staff can see the full table
-      allow create: if true;    // Public booking (no login)
-      allow update, delete: if isStaff();
+      allow read: if true;      // Public and staff both can read (for slot checking)
+      allow create: if true;    // Public booking
+      allow update, delete: if isStaff(); // Only staff can modify/delete
     }
 
     // --- SETTINGS RULES ---
-    // (Contains your SMS Gateway credentials)
-    match /settings/{settingId} {
-      allow read: if isStaff(); 
+    match /settings/clinic {
+      allow read: if true;      // Let users see clinic name/branding
       allow write: if isStaff();
+    }
+    
+    match /settings/gateway {
+      allow read, write: if isStaff(); // SECURE: Only staff can see SMS API keys
     }
 
     // --- MARKETING & BROADCAST RULES ---
