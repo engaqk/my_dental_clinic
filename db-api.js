@@ -50,36 +50,59 @@ class DatabaseAPI {
     // Get all appointments
     async getAppointments() {
         if (!this.useFirebase) {
-            return JSON.parse(localStorage.getItem('dentalAppointments')) || [];
+            try {
+                return JSON.parse(localStorage.getItem('dentalAppointments')) || [];
+            } catch (e) {
+                return [];
+            }
         }
 
         try {
+            console.log('Fetching appointments from Firestore...');
             const snapshot = await this.db.collection('appointments').get();
             const appointments = [];
             snapshot.forEach((doc) => {
                 const data = doc.data();
+                // Ensure we have a valid ID (numeric preferred for sorting)
+                const docId = doc.id;
+                const numericId = data.id || (isNaN(parseInt(docId)) ? 0 : parseInt(docId));
+
                 appointments.push({
-                    id: doc.id,
-                    date: data.date || data.booking_date,
-                    appointmentDate: data.appointmentDate || data.appointment_date,
-                    appointmentTime: data.appointmentTime || data.appointment_time,
-                    name: data.name,
-                    place: data.place,
-                    mobile: data.mobile || data.phoneNumber || data.mobileNo || '', // Mapping all possible field names
-                    reason: data.reason,
+                    id: numericId,
+                    docId: docId, // Keep original doc ID for updates/deletes
+                    idString: docId, // For compatibility
+                    date: data.date || data.booking_date || new Date().toLocaleDateString(),
+                    appointmentDate: data.appointmentDate || data.appointment_date || '',
+                    appointmentTime: data.appointmentTime || data.appointment_time || '',
+                    name: data.name || data.patientName || 'Unknown Patient',
+                    place: data.place || data.city || '',
+                    mobile: data.mobile || data.phoneNumber || data.mobileNo || '', 
+                    reason: data.reason || data.service || 'General',
                     fee: parseFloat(data.fee) || 0,
-                    status: data.status
+                    status: data.status || 'Pending',
+                    createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().getTime() : data.createdAt) : numericId
                 });
             });
-            // Sort by createdAt / id descending to match old behavior
-            return appointments.sort((a, b) => b.id - a.id);
+
+            console.log(`Successfully fetched ${appointments.length} appointments.`);
+
+            // Sort by createdAt or numeric ID descending
+            return appointments.sort((a, b) => {
+                const timeA = a.createdAt || a.id || 0;
+                const timeB = b.createdAt || b.id || 0;
+                return timeB - timeA;
+            });
         } catch (error) {
             if (error.code === 'permission-denied') {
                 console.error('SECURITY RULES WARNING: Access to "appointments" collection is blocked by Firestore Security Rules.');
             } else {
-                console.error('Firebase error:', error);
+                console.error('Firebase error fetching appointments:', error);
             }
-            return JSON.parse(localStorage.getItem('dentalAppointments')) || [];
+            try {
+                return JSON.parse(localStorage.getItem('dentalAppointments')) || [];
+            } catch (e) {
+                return [];
+            }
         }
     }
 
@@ -98,15 +121,15 @@ class DatabaseAPI {
             const normalizedMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(appointment.mobile) : appointment.mobile;
             
             await this.db.collection('appointments').doc(newId).set({
-                id: parseInt(newId),
-                name: appointment.name,
+                id: parseInt(newId) || Date.now(),
+                name: appointment.name || 'Unknown',
                 place: appointment.place || '',
-                mobile: normalizedMobile,
-                phoneNumber: normalizedMobile, // Duplicate for compatibility
-                appointmentDate: appointment.appointmentDate,
-                appointmentTime: appointment.appointmentTime,
+                mobile: normalizedMobile || '',
+                phoneNumber: normalizedMobile || '',
+                appointmentDate: appointment.appointmentDate || '',
+                appointmentTime: appointment.appointmentTime || '',
                 reason: appointment.reason || '',
-                fee: appointment.fee || 0,
+                fee: parseFloat(appointment.fee) || 0,
                 status: appointment.status || 'Pending',
                 date: appointment.date || new Date().toLocaleDateString(),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -148,10 +171,11 @@ class DatabaseAPI {
         }
 
         try {
+            if (!this.db) throw new Error('Firestore not initialized');
             await this.db.collection('appointments').doc(id.toString()).update(updates);
             return { id, ...updates };
         } catch (error) {
-            console.error('Firebase error:', error);
+            console.error('Firebase error updating appointment:', error);
             return null;
         }
     }
@@ -166,10 +190,11 @@ class DatabaseAPI {
         }
 
         try {
+            if (!this.db) throw new Error('Firestore not initialized');
             await this.db.collection('appointments').doc(id.toString()).delete();
             return true;
         } catch (error) {
-            console.error('Firebase error:', error);
+            console.error('Firebase error deleting appointment:', error);
             return false;
         }
     }

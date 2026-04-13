@@ -1,7 +1,11 @@
 let myChart = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-    loadAppointments();
+    if (window.dbAPI) {
+        loadAppointments();
+    } else {
+        console.error('Database API not found! Check if db-api.js is loaded correctly.');
+    }
     initializeDateTimePickers();
 });
 
@@ -278,15 +282,23 @@ async function loadAppointments() {
     const cardsContainer = document.getElementById('patientsCards');
     const noData = document.getElementById('noDataMessage');
 
+    if (!tbody || !cardsContainer) return;
+
     // Filter Logic
-    const searchText = document.getElementById('searchInput').value.toLowerCase();
-    const dateFilter = document.getElementById('dateFilter').value;
+    const searchText = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const dateFilter = document.getElementById('dateFilter')?.value || 'all';
     const todayStr = new Date().toLocaleDateString();
 
     let filtered = appointments.filter(app => {
-        const matchesSearch = app.name.toLowerCase().includes(searchText) ||
-            app.mobile.includes(searchText) ||
-            app.place.toLowerCase().includes(searchText);
+        const name = (app.name || '').toLowerCase();
+        const mobile = (app.mobile || '');
+        const place = (app.place || '').toLowerCase();
+        const reason = (app.reason || '').toLowerCase();
+
+        const matchesSearch = name.includes(searchText) ||
+            mobile.includes(searchText) ||
+            place.includes(searchText) ||
+            reason.includes(searchText);
 
         let matchesDate = true;
         if (dateFilter === 'today') {
@@ -300,20 +312,29 @@ async function loadAppointments() {
     cardsContainer.innerHTML = '';
 
     if (filtered.length === 0) {
-        noData.style.display = 'block';
+        if (noData) noData.style.display = 'block';
     } else {
-        noData.style.display = 'none';
-        // Sort by newest first
-        filtered.sort((a, b) => b.id - a.id).forEach(app => {
+        if (noData) noData.style.display = 'none';
+        
+        // Sort by id or createdAt descending (robustly)
+        filtered.sort((a, b) => {
+            const valA = a.createdAt || a.id || 0;
+            const valB = b.createdAt || b.id || 0;
+            if (typeof valA === 'number' && typeof valB === 'number') return valB - valA;
+            return String(valB).localeCompare(String(valA));
+        }).forEach(app => {
+            // Document ID to use for calls (prefer docId if available)
+            const actionId = app.docId || app.id || app.idString;
+            
             // Calendar Link
-            // Dynamic Calendar Link based on session time
             let start = "", end = "";
             if (app.appointmentDate && app.appointmentTime) {
-                const datePart = app.appointmentDate.replace(/-/g, "");
-                const timePart = app.appointmentTime.replace(/:/g, "") + "00";
+                const datePart = String(app.appointmentDate).replace(/-/g, "");
+                const timePart = String(app.appointmentTime).replace(/:/g, "") + "00";
                 start = `${datePart}T${timePart}`;
-                const endHour = parseInt(app.appointmentTime.split(':')[0]);
-                const endMin = (parseInt(app.appointmentTime.split(':')[1]) + 30);
+                const timeArr = String(app.appointmentTime).split(':');
+                const endHour = parseInt(timeArr[0]) || 0;
+                const endMin = (parseInt(timeArr[1]) || 0) + 30;
                 const endMinStr = endMin >= 60 ? (endMin - 60).toString().padStart(2, '0') : endMin.toString().padStart(2, '0');
                 const endHourStr = endMin >= 60 ? (endHour + 1).toString().padStart(2, '0') : endHour.toString().padStart(2, '0');
                 end = `${datePart}T${endHourStr}${endMinStr}00`;
@@ -354,15 +375,15 @@ async function loadAppointments() {
                     </div>
                 </div>
                 <div class="patient-card-actions">
-                    <select onchange="updateStatus(${app.id}, this.value)" style="${app.status === 'Cancelled' ? 'color: red;' : ''}">
+                    <select onchange="updateStatus('${actionId}', this.value)" style="${app.status === 'Cancelled' ? 'color: red;' : ''}">
                         <option value="Pending" ${app.status === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="Completed" ${app.status === 'Completed' ? 'selected' : ''}>Completed</option>
                         <option value="Cancelled" ${app.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                     </select>
-                    <input type="number" value="${app.fee}" id="fee-card-${app.id}" placeholder="Fee (₹)">
-                    <button onclick="updateFeeCard(${app.id})" title="Save Fee" class="btn-primary"><i class="fas fa-save"></i></button>
+                    <input type="number" value="${app.fee}" id="fee-card-${actionId}" placeholder="Fee (₹)">
+                    <button onclick="updateFeeCard('${actionId}')" title="Save Fee" class="btn-primary"><i class="fas fa-save"></i></button>
                     <a href="${calUrl}" target="_blank" title="Calendar" class="btn-primary" style="background-color: #4CAF50; text-decoration: none;"><i class="fas fa-calendar"></i></a>
-                    <button onclick="deleteAppointment(${app.id})" title="Delete" class="btn-primary" style="background-color: #dc3545;"><i class="fas fa-trash"></i></button>
+                    <button onclick="deleteAppointment('${actionId}')" title="Delete" class="btn-primary" style="background-color: #dc3545;"><i class="fas fa-trash"></i></button>
                 </div>
             `;
             cardsContainer.appendChild(card);
@@ -385,7 +406,7 @@ async function loadAppointments() {
                 </td>
                 <td>${app.reason}</td>
                 <td>
-                    <select onchange="updateStatus(${app.id}, this.value)" 
+                    <select onchange="updateStatus('${actionId}', this.value)" 
                             style="padding: 5px; border-radius: 5px; border: 1px solid #ddd; ${app.status === 'Cancelled' ? 'color: red;' : ''}">
                         <option value="Pending" ${app.status === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="Completed" ${app.status === 'Completed' ? 'selected' : ''}>Completed</option>
@@ -393,13 +414,13 @@ async function loadAppointments() {
                     </select>
                 </td>
                 <td>
-                    <input type="number" value="${app.fee}" id="fee-${app.id}" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 5px;">
+                    <input type="number" value="${app.fee}" id="fee-${actionId}" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 5px;">
                 </td>
                 <td>
                     <div style="display: flex; gap: 5px;">
-                        <button onclick="updateFee(${app.id})" title="Save Fee" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-save"></i></button>
+                        <button onclick="updateFee('${actionId}')" title="Save Fee" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-save"></i></button>
                         <a href="${calUrl}" target="_blank" title="Add to Calendar" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background-color: #4CAF50; text-decoration: none;"><i class="fas fa-calendar"></i></a>
-                        <button onclick="deleteAppointment(${app.id})" title="Delete" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background-color: #dc3545;"><i class="fas fa-trash"></i></button>
+                        <button onclick="deleteAppointment('${actionId}')" title="Delete" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background-color: #dc3545;"><i class="fas fa-trash"></i></button>
                     </div>
                 </td>
             `;
