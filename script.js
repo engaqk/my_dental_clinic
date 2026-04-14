@@ -112,19 +112,56 @@ function filterPatients() {
 async function openPatientProfile(patient) {
     currentPatient = patient;
     const modal = document.getElementById('patientProfileModal');
-    document.getElementById('profileName').innerText = patient.name;
-    document.getElementById('profileMeta').innerText = `Mobile: ${patient.mobile} | Place: ${patient.place || 'Main'}`;
-    renderTimeline(patient.history);
-    await renderFinances(patient);
-    modal.style.display = 'flex';
+    if (modal) {
+        document.getElementById('profileName').innerText = patient.name;
+        document.getElementById('profileMeta').innerText = `Mobile: ${patient.mobile} | Place: ${patient.place || 'Main'}`;
+        renderTimeline(patient.history);
+        await renderFinances(patient);
+        modal.style.display = 'flex';
+    }
+}
+
+function switchProfileTab(tab) {
+    const timeline = document.getElementById('profileTimelineSection');
+    const finances = document.getElementById('profileFinanceSection');
+    if (timeline) timeline.style.display = tab === 'timeline' ? 'block' : 'none';
+    if (finances) finances.style.display = tab === 'finances' ? 'block' : 'none';
+    
+    document.querySelectorAll('.profile-tab-btn').forEach(btn => {
+        const text = btn.innerText.toLowerCase();
+        if (tab === 'timeline') btn.classList.toggle('active', text.includes('history') || text.includes('clinical'));
+        if (tab === 'finances') btn.classList.toggle('active', text.includes('financial') || text.includes('finances'));
+    });
+}
+
+async function showQuickPayment() {
+    const amount = prompt("Enter payment amount (₹):");
+    if (!amount || isNaN(amount)) return;
+    if (!currentPatient || !currentPatient.history[0]) {
+        alert("Select a service to link payment.");
+        return;
+    }
+    const success = await window.dbAPI.addPayment({
+        appointmentId: currentPatient.history[0].id.toString(),
+        mobile: currentPatient.mobile,
+        amount: parseFloat(amount),
+        method: 'Recorded Payment'
+    });
+    if (success) {
+        alert("Payment Recorded Successfully.");
+        await renderFinances(currentPatient);
+    }
 }
 
 function renderTimeline(history) {
     const container = document.getElementById('patientTimeline');
     container.innerHTML = '';
 
-    history.sort((a,b) => (b.appointmentDate||b.date).localeCompare(a.appointmentDate||a.date)).forEach(appt => {
-        // Generate Calendar URL
+    const totalVisits = history.length;
+    
+    history.sort((a,b) => (b.appointmentDate||b.date).localeCompare(a.appointmentDate||a.date)).forEach((appt, index) => {
+        const visitNumber = totalVisits - index;
+        // Generate Calendar URL...
         const title = encodeURIComponent(`Dental Seating: ${appt.name} - ${appt.reason}`);
         const datePart = (appt.appointmentDate || "").replace(/-/g, "");
         const timePart = (appt.appointmentTime || "11:00").replace(/:/g, "") + "00";
@@ -133,7 +170,10 @@ function renderTimeline(history) {
         const item = document.createElement('div');
         item.className = 'timeline-item';
         item.innerHTML = `
-            <div class="timeline-date">${appt.appointmentDate || appt.date} ${appt.appointmentTime || ''}</div>
+            <div class="timeline-date">
+                <span style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-right: 8px;">VISIT #${visitNumber}</span>
+                ${appt.appointmentDate || appt.date} ${appt.appointmentTime || ''}
+            </div>
             <div class="seating-card">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <strong>${appt.reason || 'Treatment'}</strong>
@@ -357,3 +397,17 @@ function checkSuperAdmin() {
 window.checkSuperAdmin = checkSuperAdmin;
 
 function showBookingModal(a) { document.getElementById('bookingModal').style.display = 'flex'; }
+
+function openBookingForCurrentPatient() {
+    if (!currentPatient) return;
+    showSection('home');
+    document.getElementById('name').value = currentPatient.name;
+    document.getElementById('mobile').value = currentPatient.mobile;
+    document.getElementById('place').value = currentPatient.place || "";
+    document.getElementById('reason').value = "Follow-up for " + (currentPatient.history[0]?.reason || "previous treatment");
+    
+    // Smooth scroll to form
+    setTimeout(() => {
+        document.querySelector('.appointment-form').scrollIntoView({behavior: 'smooth'});
+    }, 100);
+}
