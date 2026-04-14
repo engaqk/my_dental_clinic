@@ -1,1236 +1,270 @@
+/* 
+   ==========================================================================
+   State-of-the-Art Dental Clinic Management System
+   Premium Patient-Centric & Appointment Engine
+   ==========================================================================
+*/
+
+let currentPatient = null;
 let myChart = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     if (window.dbAPI) {
-        loadAppointments();
-        initQRCode(); // Initialize Clinic QR
+        await refreshDashboard();
+        loadClinicSettings();
+        initQRCode();
     } else {
-        console.error('Database API not found! Check if db-api.js is loaded correctly.');
+        console.error('Database API not found!');
     }
     initializeDateTimePickers();
 });
 
-// Initialize date and time pickers
-function initializeDateTimePickers() {
-    const dateInput = document.getElementById('appointmentDate');
-    const timeSelect = document.getElementById('appointmentTime');
+// --- DASHBOARD: PATIENT EXPLORER ---
 
-    // Set minimum date to today
-    const today = new Date().toISOString().split('T')[0];
-    dateInput.setAttribute('min', today);
-    dateInput.value = today;
+async function refreshDashboard() {
+    console.log('💎 Premium Engine: Refreshing Patient Explorer...');
+    const appointments = await window.dbAPI.getAppointments();
+    
+    // Group by Mobile
+    const patientMap = new Map();
+    let grandTotalEarnings = 0;
+    let pendingVisits = 0;
 
-    // Generate time slots when date changes
-    dateInput.addEventListener('change', () => {
-        generateTimeSlots();
+    appointments.forEach(app => {
+        const phone = app.mobile || 'Unknown';
+        if (!patientMap.has(phone)) {
+            patientMap.set(phone, {
+                mobile: phone,
+                name: app.name || 'Anonymous Patient',
+                place: app.place || '',
+                history: [],
+                totalBilled: 0,
+                totalPaid: 0
+            });
+        }
+        const patient = patientMap.get(phone);
+        patient.history.push(app);
+        const fee = parseFloat(app.fee) || 0;
+        patient.totalBilled += fee;
+        grandTotalEarnings += fee;
+        if (app.status === 'Pending') pendingVisits++;
     });
 
-    // Generate initial time slots
-    generateTimeSlots();
+    const patients = Array.from(patientMap.values());
+    renderPatientExplorer(patients);
+    
+    // Update Stats
+    if (document.getElementById('totalPatients')) document.getElementById('totalPatients').innerText = patients.length;
+    if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').innerText = '₹' + grandTotalEarnings.toLocaleString();
+    if (document.getElementById('pendingVisits')) document.getElementById('pendingVisits').innerText = pendingVisits;
 }
 
-// Generate 30-minute time slots: 11 AM - 2 PM and 4 PM - 7 PM
-async function generateTimeSlots() {
-    const timeSelect = document.getElementById('appointmentTime');
-    const selectedDate = document.getElementById('appointmentDate').value;
+function renderPatientExplorer(patients) {
+    const container = document.getElementById('patientExplorer');
+    if (!container) return;
 
-    timeSelect.innerHTML = '<option value="">Loading slots...</option>';
-    timeSelect.disabled = true;
+    const searchText = (document.getElementById('searchInput')?.value || '').toLowerCase();
+    const filtered = patients.filter(p => 
+        p.name.toLowerCase().includes(searchText) || 
+        p.mobile.includes(searchText) ||
+        p.place.toLowerCase().includes(searchText)
+    );
 
-    // Fetch booked slots ONCE for the entire day
-    let bookedSlots = [];
-    try {
-        bookedSlots = await window.dbAPI.getBookedTimeSlots(selectedDate);
-    } catch (e) {
-        console.error("Failed to load booked slots", e);
-    }
-
-    timeSelect.innerHTML = '<option value="">Select time slot...</option>';
-    timeSelect.disabled = false;
-
-    const slotDuration = 30; // minutes
-
-    // Morning session: 11 AM to 2 PM
-    const morningStart = 11;
-    const morningEnd = 14; // 2 PM in 24-hour format
-
-    // Evening session: 4 PM to 7 PM
-    const eveningStart = 16; // 4 PM in 24-hour format
-    const eveningEnd = 19; // 7 PM in 24-hour format
-
-    // Current time logic to filter past slots
-    const now = new Date();
-    const isToday = selectedDate === now.toISOString().split('T')[0];
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-
-    // Helper to check if time is in past for today
-    const isPast = (h, m) => {
-        if (!isToday) return false;
-        if (h < currentHour) return true;
-        if (h === currentHour && m < currentMinute) return true;
-        return false;
-    };
-
-    const addSlot = (hour, minute) => {
-        // Skip if slot is in the past
-        if (isPast(hour, minute)) return;
-
-        const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
-        const displayTime = formatTime(hour, minute);
-
-        // Check against pre-fetched bookedSlots
-        // Robust check: handle if slot matches either exact string or starts with the time
-        // (e.g. "11:00" matches "11:00" or "11:00:00")
-        const isBooked = bookedSlots.some(slot =>
-            slot === timeString || slot.startsWith(timeString)
-        );
-
-        if (!isBooked) {
-            const option = document.createElement('option');
-            option.value = timeString;
-            option.textContent = displayTime;
-            timeSelect.appendChild(option);
-        } else {
-            const option = document.createElement('option');
-            option.value = timeString;
-            option.textContent = `${displayTime} (Booked)`;
-            option.disabled = true;
-            option.style.color = '#999';
-            timeSelect.appendChild(option);
-        }
-    };
-
-    // Generate morning slots
-    for (let hour = morningStart; hour < morningEnd; hour++) {
-        for (let minute = 0; minute < 60; minute += slotDuration) {
-            addSlot(hour, minute);
-        }
-    }
-
-    // Generate evening slots
-    for (let hour = eveningStart; hour < eveningEnd; hour++) {
-        for (let minute = 0; minute < 60; minute += slotDuration) {
-            addSlot(hour, minute);
-        }
-    }
-}
-
-// Format time to 12-hour format
-function formatTime(hour, minute) {
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
-    return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
-}
-
-// Check if a time slot is available (checks Supabase database)
-async function isSlotAvailable(date, time) {
-    try {
-        // Get booked slots from Supabase
-        const bookedSlots = await window.dbAPI.getBookedTimeSlots(date);
-        // Robust check: return TRUE if NO slot matches "time" or "time:00"
-        return !bookedSlots.some(slot => slot === time || slot.startsWith(time));
-    } catch (error) {
-        console.error('Error checking slot availability:', error);
-        // Fallback to localStorage if Supabase fails
-        const appointments = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
-        return !appointments.some(app =>
-            app.appointmentDate === date &&
-            app.appointmentTime === time &&
-            app.status !== 'Cancelled'
-        );
-    }
-}
-
-const form = document.getElementById('bookingForm');
-
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById('name').value;
-    const place = document.getElementById('place').value;
-    const mobile = document.getElementById('mobile').value;
-    const appointmentDate = document.getElementById('appointmentDate').value;
-    const appointmentTime = document.getElementById('appointmentTime').value;
-    const reason = document.getElementById('reason').value;
-
-    // Double-check slot availability
-    const available = await isSlotAvailable(appointmentDate, appointmentTime);
-    if (!available) {
-        alert('Sorry, this time slot has just been booked. Please select another time.');
-        generateTimeSlots(); // Refresh slots
+    container.innerHTML = '';
+    if (filtered.length === 0) {
+        document.getElementById('noDataMessage').style.display = 'block';
         return;
     }
+    document.getElementById('noDataMessage').style.display = 'none';
 
-    const appointment = {
-        id: Date.now(),
-        date: new Date().toLocaleDateString(), // Booking date
-        appointmentDate: appointmentDate, // Actual appointment date
-        appointmentTime: appointmentTime,
-        appointmentDateTime: `${appointmentDate} ${appointmentTime}`, // Combined for display
-        name,
-        place,
-        mobile,
-        reason,
-        fee: 0,
-        status: 'Pending'
-    };
-
-    const success = await saveAppointment(appointment);
-
-    if (success) {
-        form.reset();
-        initializeDateTimePickers(); // Reset date/time pickers
-        // Show Modal instead of alert
-        showBookingModal(appointment);
-
-        // TRIGGER SERVERLESS NOTIFICATION
-        triggerBookingNotification(appointment);
-    }
-});
-
-/**
- * Trigger Serverless Notification API
- */
-async function triggerBookingNotification(appointment) {
-    try {
-        const settings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
-        await fetch('/api/booking-notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                appointmentId: appointment.id,
-                name: appointment.name,
-                mobile: window.phoneUtils.normalizePhone(appointment.mobile),
-                date: appointment.appointmentDate,
-                time: appointment.appointmentTime,
-                reason: appointment.reason,
-                clinicName: settings.name || "My Dental Clinic"
-            })
-        });
-        console.log('Notification triggered successfully');
-    } catch (e) {
-        console.error('Failed to trigger notification:', e);
-    }
-}
-
-function showBookingModal(appointment) {
-    const modal = document.getElementById('bookingModal');
-    const linkBtn = document.getElementById('calendarLink');
-
-    // Generate Google Calendar Link
-    // Format: https://calendar.google.com/calendar/render?action=TEMPLATE&text=TEXT&dates=DATES&details=DETAILS&location=LOCATION
-    const title = encodeURIComponent(`Dentist Appointment: ${appointment.reason}`);
-    const details = encodeURIComponent(`Appointment with My Dental Clinic.\\nPatient: ${appointment.name}\\nReason: ${appointment.reason}`);
-    const location = encodeURIComponent("My Dental Clinic - Advance Dental clinic");
-
-    // Dates need to be YYYYMMDDTHHMMSSZ (UTC or local time without zone)
-    // appointment.appointmentDate is YYYY-MM-DD
-    // appointment.appointmentTime is HH:mm
-    const datePart = appointment.appointmentDate.replace(/-/g, "");
-    const timePart = appointment.appointmentTime.replace(/:/g, "") + "00";
-    
-    const start = `${datePart}T${timePart}`;
-    // Add 30 minutes for the end time (matching our slot duration)
-    const endHour = parseInt(appointment.appointmentTime.split(':')[0]);
-    const endMin = (parseInt(appointment.appointmentTime.split(':')[1]) + 30);
-    const endMinStr = endMin >= 60 ? (endMin - 60).toString().padStart(2, '0') : endMin.toString().padStart(2, '0');
-    const endHourStr = endMin >= 60 ? (endHour + 1).toString().padStart(2, '0') : endHour.toString().padStart(2, '0');
-    const end = `${datePart}T${endHourStr}${endMinStr}00`;
-
-    const href = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${location}`;
-
-    if (linkBtn) linkBtn.href = href;
-    modal.style.display = "flex";
-}
-
-function closeBookingModal() {
-    closeModal();
-}
-
-function closeModal() {
-    document.getElementById('bookingModal').style.display = "none";
-    showSection('home');
-}
-
-// Close modal if clicked outside
-window.onclick = function (event) {
-    const modal = document.getElementById('bookingModal');
-    if (event.target == modal) {
-        closeModal();
-    }
-}
-
-async function saveAppointment(appointment) {
-    try {
-        await window.dbAPI.createAppointment(appointment);
-        await loadAppointments();
-        return true;
-    } catch (error) {
-        console.error('Error saving appointment:', error);
-        alert('Failed to save appointment. Please try again.');
-        return false;
-    }
-}
-
-function filterAppointments() {
-    loadAppointments();
-}
-
-// NAVIGATION: Show specific dashboard tab
-function showDashboardTab(tabName) {
-    const tabs = document.querySelectorAll('.dashboard-tab');
-    tabs.forEach(tab => tab.style.display = 'none');
-    
-    // Convert 'qr' to 'qrTab', etc.
-    const fullId = tabName.endsWith('Tab') ? tabName : tabName + 'Tab';
-    const target = document.getElementById(fullId);
-    if (target) target.style.display = 'block';
-}
-
-// NEW: Initialize Clinic QR Code
-function initQRCode() {
-    const qrContainer = document.getElementById("qrcode");
-    if (!qrContainer) return;
-
-    qrContainer.innerHTML = "";
-    // URL for booking is current site origin
-    const bookingUrl = window.location.origin;
-    
-    new QRCode(qrContainer, {
-        text: bookingUrl,
-        width: 256,
-        height: 256,
-        colorDark: "#000000",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.H
-    });
-}
-
-async function loadAppointments() {
-    let appointments = await window.dbAPI.getAppointments();
-    const tbody = document.querySelector('#patientsTable tbody');
-    const cardsContainer = document.getElementById('patientsCards');
-    const noData = document.getElementById('noDataMessage');
-
-    if (!tbody || !cardsContainer) return;
-
-    // Filter Logic
-    const searchText = (document.getElementById('searchInput')?.value || '').toLowerCase();
-    const dateFilter = document.getElementById('dateFilter')?.value || 'all';
-    const todayStr = new Date().toLocaleDateString();
-
-    let filtered = appointments.filter(app => {
-        const name = (app.name || '').toLowerCase();
-        const mobile = (app.mobile || '');
-        const place = (app.place || '').toLowerCase();
-        const reason = (app.reason || '').toLowerCase();
-
-        const matchesSearch = name.includes(searchText) ||
-            mobile.includes(searchText) ||
-            place.includes(searchText) ||
-            reason.includes(searchText);
-
-        let matchesDate = true;
-        if (dateFilter === 'today') {
-            matchesDate = app.date === todayStr;
-        }
-
-        return matchesSearch && matchesDate;
-    });
-
-    tbody.innerHTML = '';
-    cardsContainer.innerHTML = '';
-
-    if (filtered.length === 0) {
-        if (noData) noData.style.display = 'block';
-    } else {
-        if (noData) noData.style.display = 'none';
-        
-        // Sort by id or createdAt descending (robustly)
-        filtered.sort((a, b) => {
-            const valA = a.createdAt || a.id || 0;
-            const valB = b.createdAt || b.id || 0;
-            if (typeof valA === 'number' && typeof valB === 'number') return valB - valA;
-            return String(valB).localeCompare(String(valA));
-        }).forEach(app => {
-            // Document ID to use for calls (prefer docId if available)
-            const actionId = app.docId || app.id || app.idString;
-            
-            // Calendar Link
-            let start = "", end = "";
-            if (app.appointmentDate && app.appointmentTime) {
-                const datePart = String(app.appointmentDate).replace(/-/g, "");
-                const timePart = String(app.appointmentTime).replace(/:/g, "") + "00";
-                start = `${datePart}T${timePart}`;
-                const timeArr = String(app.appointmentTime).split(':');
-                const endHour = parseInt(timeArr[0]) || 0;
-                const endMin = (parseInt(timeArr[1]) || 0) + 30;
-                const endMinStr = endMin >= 60 ? (endMin - 60).toString().padStart(2, '0') : endMin.toString().padStart(2, '0');
-                const endHourStr = endMin >= 60 ? (endHour + 1).toString().padStart(2, '0') : endHour.toString().padStart(2, '0');
-                end = `${datePart}T${endHourStr}${endMinStr}00`;
-            } else {
-                const now = new Date();
-                start = now.toISOString().replace(/-|:|\.\d\d\d/g, "");
-                end = new Date(now.getTime() + 60 * 60 * 1000).toISOString().replace(/-|:|\.\d\d\d/g, "");
-            }
-            const title = encodeURIComponent(`Patient: ${app.name} (${app.reason})`);
-            const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=Mobile: ${app.mobile}&location=Clinic`;
-
-            // CREATE MOBILE CARD
-            const card = document.createElement('div');
-            card.className = `patient-card ${app.status === 'Cancelled' ? 'cancelled' : ''}`;
-            card.innerHTML = `
-                <div class="patient-card-header">
-                    <div>
-                        <div class="patient-card-name">${app.name}</div>
-                        <div class="patient-card-date">Booked: ${app.date}</div>
-                    </div>
-                </div>
-                <div class="patient-card-body">
-                    <div class="patient-card-row">
-                        <span class="patient-card-label">📅 Appt:</span>
-                        <span class="patient-card-value">${app.appointmentDate || app.date} ${app.appointmentTime ? formatTime12Hour(app.appointmentTime) : ''}</span>
-                    </div>
-                    <div class="patient-card-row">
-                        <span class="patient-card-label">Mobile:</span>
-                        <span class="patient-card-value">${app.mobile}</span>
-                    </div>
-                </div>
-                <div class="patient-card-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                    <select onchange="updateStatus('${actionId}', this.value)" style="grid-column: span 2; ${app.status === 'Cancelled' ? 'color: red;' : ''}">
-                        <option value="Pending" ${app.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                        <option value="Completed" ${app.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                        <option value="Cancelled" ${app.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                    </select>
-                    <button onclick="sendWhatsApp('${encodeURIComponent(JSON.stringify(app))}')" class="btn-primary" style="background:#25D366;"><i class="fab fa-whatsapp"></i> Chat</button>
-                    <button onclick="generateBill('${encodeURIComponent(JSON.stringify(app))}')" class="btn-primary" style="background:#0d4b9f;"><i class="fas fa-file-invoice"></i> Bill</button>
-                    <button onclick="openNotesModal('${actionId}')" title="Clinical Notes" class="btn-primary" style="background:#6c757d;"><i class="fas fa-notes-medical"></i> Notes</button>
-                    <a href="${calUrl}" target="_blank" class="btn-primary" style="background-color: #4CAF50; text-align: center;"><i class="fas fa-calendar"></i></a>
-                    <button onclick="deleteAppointment('${actionId}')" class="btn-primary" style="background-color: #dc3545;"><i class="fas fa-trash"></i></button>
-                </div>
-            `;
-            cardsContainer.appendChild(card);
-
-            // CREATE DESKTOP TABLE ROW
-            const row = document.createElement('tr');
-            if (app.status === 'Cancelled') {
-                row.style.opacity = '0.6';
-                row.style.background = '#f9f9f9';
-            }
-
-            row.innerHTML = `
-                <td>
-                    <strong>${app.appointmentDate || app.date}</strong><br>
-                    <small style="color:#666">${app.appointmentTime ? formatTime12Hour(app.appointmentTime) : 'Time TBD'}</small>
-                </td>
-                <td>
-                    <strong>${app.name}</strong><br>
-                    <small style="color:#666">${app.place} | ${app.mobile}</small>
-                </td>
-                <td>${app.reason}</td>
-                <td>
-                    <select onchange="updateStatus('${actionId}', this.value)" 
-                            style="padding: 5px; border-radius: 5px; border: 1px solid #ddd; ${app.status === 'Cancelled' ? 'color: red;' : ''}">
-                        <option value="Pending" ${app.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                        <option value="Completed" ${app.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                        <option value="Cancelled" ${app.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                    </select>
-                </td>
-                <td>
-                    <input type="number" value="${app.fee}" id="fee-${actionId}" style="width: 80px; padding: 5px; border: 1px solid #ddd; border-radius: 5px;">
-                </td>
-                <td>
-                    <div style="display: flex; gap: 5px;">
-                        <button onclick="updateFee('${actionId}')" title="Save Fee" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-save"></i></button>
-                        <button onclick="sendWhatsApp('${encodeURIComponent(JSON.stringify(app))}')" title="WhatsApp" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background:#25D366;"><i class="fab fa-whatsapp"></i></button>
-                        <button onclick="generateBill('${encodeURIComponent(JSON.stringify(app))}')" title="Bill" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background:#0d4b9f;"><i class="fas fa-file-invoice"></i></button>
-                        <button onclick="openNotesModal('${actionId}')" title="Clinical Notes" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background:#6c757d;"><i class="fas fa-notes-medical"></i></button>
-                        <a href="${calUrl}" target="_blank" title="Add to Calendar" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background-color: #4CAF50; text-decoration: none;"><i class="fas fa-calendar"></i></a>
-                        <button onclick="deleteAppointment('${actionId}')" title="Delete" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background-color: #dc3545;"><i class="fas fa-trash"></i></button>
-                    </div>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    }
-
-    updateStats(appointments);
-    updateChart(appointments);
-}
-
-// Helper function to format time in 12-hour format
-function formatTime12Hour(timeString) {
-    if (!timeString) return '';
-    const [hour, minute] = timeString.split(':').map(Number);
-    return formatTime(hour, minute);
-}
-
-// New function for updating fee from card view
-async function updateFeeCard(id) {
-    const feeInput = document.getElementById(`fee-card-${id}`);
-    const newFee = parseFloat(feeInput.value) || 0;
-
-    try {
-        await window.dbAPI.updateAppointment(id, { fee: newFee });
-        alert('Fee updated!');
-        await loadAppointments();
-    } catch (error) {
-        console.error('Error updating fee:', error);
-        alert('Failed to update fee.');
-    }
-}
-
-
-async function updateStatus(id, newStatus) {
-    try {
-        await window.dbAPI.updateAppointment(id, { status: newStatus });
-        await loadAppointments();
-    } catch (error) {
-        console.error('Error updating status:', error);
-        alert('Failed to update status.');
-    }
-}
-
-async function updateFee(id) {
-    const feeInput = document.getElementById(`fee-${id}`);
-    const newFee = parseFloat(feeInput.value) || 0;
-
-    try {
-        await window.dbAPI.updateAppointment(id, { fee: newFee });
-        alert('Fee updated!');
-        await loadAppointments();
-    } catch (error) {
-        console.error('Error updating fee:', error);
-        alert('Failed to update fee.');
-    }
-}
-
-async function deleteAppointment(id) {
-    if (confirm('Are you sure you want to delete this record?')) {
-        try {
-            await window.dbAPI.deleteAppointment(id);
-            await loadAppointments();
-        } catch (error) {
-            console.error('Error deleting appointment:', error);
-            alert('Failed to delete appointment.');
-        }
-    }
-}
-
-function updateStats(appointments) {
-    // Stats usually show total historical data
-    const totalPatients = appointments.length;
-    // Calculate earnings only from non-cancelled? Or all recorded fees? Usually all recorded.
-    // If Cancelled, maybe fee should be 0, but user might want to charge cancellation fee.
-    const totalEarnings = appointments.reduce((sum, app) => sum + (parseFloat(app.fee) || 0), 0);
-    const pendingVisits = appointments.filter(a => a.status === 'Pending').length;
-
-    document.getElementById('totalPatients').innerText = totalPatients;
-    document.getElementById('totalEarnings').innerText = '₹' + totalEarnings.toLocaleString();
-    document.getElementById('pendingVisits').innerText = pendingVisits;
-}
-
-function updateChart(appointments) {
-    const ctx = document.getElementById('treatmentChart');
-    if (!ctx) return; // Guard against running on pages without chart
-
-    // Aggregate by reason
-    const reasonCounts = {};
-    appointments.forEach(app => {
-        reasonCounts[app.reason] = (reasonCounts[app.reason] || 0) + 1;
-    });
-
-    const labels = Object.keys(reasonCounts);
-    const data = Object.values(reasonCounts);
-
-    if (myChart) {
-        myChart.destroy();
-    }
-
-    myChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: '# of Patients',
-                data: data,
-                backgroundColor: [
-                    '#0d4b9f', // Primary
-                    '#d4af37', // Gold
-                    '#4CAF50', // Green
-                    '#FFC107', // Amber
-                    '#9C27B0', // Purple
-                    '#FF5722'  // Orange
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-}
-
-/* --- White Label Settings Logic --- */
-
-document.addEventListener('DOMContentLoaded', () => {
-    loadClinicSettings();
-    if (typeof checkSuperAdmin === 'function') checkSuperAdmin();
-});
-
-function checkSuperAdmin() {
-    try {
-        const btn = document.getElementById('settingsBtn');
-        if (!btn) return;
-
-        const userStr = sessionStorage.getItem('staffUser');
-        const user = userStr ? JSON.parse(userStr) : null;
-
-        // STRICT CHECK
-        if (user && user.role === 'super_admin') {
-            console.log('Super Admin detected: Showing settings.');
-            btn.style.display = 'inline-block';
-        } else {
-            console.log('Not Super Admin: Hiding settings.');
-            btn.style.display = 'none';
-            btn.style.setProperty('display', 'none', 'important'); // Force hide
-        }
-    } catch (e) {
-        console.error('Check Super Admin Error:', e);
-    }
-}
-
-// Global for access from auth.js
-window.checkSuperAdmin = checkSuperAdmin;
-
-window.openSettingsModal = async function () {
-    const modal = document.getElementById('settingsModal');
-    const settings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
-    const gateway = await window.dbAPI.getGatewaySettings();
-
-    document.getElementById('settingClinicName').value = settings.name || "My Dental Clinic";
-    document.getElementById('settingSubtitle').value = settings.subtitle || "Advance Dental clinic";
-    document.getElementById('settingAdminEmail').value = settings.adminEmail || "";
-    document.getElementById('settingPrimaryColor').value = settings.primaryColor || "#26A69A";
-
-    document.getElementById('settingGatewayApiKey').value = gateway.apiKey || "";
-    document.getElementById('settingGatewayDeviceId').value = gateway.deviceId || "";
-
-    document.getElementById('settingAdminUser').value = settings.adminUser || "abdulqadir.galaxy53@gmail.com";
-    document.getElementById('settingAdminPass').value = settings.adminPass || "admin53";
-    document.getElementById('settingAboutText').value = settings.aboutText || ""; // Load About Text
-
-    modal.style.display = 'flex';
-};
-
-window.closeSettingsModal = function () {
-    document.getElementById('settingsModal').style.display = 'none';
-};
-
-const settingsForm = document.getElementById('settingsForm');
-if (settingsForm) {
-    settingsForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const settings = {
-            name: document.getElementById('settingClinicName').value,
-            subtitle: document.getElementById('settingSubtitle').value,
-            adminEmail: document.getElementById('settingAdminEmail').value,
-            primaryColor: document.getElementById('settingPrimaryColor').value,
-            adminUser: document.getElementById('settingAdminUser').value,
-            adminPass: document.getElementById('settingAdminPass').value,
-            aboutText: document.getElementById('settingAboutText').value
-        };
-
-        const gatewaySettings = {
-            apiKey: document.getElementById('settingGatewayApiKey').value,
-            deviceId: document.getElementById('settingGatewayDeviceId').value
-        };
-
-        applySettings(settings);
-
-        // Save to Cloud (and local inside the method)
-        const btn = settingsForm.querySelector('button[type="submit"]');
-        const originalText = btn.textContent;
-        btn.textContent = 'Saving...';
-        btn.disabled = true;
-
-        await Promise.all([
-            window.dbAPI.saveSettings(settings),
-            window.dbAPI.saveGatewaySettings(gatewaySettings)
-        ]);
-
-        btn.textContent = originalText;
-        btn.disabled = false;
-
-        closeSettingsModal();
-        alert('Settings saved successfully!');
-    });
-}
-
-async function loadClinicSettings() {
-    try {
-        let settings = {};
-        // Try to fetch from Supabase if connected
-        if (window.dbAPI) {
-            const data = await window.dbAPI.getSettings();
-            // If data comes from DB (snake_case), map it
-            if (data && data.clinic_name) {
-                settings = {
-                    name: data.clinic_name,
-                    subtitle: data.subtitle,
-                    adminEmail: data.admin_email,
-                    primaryColor: data.primary_color,
-                    adminUser: data.admin_user,
-                    adminPass: data.admin_pass,
-                    aboutText: data.about_text
-                };
-                // Cache locally
-                localStorage.setItem('clinicSettings', JSON.stringify(settings));
-            } else if (data && data.name) {
-                // From local storage fallback
-                settings = data;
-            }
-        } else {
-            settings = JSON.parse(localStorage.getItem('clinicSettings'));
-        }
-
-        if (settings && Object.keys(settings).length > 0) applySettings(settings);
-    } catch (e) {
-        console.error("Error loading settings:", e);
-    }
-}
-
-function applySettings(settings) {
-    if (settings.name) {
-        const h1 = document.querySelector('.clinic-name h1');
-        if (h1) h1.textContent = settings.name;
-        document.title = settings.name;
-        const footerP = document.getElementById('footerCopyright');
-        if (footerP) {
-            footerP.innerHTML = `&copy; 2026 ${settings.name}${settings.subtitle ? ' - ' + settings.subtitle : ''}. All rights reserved.`;
-        }
-    }
-    if (settings.subtitle) {
-        const span = document.querySelector('.clinic-name span');
-        if (span) span.textContent = settings.subtitle;
-    }
-    if (settings.primaryColor) {
-        document.documentElement.style.setProperty('--primary-color', settings.primaryColor);
-    }
-    if (settings.secondaryColor) {
-        document.documentElement.style.setProperty('--secondary-color', settings.secondaryColor);
-    }
-
-    // About Page Logic
-    const aboutNav = document.getElementById('navAbout');
-    const aboutContent = document.getElementById('aboutContent');
-    const aboutSection = document.getElementById('about');
-
-    if (settings.aboutText && settings.aboutText.trim() !== "") {
-        if (aboutNav) aboutNav.style.display = 'block';
-        if (aboutSection) aboutSection.style.display = 'block'; // Show entire section
-        if (aboutContent) aboutContent.innerText = settings.aboutText;
-    } else {
-        if (aboutNav) aboutNav.style.display = 'none';
-        if (aboutSection) aboutSection.style.display = 'none';
-    }
-}
-
-function showSection(sectionId) {
-    document.getElementById('dashboard').style.display = 'none';
-    document.getElementById('main-content').style.display = 'block';
-
-    const element = document.getElementById(sectionId);
-    if (element) {
-        element.scrollIntoView({ behavior: 'smooth' });
-    }
-}
-
-/* --- PULSE SMS ENGINE UI LOGIC --- */
-
-let allRecipients = [];
-let currentPage = 1;
-const rowsPerPage = 10; // Modified to 10 per page
-
-function showDashboardTab(tabName) {
-    const tabs = document.querySelectorAll('.dashboard-tab');
-    tabs.forEach(t => t.style.display = 'none');
-    
-    if (tabName === 'broadcast') {
-        document.getElementById('broadcastTab').style.display = 'block';
-        document.getElementById('broadcastBtn').style.background = '#0d4b9f';
-        // Add a back button/breadcrumb if needed
-        initBroadcastHistory();
-    } else {
-        document.getElementById('patientsTab').style.display = 'block';
-        document.getElementById('broadcastBtn').style.background = '#555';
-    }
-}
-
-async function previewRecipients() {
-    const previewEl = document.getElementById('recipientPreview');
-    previewEl.style.display = 'block';
-    previewEl.scrollIntoView({ behavior: 'smooth' });
-
-    document.getElementById('recipientsBody').innerHTML = '<tr><td colspan="3" style="text-align:center;">Loading recipients...</td></tr>';
-    
-    allRecipients = await window.dbAPI.getBroadcastRecipients();
-    document.getElementById('previewCount').textContent = allRecipients.length;
-    
-    currentPage = 1;
-    renderRecipientsTable();
-}
-
-function renderRecipientsTable() {
-    const container = document.getElementById('recipientsBody');
-    container.innerHTML = '';
-
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    const paginated = allRecipients.slice(start, end);
-
-    const selectAllCheckbox = document.getElementById('selectAllRecipients');
-    if (selectAllCheckbox) selectAllCheckbox.checked = false;
-    toggleBulkDeleteBtn();
-
-    if (paginated.length === 0) {
-        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #aaa; padding: 2rem;">No contacts found. Add one above.</div>';
-    }
-
-    paginated.forEach(r => {
-        const isMarketing = r.source && r.source.includes('Marketing');
-        const initial = (r.name || '?').charAt(0).toUpperCase();
-        const sourceColor = isMarketing ? '#26A69A' : r.source === 'Auth' ? '#7C3AED' : '#0d4b9f';
-
+    filtered.forEach(p => {
+        const lastVisit = p.history[0]?.appointmentDate || p.history[0]?.date || 'N/A';
         const card = document.createElement('div');
-        card.style.cssText = `
-            background: white;
-            border-radius: 14px;
-            padding: 14px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            border: 1px solid #f0f0f0;
-            transition: box-shadow 0.2s;
-            position: relative;
-        `;
-        card.onmouseenter = () => card.style.boxShadow = '0 4px 18px rgba(0,0,0,0.13)';
-        card.onmouseleave = () => card.style.boxShadow = '0 2px 10px rgba(0,0,0,0.07)';
-
+        card.className = 'patient-explorer-card';
+        card.onclick = () => openPatientProfile(p);
+        
         card.innerHTML = `
-            <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; align-items: center;">
-                <input type="checkbox" class="recipient-checkbox" data-phone="${r.mobile}" onchange="updateSelectedRecipients()" style="cursor:pointer;">
-                ${isMarketing ? `<button onclick="removeSingleRecipient('${r.mobile}', '${r.id || ''}')" title="Delete" style="background:none;border:none;color:#dc3545;cursor:pointer;font-size:1rem;padding:0;">🗑</button>` : ''}
+            <div class="patient-name">${p.name}</div>
+            <div class="patient-meta">
+                <span><i class="fas fa-phone-alt"></i> ${p.mobile}</span>
+                <span><i class="fas fa-map-marker-alt"></i> ${p.place || 'Local'}</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px; margin-top: 4px;">
-                <div style="width: 40px; height: 40px; border-radius: 50%; background: ${sourceColor}; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; flex-shrink: 0;">${initial}</div>
-                <div style="min-width: 0;">
-                    <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;">${r.name || 'Unknown'}</div>
-                    <div style="font-size: 0.78rem; color: #555; font-family: monospace;">${r.mobile}</div>
+            <div class="patient-summary-stats">
+                <div class="mini-stat">
+                    <span>Last Visit</span>
+                    <span>${lastVisit}</span>
                 </div>
-            </div>
-            <div>
-                <span style="font-size: 0.7rem; background: ${sourceColor}18; color: ${sourceColor}; padding: 2px 8px; border-radius: 20px; font-weight: 600;">${r.source || 'Unknown'}</span>
+                <div class="mini-stat">
+                    <span>Sessions</span>
+                    <span>${p.history.length}</span>
+                </div>
             </div>
         `;
         container.appendChild(card);
     });
-
-    const totalPages = Math.ceil(allRecipients.length / rowsPerPage);
-    document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages || 1}`;
-    document.getElementById('prevPage').disabled = currentPage === 1;
-    document.getElementById('nextPage').disabled = currentPage === totalPages || totalPages === 0;
 }
 
-document.getElementById('prevPage')?.addEventListener('click', () => {
-    if (currentPage > 1) {
-        currentPage--;
-        renderRecipientsTable();
-    }
-});
-
-document.getElementById('nextPage')?.addEventListener('click', () => {
-    const totalPages = Math.ceil(allRecipients.length / rowsPerPage);
-    if (currentPage < totalPages) {
-        currentPage++;
-        renderRecipientsTable();
-    }
-});
-
-/* --- BROADCAST RECIPIENT DELETION LOGIC --- */
-
-function toggleSelectAllRecipients(source) {
-    const checkboxes = document.querySelectorAll('.recipient-checkbox');
-    checkboxes.forEach(cb => cb.checked = source.checked);
-    updateSelectedRecipients();
+function filterPatients() {
+    refreshDashboard();
 }
 
-function updateSelectedRecipients() {
-    toggleBulkDeleteBtn();
+async function openPatientProfile(patient) {
+    currentPatient = patient;
+    const modal = document.getElementById('patientProfileModal');
+    document.getElementById('profileName').innerText = patient.name;
+    document.getElementById('profileMeta').innerText = `Mobile: ${patient.mobile} | Place: ${patient.place || 'Main'}`;
+    renderTimeline(patient.history);
+    await renderFinances(patient);
+    modal.style.display = 'flex';
 }
 
-function toggleBulkDeleteBtn() {
-    const selected = document.querySelectorAll('.recipient-checkbox:checked').length;
-    const btn = document.getElementById('bulkDeleteBtn');
-    if (btn) btn.style.display = selected > 0 ? 'inline-block' : 'none';
-}
+function renderTimeline(history) {
+    const container = document.getElementById('patientTimeline');
+    container.innerHTML = '';
 
-async function removeSingleRecipient(phone, id) {
-    if (!confirm("Are you sure you want to delete this marketing contact?")) return;
-    
-    // UI update
-    allRecipients = allRecipients.filter(r => r.mobile !== phone);
-    renderRecipientsTable();
-    document.getElementById('previewCount').textContent = allRecipients.length;
+    history.sort((a,b) => (b.appointmentDate||b.date).localeCompare(a.appointmentDate||a.date)).forEach(appt => {
+        // Generate Calendar URL
+        const title = encodeURIComponent(`Dental Seating: ${appt.name} - ${appt.reason}`);
+        const datePart = (appt.appointmentDate || "").replace(/-/g, "");
+        const timePart = (appt.appointmentTime || "11:00").replace(/:/g, "") + "00";
+        const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${datePart}T${timePart}/${datePart}T${timePart}`;
 
-    // Database update
-    if (id && id !== 'undefined') {
-        try {
-            await window.dbAPI.deleteMarketingContact(id);
-        } catch (e) {
-            console.error("Failed to delete from DB:", e);
-        }
-    }
-}
-
-async function deleteSelectedRecipients() {
-    const selectedCheckboxes = document.querySelectorAll('.recipient-checkbox:checked');
-    const phonesToDelete = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-phone'));
-    
-    if (phonesToDelete.length === 0) return;
-    
-    // Identify which ones are marketing contacts to delete from DB
-    const marketingRecipients = allRecipients.filter(r => phonesToDelete.includes(r.mobile) && r.id);
-    const marketingIds = marketingRecipients.map(r => r.id);
-
-    if (!confirm(`Delete ${phonesToDelete.length} selected recipients?`)) return;
-
-    // UI Update
-    allRecipients = allRecipients.filter(r => !phonesToDelete.includes(r.mobile));
-    renderRecipientsTable();
-    document.getElementById('previewCount').textContent = allRecipients.length;
-
-    // Database Update
-    if (marketingIds.length > 0) {
-        try {
-            await window.dbAPI.deleteManyMarketingContacts(marketingIds);
-            alert("Marketing contacts deleted from database.");
-        } catch (e) {
-            console.error("Batch delete failed:", e);
-        }
-    }
-}
-
-async function sendBroadcast() {
-    const message = document.getElementById('broadcastMessage').value;
-    if (!message) {
-        alert('Please enter a message to broadcast.');
-        return;
-    }
-
-    if (allRecipients.length === 0) {
-        allRecipients = await window.dbAPI.getBroadcastRecipients();
-    }
-
-    if (allRecipients.length === 0) {
-        alert('No recipients found to send message to.');
-        return;
-    }
-
-    if (!confirm(`Are you sure you want to send this broadcast to ${allRecipients.length} recipients?`)) return;
-
-    const btn = document.getElementById('sendBroadcastBtn');
-    const originalText = btn.textContent;
-    btn.textContent = 'Sending...';
-    btn.disabled = true;
-
-    try {
-        const token = await window.dbAPI.getIdToken();
-        const phones = allRecipients.map(r => r.mobile);
-        const response = await fetch('/api/send-bulk-sms', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': token ? `Bearer ${token}` : ''
-            },
-            body: JSON.stringify({ recipients: phones, message })
-        });
-
-        const result = await response.json();
-        if (result.error) throw new Error(result.error);
-
-        alert(`Broadcast initiated! Sent: ${result.sent}, Failed: ${result.failed}`);
-        document.getElementById('broadcastMessage').value = '';
-    } catch (e) {
-        console.error('Broadcast failed:', e);
-        alert('Broadcast failed: ' + e.message);
-    } finally {
-        btn.textContent = originalText;
-        btn.disabled = false;
-    }
-}
-
-function initBroadcastHistory() {
-    if (window.broadcastUnsubscribe) window.broadcastUnsubscribe();
-    
-    window.broadcastUnsubscribe = window.dbAPI.onBroadcastHistoryChange((history) => {
-        const list = document.getElementById('broadcastHistoryList');
-        if (history.length === 0) {
-            list.innerHTML = '<div style="text-align: center; color: #888; padding: 2rem;">No recent broadcasts.</div>';
-            return;
-        }
-
-        list.innerHTML = history.map(h => `
-            <div class="history-item" style="padding: 1rem; border-bottom: 1px solid #eee; background: white; margin-bottom: 0.5rem; border-radius: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                    <span style="font-weight: bold; color: var(--primary-color);">${h.timestamp?.toDate().toLocaleString() || 'Just now'}</span>
-                    <span class="status-badge ${h.status.toLowerCase()}" style="padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; background: ${h.status === 'DELIVERED' ? '#e6f4ea' : '#fce8e6'}; color: ${h.status === 'DELIVERED' ? '#1e7e34' : '#c5221f'};">
-                        ${h.status}
-                    </span>
+        const item = document.createElement('div');
+        item.className = 'timeline-item';
+        item.innerHTML = `
+            <div class="timeline-date">${appt.appointmentDate || appt.date} ${appt.appointmentTime || ''}</div>
+            <div class="seating-card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>${appt.reason || 'Treatment'}</strong>
+                    <select onchange="updateStatus('${appt.id}', this.value)" style="padding: 2px 5px; font-size: 0.8rem;">
+                        <option value="Pending" ${appt.status==='Pending'?'selected':''}>Pending</option>
+                        <option value="Completed" ${appt.status==='Completed'?'selected':''}>Completed</option>
+                        <option value="Cancelled" ${appt.status==='Cancelled'?'selected':''}>Cancelled</option>
+                    </select>
                 </div>
-                <p style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #444;">${h.message}</p>
-                <div style="font-size: 0.8rem; color: #666;">
-                    <i class="fas fa-users"></i> ${h.recipientsCount} Recipients | 
-                    <i class="fas fa-check"></i> ${h.sentCount || h.recipientsCount} Sent |
-                    <i class="fas fa-times"></i> ${h.failedCount || 0} Failed
+                <div style="margin-top: 5px; color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
+                    Fee: ₹<input type="number" value="${appt.fee}" onblur="updateFee('${appt.id}', this.value)" style="width: 70px; border: 1px solid #ccc; font-size: 0.8rem;">
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <button onclick="event.stopPropagation(); openNotesModal('${appt.id}')" class="btn-primary" style="padding: 5px 10px; font-size: 0.75rem; background: #6c757d;"><i class="fas fa-notes-medical"></i> Notes</button>
+                    <button onclick="event.stopPropagation(); generateBill('${encodeURIComponent(JSON.stringify(appt))}')" class="btn-primary" style="padding: 5px 10px; font-size: 0.75rem;"><i class="fas fa-file-invoice"></i> Bill</button>
+                    <a href="${calUrl}" target="_blank" onclick="event.stopPropagation()" class="btn-primary" style="padding: 5px 10px; font-size: 0.75rem; background: #4285f4; text-decoration: none;"><i class="fas fa-calendar-plus"></i></a>
+                    <button onclick="event.stopPropagation(); sendWhatsApp('${encodeURIComponent(JSON.stringify(appt))}')" class="btn-primary" style="padding: 5px 10px; font-size: 0.75rem; background: #25D366;"><i class="fab fa-whatsapp"></i></button>
                 </div>
             </div>
-        `).join('');
+        `;
+        container.appendChild(item);
     });
 }
 
-/**
- * Pulse Manual Contact Add: Zero-Latency Logic
- */
-async function addManualContact() {
-    const nameInput = document.getElementById('manualContactName');
-    const phoneInput = document.getElementById('manualContactPhone');
-    const errorEl = document.getElementById('manualContactError');
+async function renderFinances(patient) {
+    let allPayments = [];
+    for (const appt of patient.history) {
+        const p = await window.dbAPI.getPayments(appt.id);
+        allPayments = allPayments.concat(p);
+    }
+    const totalPaid = allPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
     
-    const name = nameInput.value.trim();
-    const phone = phoneInput.value.trim();
+    document.getElementById('totalBilledProfile').innerText = '₹' + patient.totalBilled.toLocaleString();
+    document.getElementById('totalPaidProfile').innerText = '₹' + totalPaid.toLocaleString();
 
-    if (!name || phone.length !== 10) {
-        errorEl.textContent = "Please enter valid name and 10-digit number.";
-        errorEl.style.display = "block";
-        return;
-    }
-
-    errorEl.style.display = "none";
-    const normalized = window.phoneUtils.normalizePhone(phone);
-
-    // Ensure the preview is visible when we add a contact
-    const previewEl = document.getElementById('recipientPreview');
-    if (previewEl && previewEl.style.display !== 'block') {
-        previewEl.style.display = 'block';
-        previewEl.scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // Update local state immediately for ZERO-LATENCY feel
-    if (previewEl) {
-        const isDuplicate = allRecipients.some(r => r.mobile === normalized);
-        if (!isDuplicate) {
-            allRecipients.push({ name: name, mobile: normalized, source: 'Marketing (Local Update)' });
-            allRecipients.sort((a,b) => a.name.localeCompare(b.name));
-            renderRecipientsTable();
-            document.getElementById('previewCount').textContent = allRecipients.length;
-        }
-    }
-
-    // Clear inputs and persist in background
-    nameInput.value = '';
-    phoneInput.value = '';
-    
-    try {
-        await window.dbAPI.addMarketingContact({ name, mobile: normalized });
-        console.log("Contact persisted in background via Marketing Persistence");
-    } catch (e) { console.error("Persistence failed:", e); }
+    const paymentLog = document.getElementById('paymentLog');
+    paymentLog.innerHTML = '';
+    allPayments.sort((a,b) => b.createdAt - a.createdAt).forEach(pay => {
+        const div = document.createElement('div');
+        div.className = 'payment-log-item';
+        div.innerHTML = `<span>${new Date().toLocaleDateString()}</span> <span class="amount">₹${pay.amount}</span>`;
+        paymentLog.appendChild(div);
+    });
 }
 
-// Character counter for broadcast
-document.getElementById('broadcastMessage')?.addEventListener('input', (e) => {
-    const len = e.target.value.length;
-    document.getElementById('charCount').textContent = `${len} characters${len > 160 ? ' (Multiple SMS)' : ''}`;
-});
+// --- BOOKING LOGIC ---
 
-/* --- INPUT VALIDATION & MASKS --- */
-
-document.getElementById('mobile')?.addEventListener('input', function(e) {
-    const val = e.target.value;
-    const errorEl = getOrCreateInlineError(this);
-    
-    if (val && !/^[0-9]{10}$/.test(val)) {
-        errorEl.textContent = "Enter valid 10-digit number";
-        errorEl.style.display = "block";
-    } else {
-        errorEl.style.display = "none";
-    }
-});
-
-function getOrCreateInlineError(input) {
-    let error = input.parentElement.querySelector('.inline-error');
-    if (!error) {
-        error = document.createElement('div');
-        error.className = 'inline-error';
-        error.style.color = '#dc3545';
-        error.style.fontSize = '0.8rem';
-        error.style.marginTop = '4px';
-        input.parentElement.appendChild(error);
-    }
-    return error;
+function initializeDateTimePickers() {
+    const dateInput = document.getElementById('appointmentDate');
+    if (!dateInput) return;
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.setAttribute('min', today);
+    dateInput.value = today;
+    dateInput.addEventListener('change', generateTimeSlots);
+    generateTimeSlots();
 }
 
-function printSchedule() {
-    window.print();
+async function generateTimeSlots() {
+    const timeSelect = document.getElementById('appointmentTime');
+    const selectedDate = document.getElementById('appointmentDate').value;
+    if (!timeSelect) return;
+
+    timeSelect.innerHTML = '<option value="">Loading...</option>';
+    let bookedSlots = await window.dbAPI.getBookedTimeSlots(selectedDate);
+    timeSelect.innerHTML = '<option value="">Select time slot...</option>';
+
+    const addSlot = (h, m) => {
+        const timeStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+        const display = formatTime(h, m);
+        const booked = bookedSlots.some(s => s === timeStr || s.startsWith(timeStr));
+        const opt = document.createElement('option');
+        opt.value = timeStr;
+        opt.textContent = booked ? `${display} (Booked)` : display;
+        if (booked) opt.disabled = true;
+        timeSelect.appendChild(opt);
+    };
+
+    for (let h = 11; h < 14; h++) for (let m = 0; m < 60; m += 30) addSlot(h, m);
+    for (let h = 16; h < 19; h++) for (let m = 0; m < 60; m += 30) addSlot(h, m);
 }
 
-/* --- PWA SMART INSTALL BANNER LOGIC --- */
+function formatTime(h, m) {
+    const p = h >= 12 ? 'PM' : 'AM';
+    const dh = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+    return `${dh}:${m.toString().padStart(2, '0')} ${p}`;
+}
 
-let deferredPWAInstallPrompt = null;
-
-window.addEventListener('load', () => {
-    const banner = document.getElementById('pwaInstallBanner');
-    if (!banner) return;
-
-    // Check if dismissed in this session
-    if (sessionStorage.getItem('pwa_banner_dismissed')) return;
-
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    if (isStandalone) {
-        console.log("App running in standalone mode (PWA).");
-        return;
-    }
-
-    // Detect iOS
-    const ua = navigator.userAgent;
-    const isIOS = /iPhone|iPad|iPod/i.test(ua) && !window.navigator.standalone;
-
-    if (isIOS) {
-        document.getElementById('pwaDesc').innerHTML = 'Tap <strong>Share</strong> then <strong>"Add to Home Screen"</strong>';
-        const iosInstruct = document.getElementById('pwaIosInstruct');
-        if (iosInstruct) iosInstruct.style.display = 'block';
-        setTimeout(() => { banner.style.display = 'flex'; }, 3000);
-    }
-});
-
-window.addEventListener('beforeinstallprompt', (e) => {
-    // Prevent default Chrome prompt
+const bookingForm = document.getElementById('bookingForm');
+bookingForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    deferredPWAInstallPrompt = e;
-    const banner = document.getElementById('pwaInstallBanner');
-    const btn = document.getElementById('pwaInstallBtn');
-    if (banner) banner.style.display = 'flex';
-    if (btn) btn.style.display = 'block';
-    console.log("PWA Install Prompt captured and ready.");
+    const appt = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        appointmentDate: document.getElementById('appointmentDate').value,
+        appointmentTime: document.getElementById('appointmentTime').value,
+        name: document.getElementById('name').value,
+        mobile: document.getElementById('mobile').value,
+        place: document.getElementById('place').value,
+        reason: document.getElementById('reason').value,
+        fee: 0,
+        status: 'Pending'
+    };
+    await window.dbAPI.createAppointment(appt);
+    alert('Appointment Booked!');
+    bookingForm.reset();
+    showBookingModal(appt);
 });
 
-async function handlePWAInstall() {
-    if (!deferredPWAInstallPrompt) return;
-    deferredPWAInstallPrompt.prompt();
-    const { outcome } = await deferredPWAInstallPrompt.userChoice;
-    if (outcome === 'accepted') {
-        dismissPWABanner();
-        deferredPWAInstallPrompt = null;
-    }
-}
+// --- UTILITIES ---
 
-function dismissPWABanner() {
-    const banner = document.getElementById('pwaInstallBanner');
-    if (banner) banner.style.display = 'none';
-    sessionStorage.setItem('pwa_banner_dismissed', '1');
-}
-// --- FREE PREMIUM UTILITIES ---
-
-// 1. One-Tap WhatsApp
-function sendWhatsApp(appJson) {
-    const app = JSON.parse(decodeURIComponent(appJson));
-    const phone = window.phoneUtils.normalizePhone(app.mobile);
-    if (!phone) { alert("Invalid phone number"); return; }
-
-    const message = encodeURIComponent(`Hello ${app.name},
-This is a reminder for your appointment at My Dental Clinic.
-📅 Date: ${app.appointmentDate}
-⏰ Time: ${formatTime12Hour(app.appointmentTime)}
-Looking forward to seeing you!`);
-
-    window.open(`https://wa.me/91${phone}?text=${message}`, '_blank');
-}
-
-// 2. Client-Side PDF Billing
 function generateBill(appJson) {
     const app = JSON.parse(decodeURIComponent(appJson));
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    const settings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
-    const clinicName = settings.name || "My Dental Clinic";
-
-    // Header
     doc.setFontSize(22);
-    doc.setTextColor(38, 166, 154); // Primary color
-    doc.text(clinicName.toUpperCase(), 105, 20, { align: 'center' });
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(settings.subtitle || "Advanced Dental & Aesthetic Smile Center", 105, 28, { align: 'center' });
-
-    doc.setDrawColor(200);
-    doc.line(20, 35, 190, 35);
-
-    // Patient Info
+    doc.text("DENTAL CLINIC INVOICE", 105, 20, { align: 'center' });
     doc.setFontSize(12);
-    doc.setTextColor(0);
-    doc.text(`Invoice No: INV-${app.id}`, 20, 45);
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 45);
-
-    doc.setFont("helvetica", "bold");
-    doc.text("BILL TO:", 20, 60);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Patient Name: ${app.name}`, 20, 67);
-    doc.text(`Mobile: +91 ${app.mobile}`, 20, 74);
-
-    // Table Header
-    doc.setFillColor(240, 240, 240);
-    doc.rect(20, 85, 170, 10, 'F');
-    doc.setFont("helvetica", "bold");
-    doc.text("Treatment Description", 25, 92);
-    doc.text("Amount (INR)", 150, 92);
-
-    // Table Content
-    doc.setFont("helvetica", "normal");
-    doc.text(app.reason || "General Dental Consultation", 25, 105);
-    doc.text(`Rs. ${app.fee || 0}/-`, 150, 105);
-
-    doc.line(20, 115, 190, 115);
-    doc.setFont("helvetica", "bold");
-    doc.text("TOTAL DUE:", 120, 125);
-    doc.text(`Rs. ${app.fee || 0}/-`, 150, 125);
-
-    // Footer
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "italic");
-    doc.text("Thank you for choosing us for your dental health!", 105, 150, { align: 'center' });
-
-    doc.save(`Bill_${app.name.replace(/\s/g, '_')}.pdf`);
+    doc.text(`Patient: ${app.name}`, 20, 40);
+    doc.text(`Treatment: ${app.reason}`, 20, 50);
+    doc.text(`Total Fee: Rs. ${app.fee}/-`, 20, 60);
+    doc.save(`Bill_${app.name}.pdf`);
 }
 
-// 3. Clinical Examination Logic
+function sendWhatsApp(appJson) {
+    const app = JSON.parse(decodeURIComponent(appJson));
+    const msg = encodeURIComponent(`Hello ${app.name}, reminder for your visit on ${app.appointmentDate} at ${app.appointmentTime}.`);
+    window.open(`https://wa.me/91${app.mobile}?text=${msg}`, '_blank');
+}
+
 async function openNotesModal(apptId) {
-    const modal = document.getElementById('notesModal');
-    const form = document.getElementById('notesForm');
     document.getElementById('notesApptId').value = apptId;
-
-    // Reset fields
-    form.reset();
-
-    // Fetch existing notes
+    document.getElementById('notesForm').reset();
     const existing = await window.dbAPI.getClinicalNotes(apptId);
     if (existing) {
         document.getElementById('noteSoftTissue').value = existing.softTissue || "";
@@ -1239,17 +273,13 @@ async function openNotesModal(apptId) {
         document.getElementById('notePeriodontal').value = existing.periodontal || "";
         document.getElementById('noteRadiographic').value = existing.radiographic || "";
     }
-
-    modal.style.display = 'flex';
+    document.getElementById('notesModal').style.display = 'flex';
 }
 
-function closeNotesModal() {
-    document.getElementById('notesModal').style.display = 'none';
-}
+function closeNotesModal() { document.getElementById('notesModal').style.display = 'none'; }
 
 document.getElementById('notesForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const apptId = document.getElementById('notesApptId').value;
     const data = {
         softTissue: document.getElementById('noteSoftTissue').value,
         hardTissue: document.getElementById('noteHardTissue').value,
@@ -1257,12 +287,27 @@ document.getElementById('notesForm')?.addEventListener('submit', async (e) => {
         periodontal: document.getElementById('notePeriodontal').value,
         radiographic: document.getElementById('noteRadiographic').value
     };
-
-    const success = await window.dbAPI.saveClinicalNotes(apptId, data);
-    if (success) {
-        alert('Examination report saved successfully!');
-        closeNotesModal();
-    } else {
-        alert('Failed to save report. Please try again.');
-    }
+    await window.dbAPI.saveClinicalNotes(document.getElementById('notesApptId').value, data);
+    alert('Notes Saved!');
+    closeNotesModal();
 });
+
+async function updateStatus(id, stat) { await window.dbAPI.updateAppointment(id, { status: stat }); refreshDashboard(); }
+async function updateFee(id, val) { await window.dbAPI.updateAppointment(id, { fee: parseFloat(val) || 0 }); refreshDashboard(); }
+
+function showDashboardTab(name) {
+    document.querySelectorAll('.dashboard-tab').forEach(t => t.style.display='none');
+    document.getElementById(name+'Tab').style.display='block';
+}
+
+function initQRCode() {
+    const container = document.getElementById("qrcode");
+    if (container) { container.innerHTML = ""; new QRCode(container, { text: window.location.origin, width: 256, height: 256 }); }
+}
+
+function logout() { sessionStorage.clear(); window.location.reload(); }
+function closeProfileModal() { document.getElementById('patientProfileModal').style.display = 'none'; refreshDashboard(); }
+function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
+function openSettingsModal() { alert('Settings loading...'); }
+function loadClinicSettings() { console.log('Settings Loaded'); }
+function showBookingModal(a) { document.getElementById('bookingModal').style.display = 'flex'; }

@@ -1,490 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <meta name="theme-color" content="#26A69A">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.webmanifest">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <link rel="apple-touch-icon" href="app-icon.png">
-    <title>My Dental Clinic - Advanced Dental care & Aesthetic Smile Center</title>
-    <meta name="description" content="Professional dental services including general consultation, teeth whitening, root canal, and orthodontics. Book your appointment online today.">
-    <meta name="keywords" content="dentist, dental clinic, toothache, smile makeover, oral health, booking">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://dr-drashti-clinic-d1.vercel.app/">
-    <meta property="og:title" content="My Dental Clinic - Professional Dental Care">
-    <meta property="og:description" content="Experience world-class dental and advanced care. Book your visit online with our easy scheduling system.">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>My Dental Clinic | Premium Care</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:title" content="My Dental Clinic - Professional Dental Care">
-    <meta property="twitter:description" content="Experience world-class dental and advanced care. Book your visit online.">
-    <meta property="twitter:image" content="https://dr-drashti-clinic-d1.vercel.app/logo.png">
-
-    <link rel="stylesheet" href="style.css?v=2.3">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 </head>
-
 <body>
-
-    <!-- Header -->
     <header>
         <div class="nav-container">
             <div class="logo-section">
-                <img src="logo.png" alt="Clinic Logo">
-                <div class="clinic-name">
-                    <h1>My Dental Clinic</h1>
-                    <span>Advance Dental clinic</span>
-                </div>
+                <img src="logo-blue.png" alt="Clinic Logo">
             </div>
-            <nav>
+            <nav id="mainNav">
                 <ul>
-                    <li><a href="#home" onclick="showSection('home')">Home</a></li>
-                    <li><a href="#about" id="navAbout" onclick="showSection('about')" style="display: none;">About
-                            Us</a></li>
-                    <li><a href="#appointment" onclick="showSection('appointment')" class="btn-primary">Book
-                            Appointment</a></li>
-                    <li><a href="#" onclick="toggleDashboard()">Staff Dashboard</a></li>
-                    <li><button onclick="toggleTheme()" class="theme-toggle" title="Switch Theme">
-                            <i class="fas fa-palette"></i>
-                        </button></li>
+                    <li><a href="#" onclick="showSection('home')" class="active">Home</a></li>
+                    <li><a href="#" onclick="showSection('dashboard')">Dashboard</a></li>
                 </ul>
             </nav>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main id="main-content">
-        <!-- Hero Section -->
-        <section id="home" class="hero">
-            <div class="hero-content">
-                <h2>Your Smile, Our Passion</h2>
-                <p>Experience world-class dental and advanced care. We combine cutting-edge technology with
-                    aesthetic expertise.</p>
-                <a href="#appointment" onclick="showSection('appointment')" class="btn-primary">Book Your Visit</a>
+    <main>
+        <!-- Home Section -->
+        <section id="home" class="section">
+            <div class="hero" style="margin-top: 0; padding-top: 5rem;">
+                <div class="hero-content">
+                    <h1>Healthy Smiles, <br><span style="color:var(--accent-color)">Premium Care</span></h1>
+                    <p>Experience advanced dentistry with personalized attention at your fingertips.</p>
+                </div>
             </div>
-        </section>
 
-        </section>
-
-        <!-- About Us Section (Dynamic) -->
-        <section id="about" class="about-section"
-            style="display: none; padding: 4rem 1rem; background-color: var(--accent-color);">
-            <div class="container" style="max-width: 800px;">
-                <h2 class="section-title">About Us</h2>
-                <div id="aboutContent"
-                    style="white-space: pre-wrap; font-size: 1.1rem; line-height: 1.8; color: #555; background: white; padding: 2rem; border-radius: 15px; box-shadow: var(--glass-shadow);">
+            <div class="container" style="padding: 2rem 1rem;">
+                <div class="appointment-form">
+                    <h2 class="section-title">Book Appointment</h2>
+                    <form id="bookingForm">
+                        <div class="form-group">
+                            <label>Patient Name</label>
+                            <input type="text" id="name" required placeholder="Full Name">
+                        </div>
+                        <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div>
+                                <label>Mobile Number</label>
+                                <input type="number" id="mobile" required placeholder="10 Digits">
+                            </div>
+                            <div>
+                                <label>City/Place</label>
+                                <input type="text" id="place" required placeholder="Your City">
+                            </div>
+                        </div>
+                        <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div>
+                                <label>Preferred Date</label>
+                                <input type="date" id="appointmentDate" required>
+                            </div>
+                            <div>
+                                <label>Select Time</label>
+                                <select id="appointmentTime" required></select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Reason for Visit</label>
+                            <textarea id="reason" rows="2" placeholder="e.g. Scaling, Root Canal, Braces..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" style="width:100%; padding:15px; font-weight:700;">CONFIRM BOOKING</button>
+                    </form>
                 </div>
             </div>
         </section>
 
-        <!-- Appointment Section -->
-        <section id="appointment" class="appointment-section">
+        <!-- Dashboard Section -->
+        <section id="dashboard" class="section" style="display:none; padding-top: 2rem;">
             <div class="container">
-                <h2 class="section-title">Book an Appointment</h2>
-                <form class="appointment-form" id="bookingForm">
-                    <div class="form-group">
-                        <label for="name">Patient Name *</label>
-                        <input type="text" id="name" required placeholder="Enter full name" minlength="2" maxlength="50"
-                            pattern="[A-Za-z\s]+" title="Please enter a valid name (letters and spaces only)">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2 style="font-weight: 800; color: var(--primary-color);">Patient Explorer</h2>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="showDashboardTab('patients')" class="btn-primary"><i class="fas fa-users"></i></button>
+                        <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent-color); color:var(--primary-color)"><i class="fas fa-qrcode"></i></button>
+                        <button onclick="logout()" class="btn-primary" style="background:#dc3545;"><i class="fas fa-sign-out-alt"></i></button>
                     </div>
-                    <div class="form-group">
-                        <label for="place">Place/City *</label>
-                        <input type="text" id="place" required placeholder="e.g. New York" minlength="2" maxlength="50"
-                            pattern="[A-Za-z\s]+" title="Please enter a valid city name (letters and spaces only)">
+                </div>
+
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <i class="fas fa-user-check"></i>
+                        <div class="mini-stat">
+                            <span>Total Patients</span>
+                            <span id="totalPatients" class="stat-val">0</span>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="mobile">Mobile Number *</label>
-                        <input type="number" id="mobile" required placeholder="10-digit number" inputmode="numeric" 
-                            style="appearance: textfield;"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
+                    <div class="stat-box">
+                        <i class="fas fa-wallet"></i>
+                        <div class="mini-stat">
+                            <span>Settled Bill</span>
+                            <span id="totalEarnings" class="stat-val">₹0</span>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="appointmentDate">Appointment Date *</label>
-                        <input type="date" id="appointmentDate" required title="Please select an appointment date">
+                    <div class="stat-box">
+                        <i class="fas fa-clock"></i>
+                        <div class="mini-stat">
+                            <span>Outstanding</span>
+                            <span id="pendingVisits" class="stat-val">0</span>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="appointmentTime">Appointment Time (30-min slots) *</label>
-                        <select id="appointmentTime" required title="Please select an available time slot">
-                            <option value="">Select time slot...</option>
-                        </select>
+                </div>
+
+                <div id="patientsTab" class="dashboard-tab">
+                    <div class="search-box" style="margin-bottom: 2rem;">
+                        <input type="text" id="searchInput" placeholder="Search by name, phone or city..." onkeyup="filterPatients()">
+                        <i class="fas fa-search" style="left: 20px;"></i>
                     </div>
-                    <div class="form-group">
-                        <label for="reason">Reason for Treatment *</label>
-                        <select id="reason" required title="Please select a treatment reason">
-                            <option value="">Select a service...</option>
-                            <option value="General Consultation">General Consultation</option>
-                            <option value="Teeth Whitening">Teeth Whitening</option>
-                            <option value="Root Canal">Root Canal</option>
-                            <option value="Cosmetic Correction">Cosmetic Correction</option>
-                            <option value="Orthodontics">Orthodontics (Braces)</option>
-                            <option value="Other">Other</option>
-                        </select>
+                    <div id="patientExplorer" class="dashboard-grid"></div>
+                    <div id="noDataMessage" style="text-align: center; padding: 4rem; display: none;">
+                        <p style="color: var(--text-muted);">No records found.</p>
                     </div>
-                    <button type="submit" class="btn-primary" style="width: 100%">Confirm Booking</button>
-                </form>
+                </div>
+
+                <div id="qrTab" class="dashboard-tab" style="display: none;">
+                    <div class="dashboard-card" style="text-align: center; padding: 3rem;">
+                        <h3>Clinic Booking QR</h3>
+                        <div id="qrcode" style="display: flex; justify-content: center; margin: 2rem 0;"></div>
+                        <button onclick="window.print()" class="btn-primary"><i class="fas fa-print"></i> Print QR Poster</button>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
 
-    <!-- Dashboard Section -->
-    <section id="dashboard" class="dashboard-section">
-        <div class="container">
-            <h2 class="section-title">Patient Dashboard</h2>
-            <div class="dashboard-header">
-                <h2>Staff Dashboard</h2>
-                <div style="display: flex; gap: 1rem;">
-                    <button id="qrBtn" onclick="showDashboardTab('qr')" class="btn-primary" style="background-color: #0d4b9f;">
-                        <i class="fas fa-qrcode"></i> Clinic QR
+    <!-- Patient Profile Modal -->
+    <div id="patientProfileModal" class="modal">
+        <div class="modal-content profile-modal">
+            <span class="close-modal" onclick="closeProfileModal()">&times;</span>
+            <div class="profile-header">
+                <h2 id="profileName">Loading...</h2>
+                <p id="profileMeta">Mobile: Loading...</p>
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button onclick="quickWhatsApp()" class="btn-primary" style="background: #25D366; border: none; font-size: 0.9rem;">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
                     </button>
-                    <button id="settingsBtn" onclick="openSettingsModal()" class="btn-primary"
-                        style="background-color: #555; display: none;">
-                        <i class="fas fa-cog"></i> Settings
-                    </button>
-                    <button onclick="logout()" class="btn-primary" style="background-color: #dc3545;">
-                        <i class="fas fa-sign-out-alt"></i> Logout
+                    <button onclick="showQuickPayment()" class="btn-primary" style="background: var(--accent-color); color: var(--primary-color); border: none; font-size: 0.9rem;">
+                        <i class="fas fa-plus"></i> Add Payment
                     </button>
                 </div>
             </div>
-
-            <!-- Stats Row -->
-            <div class="stats-container">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-users"></i></div>
-                    <div class="stat-info">
-                        <h3>Total Patients</h3>
-                        <p id="totalPatients">0</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-rupee-sign"></i></div>
-                    <div class="stat-info">
-                        <h3>Total Earnings</h3>
-                        <p id="totalEarnings">₹0</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
-                    <div class="stat-info">
-                        <h3>Pending Visits</h3>
-                        <p id="pendingVisits">0</p>
-                    </div>
-                </div>
+            <div class="profile-tabs">
+                <button class="profile-tab-btn active" onclick="switchProfileTab('timeline')">Clinical History</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('finances')">Financial Health</button>
             </div>
-
-            <!-- Dashboard Controls -->
-            <div class="controls-container">
-                <div class="search-box">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="searchInput" placeholder="Search by name or mobile..."
-                        onkeyup="filterAppointments()">
+            <div class="profile-content">
+                <div id="profileTimelineSection">
+                    <div id="patientTimeline" class="timeline"></div>
                 </div>
-                <div class="filter-box">
-                    <select id="dateFilter" onchange="filterAppointments()">
-                        <option value="all">All Dates</option>
-                        <option value="today">Today</option>
-                    </select>
-                </div>
-                <button onclick="window.print()" class="btn-primary"><i class="fas fa-print"></i> Print
-                    Schedule</button>
-            </div>
-
-            <div id="patientsTab" class="dashboard-tab">
-                <div class="dashboard-grid">
-                    <div class="dashboard-card">
-                        <h3>Registered Patients</h3>
-
-                        <!-- Mobile Card View -->
-                        <div class="patients-cards" id="patientsCards">
-                            <!-- Cards will be populated here for mobile -->
+                <div id="profileFinanceSection" style="display: none;">
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0; gap: 15px;">
+                        <div class="dashboard-card" style="background: #fdf2f2; border: none; padding: 1rem;">
+                            <h4 style="color: #9b1c1c; font-size: 0.8rem;">TOTAL BILLED</h4>
+                            <p id="totalBilledProfile" style="font-size: 1.3rem; font-weight: 800; color: #9b1c1c;">₹0</p>
                         </div>
-
-                        <!-- Desktop Table View -->
-                        <div class="table-container">
-                            <table id="patientsTable">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Patient Info</th>
-                                        <th>Treatment</th>
-                                        <th>Status</th>
-                                        <th>Fees (₹)</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be populated here -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="noDataMessage" style="text-align: center; padding: 2rem; color: #888; display: none;">
-                            No appointments found.
+                        <div class="dashboard-card" style="background: #f0fdf4; border: none; padding: 1rem;">
+                            <h4 style="color: #166534; font-size: 0.8rem;">TOTAL PAID</h4>
+                            <p id="totalPaidProfile" style="font-size: 1.3rem; font-weight: 800; color: #166534;">₹0</p>
                         </div>
                     </div>
-
-                    <div class="dashboard-card">
-                        <h3>Treatments Breakdown</h3>
-                        <div class="chart-container">
-                            <canvas id="treatmentChart"></canvas>
-                        </div>
+                    <div class="dashboard-card" style="margin-top: 1rem;">
+                        <h4 style="margin-bottom: 1rem;">Payment History</h4>
+                        <div id="paymentLog" class="payment-section"></div>
                     </div>
                 </div>
-            </div>
-
-            <!-- Clinic QR Tab -->
-            <div id="qrTab" class="dashboard-tab" style="display: none;">
-                <div class="dashboard-grid" style="grid-template-columns: 1fr;">
-                    <div class="dashboard-card" style="text-align: center; padding: 3rem;">
-                        <h3 style="color: var(--primary-color);">Your Clinic Booking QR Code</h3>
-                        <p>Print this and put it at your reception. Patients can scan to book directly!</p>
-                        <div id="qrcode" style="display: flex; justify-content: center; margin: 2rem auto;"></div>
-                        <button onclick="window.print()" class="btn-primary" style="margin-top: 1rem;">
-                            <i class="fas fa-print"></i> Print Poster
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Staff Login</h2>
-            <form id="loginForm" style="display: flex; flex-direction: column; gap: 1rem;">
-                <div class="form-group">
-                    <label for="username">Username or Email</label>
-                    <input type="text" id="username" required placeholder="Enter username or email">
-                </div>
-                <div class="form-group">
-                    <label for="password">Password</label>
-                    <input type="password" id="password" required placeholder="Enter password">
-                </div>
-                <div style="text-align: right; margin-top: -0.5rem;">
-                    <a href="#" onclick="showForgotPasswordModal(); return false;"
-                        style="color: var(--primary-color); font-size: 0.9rem; text-decoration: none;">Forgot
-                        Password?</a>
-                </div>
-                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                    <button type="submit" class="btn-primary" style="flex: 1;">Login</button>
-                    <button type="button" onclick="closeLoginModal()" class="btn-primary"
-                        style="flex: 1; background-color: #999;">Cancel</button>
-                </div>
-            </form>
-            <p id="loginError" style="color: red; margin-top: 1rem; display: none; text-align: center;"></p>
-        </div>
-    </div>
-
-    <!-- Forgot Password Modal -->
-    <div id="forgotPasswordModal" class="modal">
-        <div class="modal-content">
-            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Reset Password</h2>
-            <p style="margin-bottom: 1.5rem; color: #666;">Enter your email address and we'll send you a password reset
-                link.</p>
-            <form id="forgotPasswordForm" style="display: flex; flex-direction: column; gap: 1rem;">
-                <div class="form-group">
-                    <label for="resetEmail">Email Address</label>
-                    <input type="email" id="resetEmail" required placeholder="Enter your email">
-                </div>
-                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                    <button type="submit" class="btn-primary" style="flex: 1;">Send Reset Link</button>
-                    <button type="button" onclick="closeForgotPasswordModal()" class="btn-primary"
-                        style="flex: 1; background-color: #999;">Cancel</button>
-                </div>
-            </form>
-            <p id="resetMessage" style="margin-top: 1rem; display: none; text-align: center;"></p>
-        </div>
-    </div>
-
-    <!-- Duplicate Check Success Modal -->
-    <div id="bookingModal" class="modal">
-        <div class="modal-content" style="text-align: center;">
-            <div style="color: var(--primary-color); font-size: 3rem; margin-bottom: 1rem;">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Booking Confirmed!</h2>
-            <p>Your appointment has been successfully scheduled.</p>
-            <p style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;">We look forward to seeing you.</p>
-            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
-                <a id="calendarLink" target="_blank" class="btn-primary" style="background-color: #4CAF50; text-decoration: none;">
-                    <i class="fab fa-google"></i> Add to Calendar
-                </a>
-                <button onclick="closeBookingModal()" class="btn-primary" style="background-color: #999;">Done</button>
             </div>
         </div>
     </div>
 
-    <!-- Clinical Notes Modal -->
+    <!-- Notes Modal -->
     <div id="notesModal" class="modal">
         <div class="modal-content" style="max-width: 600px;">
             <span class="close-modal" onclick="closeNotesModal()">&times;</span>
-            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Clinical Examination Notes</h2>
-            <form id="notesForm" style="display: flex; flex-direction: column; gap: 1.2rem;">
+            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Examination Report</h2>
+            <form id="notesForm" style="display: flex; flex-direction: column; gap: 1rem;">
                 <input type="hidden" id="notesApptId">
-                <div class="form-group">
-                    <label>Soft Tissue Examination (Tongue, Palate, Gums)</label>
-                    <textarea id="noteSoftTissue" placeholder="e.g. Normal, minor ulcers, gingival inflammation..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Hard Tissue / Teeth (Missing, Cavities, Sensitivity)</label>
-                    <textarea id="noteHardTissue" placeholder="e.g. Cavity in 16, 48 Impacted, Sensitivity in lower front..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Oral Hygiene Status (Plaque, Calculus)</label>
-                    <select id="noteHygiene">
-                        <option value="Good">Good</option>
-                        <option value="Fair">Fair</option>
-                        <option value="Poor (Scaling Recommended)">Poor (Scaling Recommended)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Periodontal Status (Gum Health)</label>
-                    <textarea id="notePeriodontal" placeholder="e.g. Healthy, Bleeding on probing, Recession..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Radiographic Findings (X-Rays)</label>
-                    <textarea id="noteRadiographic" placeholder="e.g. Root infection in 24, Periapical radiolucency..."></textarea>
-                </div>
-                <button type="submit" class="btn-primary" style="width: 100%; padding: 12px;">Save Examination Report</button>
+                <div class="form-group"><label>Soft Tissue</label><textarea id="noteSoftTissue"></textarea></div>
+                <div class="form-group"><label>Hard Tissue</label><textarea id="noteHardTissue"></textarea></div>
+                <div class="form-group"><label>Oral Hygiene</label><select id="noteHygiene"><option>Good</option><option>Fair</option><option>Poor</option></select></div>
+                <div class="form-group"><label>Periodontal</label><textarea id="notePeriodontal"></textarea></div>
+                <div class="form-group"><label>Radiographic</label><textarea id="noteRadiographic"></textarea></div>
+                <button type="submit" class="btn-primary" style="width:100%">Save Report</button>
             </form>
         </div>
     </div>
 
-    <!-- Update Password Modal (For Reset Flow) -->
-    <div id="updatePasswordModal" class="modal">
-        <div class="modal-content">
-            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Set New Password</h2>
-            <form id="updatePasswordForm" style="display: flex; flex-direction: column; gap: 1rem;">
-                <div class="form-group">
-                    <label for="newPassword">New Password</label>
-                    <input type="password" id="newPassword" required placeholder="Enter new password" minlength="6">
-                </div>
-                <button type="submit" class="btn-primary">Update Password</button>
-            </form>
-            <p id="updatePasswordMessage" style="color: green; margin-top: 1rem; display: none; text-align: center;">
-            </p>
+    <!-- Booking Confirmation Modal -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <i class="fas fa-check-circle" style="font-size: 4rem; color: #25D366; margin-bottom: 1rem;"></i>
+            <h2>Booking Confirmed!</h2>
+            <p>Your appointment has been successfully recorded.</p>
+            <button onclick="closeBookingModal()" class="btn-primary" style="margin-top: 1.5rem; width: 100%;">DONE</button>
         </div>
     </div>
 
-    <!-- Settings Modal (Super Admin Only) -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal" onclick="closeSettingsModal()">&times;</span>
-            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">App Settings (White Label)</h2>
-            <form id="settingsForm" style="display: flex; flex-direction: column; gap: 1rem;">
-                <div class="form-group">
-                    <label for="settingClinicName">Clinic Name</label>
-                    <input type="text" id="settingClinicName" placeholder="My Dental Clinic...">
-                </div>
-                <div class="form-group">
-                    <label for="settingSubtitle">Subtitle / Tagline</label>
-                    <input type="text" id="settingSubtitle" placeholder="Advance Dental clinic...">
-                </div>
-                <div class="form-group">
-                    <label for="settingAdminEmail">Admin Alert Email</label>
-                    <input type="email" id="settingAdminEmail" placeholder="admin@example.com">
-                </div>
-                <div class="form-group">
-                    <label for="settingPrimaryColor">Primary Color (Theme)</label>
-                    <input type="color" id="settingPrimaryColor" value="#26A69A" style="height: 50px; cursor: pointer;">
-                </div>
-                
-                <div style="border-top: 1px solid #ddd; margin: 0.5rem 0;"></div>
-                <h3 style="font-size: 1rem; color: #666;">SMS Gateway API Configuration (Pulse SDK)</h3>
-                <div class="form-group">
-                    <label for="settingGatewayApiKey">API Key</label>
-                    <input type="password" id="settingGatewayApiKey" placeholder="Enter SMS Gateway API Key">
-                </div>
-                <div class="form-group">
-                    <label for="settingGatewayDeviceId">Device ID (Gateway)</label>
-                    <input type="text" id="settingGatewayDeviceId" placeholder="Enter Device ID">
-                </div>
-
-                <div style="border-top: 1px solid #ddd; margin: 0.5rem 0;"></div>
-                <h3 style="font-size: 1rem; color: #666;">Default Admin Credentials</h3>
-                <div class="form-group">
-                    <label for="settingAdminUser">Admin Username/Email</label>
-                    <input type="text" id="settingAdminUser" placeholder="admin">
-                </div>
-                <div class="form-group">
-                    <label for="settingAdminPass">Admin Password</label>
-                    <input type="text" id="settingAdminPass" placeholder="password">
-                </div>
-                <div class="form-group">
-                    <label for="settingAboutText">About Us Content</label>
-                    <textarea id="settingAboutText" rows="2" placeholder="Describe your clinic..."></textarea>
-                </div>
-                <button type="submit" class="btn-primary">Save Changes</button>
-            </form>
-        </div>
-    </div>
-
-    <footer>
-        <p id="footerCopyright">&copy; 2026 My Dental Clinic - Advance Dental clinic. All rights
-            reserved.</p>
-    </footer>
-
-    <!-- Firebase Authentication & Firestore SDKs -->
+    <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-
-    <script src="phoneUtils.js?v=2.3"></script>
-    <script src="db-api.js?v=2.3"></script>
-    <script src="auth.js?v=2.3"></script>
-    <script src="theme-switcher.js?v=2.3"></script>
-    <script src="script.js?v=2.3" defer></script>
-
-    <!-- PWA Install Banner -->
-    <div id="pwaInstallBanner" class="pwa-banner" role="dialog" aria-label="Install App">
-        <div class="pwa-icon">D</div>
-        <div class="pwa-content">
-            <p class="pwa-title">Install My Dental Clinic</p>
-            <p id="pwaDesc" class="pwa-desc">Add to your home screen for faster access.</p>
-        </div>
-        <div class="pwa-actions">
-            <button id="pwaInstallBtn" onclick="handlePWAInstall()" class="pwa-install-btn" style="display: none;">Install</button>
-            <div id="pwaIosInstruct" style="display: none; background: #E0F2F1; padding: 6px; border-radius: 8px; color: var(--primary-color);">
-                <i class="fas fa-mobile-alt"></i>
-            </div>
-            <button onclick="dismissPWABanner()" class="pwa-close-btn" aria-label="Dismiss">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    </div>
-
-    <!-- PWA & Auto-Refresh Logic (Pulse Suite Update) -->
+    <script src="phoneUtils.js"></script>
+    <script src="db-api.js"></script>
+    <script src="script.js"></script>
     <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').then(reg => {
-                    reg.onupdatefound = () => {
-                        const installingWorker = reg.installing;
-                        installingWorker.onstatechange = () => {
-                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                // New content available; reload for auto-update
-                                window.location.reload();
+        function showSection(id) {
+            document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            if (id === 'dashboard') {
+                if (!sessionStorage.getItem('staffUser')) {
+                    const user = prompt("Staff Email:");
+                    const pass = prompt("Staff Password:");
+                    if(user && pass) {
+                        window.dbAPI.signIn(user, pass).then(res => {
+                            if(res.user) {
+                                sessionStorage.setItem('staffUser', JSON.stringify(res.user));
+                                document.getElementById('dashboard').style.display='block';
+                            } else {
+                                alert("Unauthorized");
+                                showSection('home');
                             }
-                        };
-                    };
-                }).catch(err => console.error('PWA Fail:', err));
-            });
+                        });
+                    } else { showSection('home'); }
+                }
+            }
         }
     </script>
 </body>
-
 </html>

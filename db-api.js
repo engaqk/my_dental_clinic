@@ -609,5 +609,54 @@ class DatabaseAPI {
     }
 }
 
+    // --- NEW: Multi-Seating & Payment Management ---
+
+    async getPayments(appointmentId) {
+        if (!this.useFirebase) return [];
+        try {
+            const snapshot = await this.db.collection('payments')
+                .where('appointmentId', '==', appointmentId.toString())
+                .get();
+            const payments = [];
+            snapshot.forEach(doc => payments.push({ id: doc.id, ...doc.data() }));
+            return payments;
+        } catch (error) {
+            return [];
+        }
+    }
+
+    async addPayment(payment) {
+        if (!this.useFirebase) return false;
+        try {
+            const data = {
+                ...payment,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            await this.db.collection('payments').add(data);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    async getPatientHistory(mobile) {
+        if (!this.useFirebase) return [];
+        try {
+            const snapshot = await this.db.collection('appointments')
+                .where('mobile', '==', mobile)
+                .get();
+            const history = [];
+            snapshot.forEach(doc => history.push({ id: doc.id, ...doc.data() }));
+            return history.sort((a, b) => {
+                const dateA = a.appointmentDate || a.date;
+                const dateB = b.appointmentDate || b.date;
+                return dateB.localeCompare(dateA);
+            });
+        } catch (error) {
+            return [];
+        }
+    }
+}
+
 // Export singleton instance
 window.dbAPI = new DatabaseAPI();
