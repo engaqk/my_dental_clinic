@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Map "admin" to the primary email for convenience
                 let actualUsername = username;
                 if (username.toLowerCase() === 'admin') {
-                    actualUsername = 'drashtijani1812@gmail.com';
+                    actualUsername = 'abdulqadir.galaxy53@gmail.com';
                 }
 
                 // Use Supabase authentication
@@ -72,10 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
 
                     // Sync Password: If login succeeded, update 'adminPass' in settings to match 
-                    // (This handles cases where password was reset via email but settings/fallback was old)
                     try {
-                        const localSettings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
-                        const defaultUser = localSettings.adminUser || 'drashtijani1812@gmail.com';
+                        let localSettings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
+                        const defaultUser = localSettings.adminUser || 'abdulqadir.galaxy53@gmail.com';
                         // Check if we logged in as the admin (via 'admin' alias or direct email)
                         if (username === 'admin' || username === defaultUser) {
                             if (localSettings.adminPass !== password) {
@@ -84,7 +83,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 localStorage.setItem('clinicSettings', JSON.stringify(localSettings));
                                 // Also try to sync to cloud if possible
                                 if (window.dbAPI && window.dbAPI.saveSettings) {
-                                    window.dbAPI.saveSettings(localSettings);
+                                    const fullSettings = await window.dbAPI.getSettings();
+                                    const merged = { ...fullSettings, ...localSettings, name: fullSettings.clinic_name || localSettings.name };
+                                    window.dbAPI.saveSettings(merged);
                                 }
                             }
                         }

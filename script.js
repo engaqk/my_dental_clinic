@@ -596,8 +596,8 @@ window.openSettingsModal = async function () {
     document.getElementById('settingGatewayApiKey').value = gateway.apiKey || "";
     document.getElementById('settingGatewayDeviceId').value = gateway.deviceId || "";
 
-    document.getElementById('settingAdminUser').value = settings.adminUser || "drashtijani1812@gmail.com";
-    document.getElementById('settingAdminPass').value = settings.adminPass || "drashti@123";
+    document.getElementById('settingAdminUser').value = settings.adminUser || "abdulqadir.galaxy53@gmail.com";
+    document.getElementById('settingAdminPass').value = settings.adminPass || "admin53";
     document.getElementById('settingAboutText').value = settings.aboutText || ""; // Load About Text
 
     modal.style.display = 'flex';

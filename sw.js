@@ -36,8 +36,13 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-    // Do not intercept non-GET requests or API calls
+    // 1. Do not intercept non-GET requests or API calls
     if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+        return;
+    }
+
+    // 2. Bypass Service Worker for manifest.webmanifest to avoid 401/CORS issues with some providers
+    if (event.request.url.includes('manifest.webmanifest')) {
         return;
     }
 

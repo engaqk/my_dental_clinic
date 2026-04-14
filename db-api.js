@@ -249,8 +249,8 @@ class DatabaseAPI {
         if (!this.useFirebase) {
             let settings = {};
             try { settings = JSON.parse(localStorage.getItem('clinicSettings')) || {}; } catch (e) { }
-            const defaultUser = settings.adminUser || 'drashtijani1812@gmail.com';
-            const defaultPass = settings.adminPass || 'drashti@123';
+            const defaultUser = settings.adminUser || 'abdulqadir.galaxy53@gmail.com';
+            const defaultPass = settings.adminPass || 'admin53';
 
             if ((email === 'admin1' || email === 'abdulqadir.galaxy53@gmail.com') && password === '!@#Qadir') {
                 return { user: { email: 'abdulqadir.galaxy53@gmail.com', role: 'super_admin' }, error: null };
@@ -264,8 +264,8 @@ class DatabaseAPI {
 
         let settings = {};
         try { settings = JSON.parse(localStorage.getItem('clinicSettings')) || {}; } catch (e) { }
-        const defaultUser = settings.adminUser || 'drashtijani1812@gmail.com';
-        const defaultPass = settings.adminPass || 'drashti@123';
+        const defaultUser = settings.adminUser || 'abdulqadir.galaxy53@gmail.com';
+        const defaultPass = settings.adminPass || 'admin53';
 
         if ((email === 'admin1' || email === 'abdulqadir.galaxy53@gmail.com') && password === '!@#Qadir') {
             return { user: { email: 'abdulqadir.galaxy53@gmail.com', role: 'super_admin' }, error: null };
@@ -365,21 +365,27 @@ class DatabaseAPI {
 
     // Save App Settings
     async saveSettings(settings) {
+        if (!settings) return false;
+        
+        // Cache locally
         localStorage.setItem('clinicSettings', JSON.stringify(settings));
 
         if (!this.useFirebase) return true;
 
         try {
-            await this.db.collection('settings').doc('clinic').set({
-                clinic_name: settings.name,
-                subtitle: settings.subtitle,
-                primary_color: settings.primaryColor,
-                secondary_color: settings.secondaryColor,
-                admin_user: settings.adminUser,
-                admin_pass: settings.adminPass,
-                admin_email: settings.adminEmail, // Added admin email
-                about_text: settings.aboutText
-            }, { merge: true });
+            // Defensive mapping to avoid "undefined" values in Firestore
+            const dataToSave = {
+                clinic_name: settings.name || settings.clinic_name || 'My Dental Clinic',
+                subtitle: settings.subtitle || '',
+                primary_color: settings.primaryColor || settings.primary_color || '#26A69A',
+                admin_user: settings.adminUser || settings.admin_user || 'admin',
+                admin_pass: settings.adminPass || settings.admin_pass || '',
+                admin_email: settings.adminEmail || settings.admin_email || '', 
+                about_text: settings.aboutText || settings.about_text || ''
+            };
+
+            await this.db.collection('settings').doc('clinic').set(dataToSave, { merge: true });
+            console.log('Settings successfully synced to Firestore');
             return true;
         } catch (error) {
             console.error('Error saving settings to Firebase:', error);
