@@ -185,18 +185,18 @@ function renderTimeline(history) {
                 </div>
 
                 <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-                    <button onclick="openNotesModal('${appt.id}')" class="btn-primary" style="background: #64748b; padding: 0.5rem 1rem; font-size: 0.65rem;">
+                    <button onclick="openNotesModal('${appt.id}')" class="btn-notes">
                         <i class="fas fa-notes-medical"></i> NOTES
                     </button>
-                    <button onclick="generateBill('${encodeURIComponent(JSON.stringify(appt))}')" class="btn-primary" style="background: var(--secondary); padding: 0.5rem 1rem; font-size: 0.65rem;">
+                    <button onclick="generateBill('${encodeURIComponent(JSON.stringify(appt))}')" class="btn-bill">
                         <i class="fas fa-file-invoice-dollar"></i> BILL
                     </button>
                     <button onclick="sendQuickUpdate('${appt.mobile}', 'Hi ${appt.name}, just a follow up regarding your visit for ${appt.reason}.')" 
-                        class="btn-primary" style="background: #3b82f6; padding: 0.5rem 1rem; font-size: 0.65rem; min-width: auto; width: 40px; justify-content: center;">
+                        class="btn-chat" style="min-width: auto; width: 44px; justify-content: center;">
                         <i class="fab fa-whatsapp"></i>
                     </button>
                     <button onclick="window.location.href='tel:${appt.mobile}'" 
-                        class="btn-primary" style="background: #22c55e; padding: 0.5rem 1rem; font-size: 0.65rem; min-width: auto; width: 40px; justify-content: center;">
+                        class="btn-call" style="min-width: auto; width: 44px; justify-content: center;">
                         <i class="fas fa-phone-alt"></i>
                     </button>
                 </div>

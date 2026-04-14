@@ -64,8 +64,26 @@ nav a.active::after { content:''; position:absolute; bottom:-8px; left:0; width:
 .profile-tab-btn.active { background:white; color:var(--primary); box-shadow:var(--shadow-lux); }
 
 /* POPUP ACTION BUTTONS */
-.action-grid { display:flex; gap:1.5rem; flex-wrap:wrap; margin-bottom:3.5rem; }
-.action-grid .btn-primary { padding:1rem 2.25rem; font-size:0.8rem; }
+.action-grid { display:flex; gap:1.25rem; flex-wrap:wrap; margin-bottom:3.5rem; }
+.action-grid button, .seating-card button { padding:0.85rem 1.75rem; font-size:0.75rem; border-radius:100px; font-weight:800; text-transform:uppercase; letter-spacing:0.05em; border:none; color:white; cursor:pointer; transition:var(--transition); display:inline-flex; align-items:center; gap:0.5rem; box-shadow:var(--shadow-lux); }
+
+.btn-chat { background: linear-gradient(135deg, #10B981, #059669) !important; }
+.btn-chat:hover { transform:translateY(-3px); box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4); }
+
+.btn-seating { background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important; }
+.btn-seating:hover { transform:translateY(-3px); box-shadow: 0 10px 20px -5px rgba(38, 166, 154, 0.4); }
+
+.btn-payment { background: linear-gradient(135deg, #F59E0B, #D97706) !important; }
+.btn-payment:hover { transform:translateY(-3px); box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.4); }
+
+.btn-notes { background: linear-gradient(135deg, #64748B, #475569) !important; }
+.btn-notes:hover { transform:translateY(-3px); box-shadow: 0 10px 20px -5px rgba(100, 116, 139, 0.4); }
+
+.btn-bill { background: linear-gradient(135deg, var(--secondary), #000) !important; }
+.btn-bill:hover { transform:translateY(-3px); box-shadow: 0 10px 20px -5px rgba(15, 23, 42, 0.4); }
+
+.btn-call { background: linear-gradient(135deg, #22C55E, #16A34A) !important; }
+.btn-call:hover { transform:translateY(-3px); box-shadow: 0 10px 20px -5px rgba(34, 197, 94, 0.4); }
 
 /* TIMELINE & VISIT CARDS */
 .timeline { position:relative; padding-left:3rem; border-left:2px dashed #E2E8F0; margin-left:1rem; }
