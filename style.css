@@ -1,299 +1,328 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #26A69A;        /* Vibrant Medical Teal */
-  --primary-glow: rgba(38, 166, 154, 0.4);
-  --secondary: #0F172A;      /* Luxurious Midnight */
-  --accent: #F59E0B;         /* Clinical Gold */
-  --success: #10B981;
-  --danger: #EF4444;
-  --bg-main: #F8FAFC;
-  --bg-card: #FFFFFF;
-  --text-main: #0F172A;
+  --primary: #26A69A;        
+  --primary-dark: #00695C;
+  --secondary: #0F172A;      /* Midnight */
+  --accent: #F59E0B;         /* Gold */
+  --bg-main: #FFFFFF;
+  --bg-alt: #F8FAFC;
+  --text-main: #1E293B;
   --text-muted: #64748B;
-  --radius-xl: 32px;
+  
+  /* Precision Spacing System */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-8: 3rem;
+  --s-12: 4.5rem;
+  --s-16: 6rem;
+  --s-24: 9rem;
+
+  --shadow-lux: 0 4px 6px -1px rgba(0,0,0,0.02), 0 10px 15px -3px rgba(0,0,0,0.03);
+  --shadow-deep: 0 20px 25px -5px rgba(0,0,0,0.05), 0 10px 10px -5px rgba(0,0,0,0.02);
+  --radius-xl: 40px;
   --radius-lg: 24px;
-  --radius-md: 16px;
-  --shadow-sm: 0 4px 6px -1px rgba(0,0,0,0.05);
-  --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
-  --transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --radius-md: 12px;
+  --transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Inter', sans-serif;
-  scroll-behavior: smooth;
-}
-
-body {
-  background-color: var(--bg-main);
-  color: var(--text-main);
-  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
-/* --- THE FLAWLESS HEADER --- */
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Outfit', sans-serif;
+  color: var(--secondary);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* --- THE FLAWLESS NAV & HEADER --- */
 header {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  position: sticky;
-  top: 0;
+  position: fixed;
+  top: 0; left: 0; width: 100%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(180%) blur(20px);
   z-index: 1000;
   border-bottom: 1px solid rgba(0,0,0,0.05);
-  padding: 1rem 0;
-  transition: var(--transition);
+  height: 80px;
+  display: flex;
+  align-items: center;
 }
 
 .nav-container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 var(--s-6);
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.logo-section { display: flex; align-items: center; gap: 1rem; }
-.logo-section img { height: 44px; width: auto; transition: transform 0.3s; }
-.logo-section:hover img { transform: scale(1.05); }
+.logo-section { display: flex; align-items: center; gap: var(--s-4); }
+.logo-section img { height: 48px; width: auto; }
 
-nav ul { display: flex; align-items: center; gap: 2rem; list-style: none; }
+nav ul { display: flex; align-items: center; gap: var(--s-8); list-style: none; }
 nav a {
   text-decoration: none;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  transition: var(--transition);
-  position: relative;
-}
-nav a.active { color: var(--primary); }
-nav a::after {
-  content: '';
-  position: absolute;
-  bottom: -4px; left: 0; width: 0; height: 2px;
-  background: var(--primary);
+  letter-spacing: 0.15em;
   transition: var(--transition);
 }
-nav a.active::after, nav a:hover::after { width: 100%; }
+nav a.active, nav a:hover { color: var(--primary); }
 
-/* --- PREMIUM HERO SECTION --- */
-.hero {
-  padding: 8rem 1.5rem 10rem;
-  text-align: center;
-  background: radial-gradient(circle at top right, rgba(38, 166, 154, 0.08), transparent),
-              radial-gradient(circle at bottom left, rgba(15, 23, 42, 0.03), transparent);
-}
-
-.hero-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  background: white;
-  border-radius: 100px;
-  box-shadow: var(--shadow-sm);
-  color: var(--primary);
-  font-size: 0.75rem;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  margin-bottom: 2rem;
-}
-
-.gradient-text {
-  font-family: 'Outfit', sans-serif;
-  font-size: clamp(2.5rem, 8vw, 5.5rem);
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  background: linear-gradient(135deg, var(--secondary) 20%, var(--primary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 1.5rem;
-}
-
-/* --- BUTTONS (HAPTIC READY) --- */
-.btn-primary {
+#auth-btn {
   background: var(--secondary);
   color: white;
   border: none;
-  padding: 1rem 2.5rem;
-  border-radius: 100px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 50px;
   font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   cursor: pointer;
   transition: var(--transition);
-  box-shadow: 0 10px 30px -10px rgba(15, 23, 42, 0.3);
+}
+#auth-btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+/* --- THE IMMERSIVE HERO --- */
+.hero {
+  height: 100vh;
+  min-height: 800px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  text-align: center;
+  padding-top: 80px;
+  background-image: linear-gradient(rgba(255,255,255,0.7), rgba(255,255,255,0.7)), url('hero-bg.png');
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-content {
+  max-width: 900px;
+  padding: 0 var(--s-6);
+  animation: fadeInUp 1s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.hero-label {
+  display: inline-block;
+  font-weight: 800;
+  font-size: 0.7rem;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.3em;
+  margin-bottom: var(--s-4);
+}
+
+.gradient-text {
+  font-size: clamp(3rem, 7vw, 6rem);
+  line-height: 0.95;
+  margin-bottom: var(--s-6);
+  background: linear-gradient(135deg, var(--secondary) 20%, var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-p {
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+  color: var(--text-muted);
+  max-width: 600px;
+  margin: 0 auto var(--s-8);
+  font-weight: 400;
+}
+
+.hero-actions {
+  display: flex;
+  gap: var(--s-4);
+  justify-content: center;
+}
+
+/* --- THE BUTTON ENGINE --- */
+.btn-primary, .btn-outline {
+  padding: var(--s-5) var(--s-12);
+  border-radius: 100px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: var(--transition);
+  border: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: var(--s-3);
+  box-shadow: var(--shadow-lux);
+}
+
+.btn-primary {
+  background: var(--secondary);
+  color: white;
 }
 .btn-primary:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.4);
-  background: var(--primary-dark);
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-deep);
+  background: var(--primary);
 }
-.btn-primary:active { transform: scale(0.96); }
 
-/* --- FORMS (PROFESSIONAL EMR LOOK) --- */
+.btn-outline {
+  background: transparent;
+  color: var(--secondary);
+  border: 2px solid var(--secondary);
+  box-shadow: none;
+}
+.btn-outline:hover {
+  background: var(--secondary);
+  color: white;
+  transform: translateY(-5px);
+}
+
+/* --- CLINICAL SECTIONS --- */
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--s-16) var(--s-6);
+}
+
 .appointment-form {
   background: white;
-  padding: clamp(1.5rem, 5vw, 4rem);
+  padding: var(--s-12);
   border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg);
-  max-width: 760px;
-  margin: -4rem auto 0;
+  box-shadow: var(--shadow-deep);
+  margin-top: -120px;
   position: relative;
   z-index: 10;
+  border: 1px solid rgba(0,0,0,0.03);
 }
 
 .form-group label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: block;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
-  margin-bottom: 0.75rem;
   text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: var(--s-2);
 }
 
 .form-group input, .form-group select, .form-group textarea {
   width: 100%;
-  padding: 1.15rem;
-  background: #F8FAFC;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
+  padding: var(--s-4) var(--s-5);
+  border-radius: 12px;
+  border: 1.5px solid #F1F5F9;
   font-size: 1rem;
-  font-weight: 500;
   transition: var(--transition);
+  background: #F8FAFC;
 }
 
 .form-group input:focus {
-  background: white;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 4px var(--primary-glow);
   outline: none;
+  border-color: var(--primary);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(38, 166, 154, 0.1);
 }
 
-/* --- DASHBOARD ELEMENTS --- */
+/* --- DASHBOARD LUXURY --- */
 .stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-  margin-bottom: 4rem;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--s-6);
+  margin-bottom: var(--s-12);
 }
 
 .stat-box {
-  background: white;
-  padding: 2.5rem;
+  background: var(--bg-alt);
+  padding: var(--s-8);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  text-align: center;
   transition: var(--transition);
-  border: 1px solid rgba(0,0,0,0.02);
 }
-.stat-box:hover {
-  transform: translateY(-10px);
-  box-shadow: var(--shadow-lg);
-}
+.stat-box:hover { background: white; box-shadow: var(--shadow-deep); transform: translateY(-10px); }
 
-.stat-val {
-  font-family: 'Outfit', sans-serif;
-  font-size: 3rem;
-  font-weight: 800;
-  color: var(--secondary);
-  line-height: 1;
-}
+.stat-val { font-size: 3rem; font-weight: 800; color: var(--secondary); font-family: 'Outfit'; line-height: 1; }
 
-/* --- PATIENT EXPLORER CARDS --- */
 .patient-explorer-card {
   background: white;
-  padding: 2rem;
+  padding: var(--s-6);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  transition: var(--transition);
+  box-shadow: var(--shadow-lux);
   border: 1px solid transparent;
+  transition: var(--transition);
   cursor: pointer;
 }
-.patient-explorer-card:hover {
-  transform: translateY(-5px);
-  border-color: var(--primary);
-  box-shadow: var(--shadow-lg);
-}
+.patient-explorer-card:hover { transform: scale(1.02); border-color: var(--primary); box-shadow: var(--shadow-deep); }
 
-.patient-name { font-size: 1.5rem; font-weight: 800; color: var(--secondary); font-family: 'Outfit'; }
-
-/* --- MODALS (THE FLAWLESS OVERLAY) --- */
+/* --- MODAL PRECISION --- */
 .modal {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.7);
-  backdrop-filter: blur(12px);
-  z-index: 2000;
-  padding: 1.5rem;
-  align-items: center;
-  justify-content: center;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(15px);
+  z-index: 2001;
+  align-items: center; justify-content: center;
 }
 
 .modal-content {
   background: white;
   width: 100%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
+  max-width: 700px;
   border-radius: var(--radius-xl);
-  padding: 3rem;
+  padding: var(--s-12);
   position: relative;
-  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-  animation: modalEnter 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: modalIn 0.6s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-@keyframes modalEnter {
-  from { transform: translateY(40px) scale(0.95); opacity: 0; }
-  to { transform: translateY(0) scale(1); opacity: 1; }
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.close-modal {
-  position: absolute;
-  top: 1.5rem; right: 1.5rem;
-  width: 40px; height: 40px;
-  background: #F1F5F9;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer;
-  transition: var(--transition);
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.9) translateY(40px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
-.close-modal:hover { background: #E2E8F0; transform: rotate(90deg); }
 
-/* --- PATIENT PROFILE (EMR STYLE) --- */
-.profile-modal { max-width: 1000px; padding: 0 !important; }
-.profile-header {
-  background: var(--secondary);
-  padding: 4rem 3rem;
-  color: white;
-}
-.profile-tabs { display: flex; gap: 2rem; padding: 0 3rem; background: #F8FAFC; border-bottom: 1px solid #E2E8F0; }
-.profile-tab-btn {
-  padding: 1.5rem 0;
-  font-weight: 700;
-  color: var(--text-muted);
-  border: none; background: none; cursor: pointer;
-  position: relative;
-}
-.profile-tab-btn.active { color: var(--primary); }
-.profile-tab-btn.active::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:3px; background:var(--primary); }
-
-/* --- MOBILE OPTIMIZATION --- */
-@media (max-width: 768px) {
-  .hero { padding: 5rem 1rem 6rem; }
-  .gradient-text { font-size: 3rem; }
-  .modal-content { padding: 2rem; margin: 0; border-radius: 0; height: 100%; max-height: 100%; }
-  .nav-container { flex-direction: column; gap: 1rem; }
-  nav ul { gap: 1rem; }
+/* --- MOBILE OPTIMIZATION (THE CROSS-DEVICE FLAWLESSNESS) --- */
+@media (max-width: 991px) {
+  .hero { height: auto; min-height: 700px; }
+  .nav-container { padding: 0 var(--s-4); }
+  nav ul { display: none; } /* Mobile Menu would go here */
   .stats-row { grid-template-columns: 1fr; }
-  .profile-header { padding: 3rem 1.5rem; }
+  .appointment-form { padding: var(--s-6); margin-top: -60px; border-radius: var(--radius-lg); }
+  .container { padding: var(--s-12) var(--s-4); }
+  .hero-actions { flex-direction: column; }
+  .btn-primary, .btn-outline { width: 100%; justify-content: center; padding: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .gradient-text { font-size: 2.75rem; }
+  .hero { padding-top: 120px; }
+  .modal-content { padding: var(--s-6); }
 }
