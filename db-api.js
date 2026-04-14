@@ -607,7 +607,6 @@ class DatabaseAPI {
             return false;
         }
     }
-}
 
     // --- NEW: Multi-Seating & Payment Management ---
 
