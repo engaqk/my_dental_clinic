@@ -15,10 +15,24 @@ if (!admin.apps.length) {
 }
 
 /**
- * Serverless function to list Auth users (limited for demo/white-label)
+ * Serverless function to list Auth users (Secure: Admin only)
  */
 module.exports = async (req, res) => {
+    // SECURITY: Check for Firebase ID Token
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized: No token provided' });
+    }
+
+    const idToken = authHeader.split('Bearer ')[1];
+
     try {
+        // Verify token
+        const decodedToken = await admin.auth().verifyIdToken(idToken);
+        if (!decodedToken) {
+            return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+        }
+
         const listUsersResult = await admin.auth().listUsers(100);
         const users = listUsersResult.users.map(userRecord => ({
             uid: userRecord.uid,

@@ -10,14 +10,20 @@ service cloud.firestore {
 
     // --- APPOINTMENTS RULES ---
     match /appointments/{appointmentId} {
-      allow read: if true;      // Public and staff both can read (for slot checking)
-      allow create: if true;    // Public booking
-      allow update, delete: if isStaff(); // Only staff can modify/delete
+      // Patients can read to see their own booking or check slots
+      // Staff can read all
+      allow read: if true; 
+      
+      // Anyone can book an appointment
+      allow create: if true;
+      
+      // Only staff can update status or delete
+      allow update, delete: if isStaff();
     }
 
     // --- SETTINGS RULES ---
     match /settings/clinic {
-      allow read: if true;      // Let users see clinic name/branding
+      allow read: if true;      // Let patients see clinic name/branding/colors
       allow write: if isStaff();
     }
     
@@ -34,7 +40,7 @@ service cloud.firestore {
       allow read, write: if isStaff();
     }
 
-    // --- GENERAL BACKFALL ---
+    // --- FALLBACK ---
     match /{document=**} {
       allow read, write: if isStaff();
     }

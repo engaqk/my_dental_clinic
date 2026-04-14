@@ -1,21 +1,25 @@
 {
-  "name": "My Dental Clinic",
+  "name": "My Dental Clinic Management System",
   "short_name": "MyDental",
-  "start_url": "/",
+  "start_url": "index.html",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#26A69A",
-  "description": "Professional Dental Clinic Management System",
+  "description": "Professional Dental Clinic Management and Appointment Booking System",
+  "categories": ["medical", "health", "business"],
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "https://cdn-icons-png.flaticon.com/512/1041/1041916.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

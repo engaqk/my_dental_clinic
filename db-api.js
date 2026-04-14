@@ -117,15 +117,17 @@ class DatabaseAPI {
         }
 
         try {
-            const newId = (appointment.id || Date.now()).toString();
+            console.log('Attempting to save appointment to Firestore...', appointment);
             const normalizedMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(appointment.mobile) : appointment.mobile;
             
-            await this.db.collection('appointments').doc(newId).set({
-                id: parseInt(newId) || Date.now(),
+            // Use .add() instead of .doc().set() to ensure it's treated as a new document
+            // and let Firestore generate a unique string ID.
+            const docRef = await this.db.collection('appointments').add({
+                id: appointment.id || Date.now(), // Keep numeric ID for sorting
                 name: appointment.name || 'Unknown',
                 place: appointment.place || '',
-                mobile: normalizedMobile || '',
-                phoneNumber: normalizedMobile || '',
+                mobile: normalizedMobile || appointment.mobile || '',
+                phoneNumber: normalizedMobile || appointment.mobile || '',
                 appointmentDate: appointment.appointmentDate || '',
                 appointmentTime: appointment.appointmentTime || '',
                 reason: appointment.reason || '',
@@ -135,20 +137,28 @@ class DatabaseAPI {
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
+            console.log('Successfully saved to Firestore with ID:', docRef.id);
+
             return {
-                id: newId,
+                id: appointment.id || Date.now(),
+                docId: docRef.id,
                 date: appointment.date || new Date().toLocaleDateString(),
                 appointmentDate: appointment.appointmentDate,
                 appointmentTime: appointment.appointmentTime,
                 name: appointment.name,
                 place: appointment.place || '',
                 mobile: appointment.mobile,
-                reason: appointment.reason || '',
+                reason: appointment.reason,
                 fee: appointment.fee || 0,
                 status: appointment.status || 'Pending'
             };
         } catch (error) {
-            console.error('Firebase error:', error);
+            console.error('CRITICAL: Firestore booking failed!', error);
+            if (error.code === 'permission-denied') {
+                console.error('CHECK SECURITY RULES: Public write to "appointments" might be blocked.');
+            }
+            
+            // Fallback to local storage so the user doesn't lose the booking
             let appointments = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
             const newAppointment = { ...appointment, id: Date.now() };
             appointments.push(newAppointment);
@@ -276,6 +286,17 @@ class DatabaseAPI {
             }
             // Add a friendly invalid message mimicking supabase behavior
             return { user: null, error: { message: 'Invalid username or password' } };
+        }
+    }
+
+    // Helper to get fresh ID Token for secure API calls
+    async getIdToken() {
+        if (!this.useFirebase || !this.auth.currentUser) return null;
+        try {
+            return await this.auth.currentUser.getIdToken(true);
+        } catch (error) {
+            console.error('Failed to get ID token:', error);
+            return null;
         }
     }
 
@@ -503,17 +524,24 @@ class DatabaseAPI {
 
             // Source 2: Auth Directory (via Serverless API)
             try {
-                const response = await fetch('api/get-auth-users');
-                const authUsers = await response.json();
-                if (authUsers && Array.isArray(authUsers)) {
-                    authUsers.forEach(u => {
-                        if (u.phoneNumber || u.mobile) {
-                            const normalized = window.phoneUtils.normalizePhone(u.phoneNumber || u.mobile);
-                            if (!recipientMap.has(normalized)) {
-                                recipientMap.set(normalized, { name: u.displayName || u.email || 'Auth User', mobile: normalized, source: 'Auth' });
+                const token = await this.getIdToken();
+                const response = await fetch('api/get-auth-users', {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                if (response.ok) {
+                    const authUsers = await response.json();
+                    if (authUsers && Array.isArray(authUsers)) {
+                        authUsers.forEach(u => {
+                            if (u.phoneNumber || u.mobile) {
+                                const normalized = window.phoneUtils.normalizePhone(u.phoneNumber || u.mobile);
+                                if (!recipientMap.has(normalized)) {
+                                    recipientMap.set(normalized, { name: u.displayName || u.email || 'Auth User', mobile: normalized, source: 'Auth' });
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
+                } else {
+                    console.warn('Auth directory access denied (not logged in or invalid token)');
                 }
             } catch (e) { console.warn('Auth directory fetch failed:', e); }
 

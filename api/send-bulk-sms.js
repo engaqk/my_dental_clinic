@@ -26,6 +26,22 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // SECURITY: Check for Firebase ID Token
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized: No token provided' });
+  }
+
+  const idToken = authHeader.split('Bearer ')[1];
+  try {
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    if (!decodedToken) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    }
+  } catch (authError) {
+    return res.status(401).json({ error: 'Unauthorized: Authentication failed' });
+  }
+
   const { recipients, message } = req.body;
 
   if (!recipients || !Array.isArray(recipients) || recipients.length === 0 || !message) {

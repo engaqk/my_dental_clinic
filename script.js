@@ -926,10 +926,14 @@ async function sendBroadcast() {
     btn.disabled = true;
 
     try {
+        const token = await window.dbAPI.getIdToken();
         const phones = allRecipients.map(r => r.mobile);
         const response = await fetch('/api/send-bulk-sms', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': token ? `Bearer ${token}` : ''
+            },
             body: JSON.stringify({ recipients: phones, message })
         });
 
