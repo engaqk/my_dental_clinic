@@ -584,17 +584,28 @@ class DatabaseAPI {
         }
     }
 
-    // Real-time Broadcast History Listener
-    onBroadcastHistoryChange(callback) {
-        if (!this.useFirebase) return () => {};
-        return this.db.collection('broadcast_history')
-            .orderBy('timestamp', 'desc')
-            .limit(20)
-            .onSnapshot(snapshot => {
-                const history = [];
-                snapshot.forEach(doc => history.push({ id: doc.id, ...doc.data() }));
-                callback(history);
+    // --- NEW: Clinical Examination Notes ---
+    async getClinicalNotes(appointmentId) {
+        if (!this.useFirebase) return null;
+        try {
+            const doc = await this.db.collection('clinical_notes').doc(appointmentId.toString()).get();
+            return doc.exists ? doc.data() : null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    async saveClinicalNotes(appointmentId, notes) {
+        if (!this.useFirebase) return false;
+        try {
+            await this.db.collection('clinical_notes').doc(appointmentId.toString()).set({
+                ...notes,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+            return true;
+        } catch (error) {
+            return false;
+        }
     }
 }
 

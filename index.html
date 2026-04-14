@@ -22,7 +22,9 @@
     <meta property="og:url" content="https://dr-drashti-clinic-d1.vercel.app/">
     <meta property="og:title" content="My Dental Clinic - Professional Dental Care">
     <meta property="og:description" content="Experience world-class dental and advanced care. Book your visit online with our easy scheduling system.">
-    <meta property="og:image" content="https://dr-drashti-clinic-d1.vercel.app/logo.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
@@ -146,8 +148,8 @@
             <div class="dashboard-header">
                 <h2>Staff Dashboard</h2>
                 <div style="display: flex; gap: 1rem;">
-                    <button id="broadcastBtn" onclick="showDashboardTab('broadcast')" class="btn-primary" style="background-color: #0d4b9f;">
-                        <i class="fas fa-bullhorn"></i> Bulk SMS
+                    <button id="qrBtn" onclick="showDashboardTab('qr')" class="btn-primary" style="background-color: #0d4b9f;">
+                        <i class="fas fa-qrcode"></i> Clinic QR
                     </button>
                     <button id="settingsBtn" onclick="openSettingsModal()" class="btn-primary"
                         style="background-color: #555; display: none;">
@@ -243,60 +245,16 @@
                 </div>
             </div>
 
-            <!-- Bulk SMS Tab -->
-            <div id="broadcastTab" class="dashboard-tab" style="display: none;">
-                <div class="dashboard-grid">
-                    <div class="dashboard-card">
-                        <h3>Bulk SMS Broadcast Engine</h3>
-                        <p style="color: #666; margin-bottom: 1rem;">Send mass updates to all unique patients, auth users, and marketing leads.</p>
-                        
-                        <div class="form-group" style="margin-bottom: 2rem;">
-                            <label>Broadcast Message</label>
-                            <textarea id="broadcastMessage" rows="4" placeholder="Enter message to send..."></textarea>
-                            <small id="charCount">0 characters</small>
-                        </div>
-
-                        <div style="border-top: 1px solid #eee; margin-top: 1rem; padding-top: 1rem;">
-                            <h4 style="margin-bottom: 0.5rem;">Add Manual Contact</h4>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <input type="text" id="manualContactName" placeholder="Name" style="flex: 1;">
-                                <input type="number" id="manualContactPhone" placeholder="10-digit Mobile" style="flex: 1;" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10)">
-                                <button onclick="addManualContact()" class="btn-primary" style="background: #26A69A;"><i class="fas fa-plus"></i></button>
-                            </div>
-                            <div id="manualContactError" style="color: red; font-size: 0.8rem; margin-top: 5px; display: none;"></div>
-                        </div>
-                        
-                        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                            <button onclick="previewRecipients()" class="btn-primary" style="flex: 1;">Preview Recipients</button>
-                            <button id="sendBroadcastBtn" onclick="sendBroadcast()" class="btn-primary" style="flex: 1; background: #0d4b9f;">Send Broadcast Now</button>
-                        </div>
-
-                        <div id="recipientPreview" style="margin-top: 2rem; display: none;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                <h4 style="margin: 0;">Recipients (<span id="previewCount">0</span>)</h4>
-                                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                    <label style="font-size: 0.8rem; color: #555; display: flex; align-items: center; gap: 4px;">
-                                        <input type="checkbox" id="selectAllRecipients" onclick="toggleSelectAllRecipients(this)"> Select All
-                                    </label>
-                                    <button id="bulkDeleteBtn" onclick="deleteSelectedRecipients()" class="btn-primary" style="background: #dc3545; display: none; padding: 5px 15px; font-size: 0.75rem;">🗑 Delete Selected</button>
-                                </div>
-                            </div>
-                            <!-- Grid View -->
-                            <div id="recipientsBody" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; max-height: 450px; overflow-y: auto; padding: 4px;"></div>
-                            <div class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
-                                <button id="prevPage" class="btn-primary" style="padding: 5px 15px;">Prev</button>
-                                <span id="pageInfo">Page 1 of 1</span>
-                                <button id="nextPage" class="btn-primary" style="padding: 5px 15px;">Next</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="dashboard-card">
-                        <h3>Live Broadcast History</h3>
-                        <div id="broadcastHistoryList" style="max-height: 600px; overflow-y: auto;">
-                            <!-- History items injected here -->
-                            <div style="text-align: center; color: #888; padding: 2rem;">No recent broadcasts.</div>
-                        </div>
+            <!-- Clinic QR Tab -->
+            <div id="qrTab" class="dashboard-tab" style="display: none;">
+                <div class="dashboard-grid" style="grid-template-columns: 1fr;">
+                    <div class="dashboard-card" style="text-align: center; padding: 3rem;">
+                        <h3 style="color: var(--primary-color);">Your Clinic Booking QR Code</h3>
+                        <p>Print this and put it at your reception. Patients can scan to book directly!</p>
+                        <div id="qrcode" style="display: flex; justify-content: center; margin: 2rem auto;"></div>
+                        <button onclick="window.print()" class="btn-primary" style="margin-top: 1rem;">
+                            <i class="fas fa-print"></i> Print Poster
+                        </button>
                     </div>
                 </div>
             </div>
@@ -367,6 +325,42 @@
                 </a>
                 <button onclick="closeBookingModal()" class="btn-primary" style="background-color: #999;">Done</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Clinical Notes Modal -->
+    <div id="notesModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close-modal" onclick="closeNotesModal()">&times;</span>
+            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Clinical Examination Notes</h2>
+            <form id="notesForm" style="display: flex; flex-direction: column; gap: 1.2rem;">
+                <input type="hidden" id="notesApptId">
+                <div class="form-group">
+                    <label>Soft Tissue Examination (Tongue, Palate, Gums)</label>
+                    <textarea id="noteSoftTissue" placeholder="e.g. Normal, minor ulcers, gingival inflammation..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Hard Tissue / Teeth (Missing, Cavities, Sensitivity)</label>
+                    <textarea id="noteHardTissue" placeholder="e.g. Cavity in 16, 48 Impacted, Sensitivity in lower front..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Oral Hygiene Status (Plaque, Calculus)</label>
+                    <select id="noteHygiene">
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                        <option value="Poor (Scaling Recommended)">Poor (Scaling Recommended)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Periodontal Status (Gum Health)</label>
+                    <textarea id="notePeriodontal" placeholder="e.g. Healthy, Bleeding on probing, Recession..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Radiographic Findings (X-Rays)</label>
+                    <textarea id="noteRadiographic" placeholder="e.g. Root infection in 24, Periapical radiolucency..."></textarea>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; padding: 12px;">Save Examination Report</button>
+            </form>
         </div>
     </div>
 

@@ -3,6 +3,7 @@ let myChart = null;
 document.addEventListener('DOMContentLoaded', () => {
     if (window.dbAPI) {
         loadAppointments();
+        initQRCode(); // Initialize Clinic QR
     } else {
         console.error('Database API not found! Check if db-api.js is loaded correctly.');
     }
@@ -276,6 +277,36 @@ function filterAppointments() {
     loadAppointments();
 }
 
+// NAVIGATION: Show specific dashboard tab
+function showDashboardTab(tabName) {
+    const tabs = document.querySelectorAll('.dashboard-tab');
+    tabs.forEach(tab => tab.style.display = 'none');
+    
+    // Convert 'qr' to 'qrTab', etc.
+    const fullId = tabName.endsWith('Tab') ? tabName : tabName + 'Tab';
+    const target = document.getElementById(fullId);
+    if (target) target.style.display = 'block';
+}
+
+// NEW: Initialize Clinic QR Code
+function initQRCode() {
+    const qrContainer = document.getElementById("qrcode");
+    if (!qrContainer) return;
+
+    qrContainer.innerHTML = "";
+    // URL for booking is current site origin
+    const bookingUrl = window.location.origin;
+    
+    new QRCode(qrContainer, {
+        text: bookingUrl,
+        width: 256,
+        height: 256,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+}
+
 async function loadAppointments() {
     let appointments = await window.dbAPI.getAppointments();
     const tbody = document.querySelector('#patientsTable tbody');
@@ -358,32 +389,25 @@ async function loadAppointments() {
                 </div>
                 <div class="patient-card-body">
                     <div class="patient-card-row">
-                        <span class="patient-card-label">📅 Appointment:</span>
-                        <span class="patient-card-value">${app.appointmentDate || app.date} ${app.appointmentTime ? 'at ' + formatTime12Hour(app.appointmentTime) : ''}</span>
-                    </div>
-                    <div class="patient-card-row">
-                        <span class="patient-card-label">Place:</span>
-                        <span class="patient-card-value">${app.place}</span>
+                        <span class="patient-card-label">📅 Appt:</span>
+                        <span class="patient-card-value">${app.appointmentDate || app.date} ${app.appointmentTime ? formatTime12Hour(app.appointmentTime) : ''}</span>
                     </div>
                     <div class="patient-card-row">
                         <span class="patient-card-label">Mobile:</span>
                         <span class="patient-card-value">${app.mobile}</span>
                     </div>
-                    <div class="patient-card-row">
-                        <span class="patient-card-label">Treatment:</span>
-                        <span class="patient-card-value">${app.reason}</span>
-                    </div>
                 </div>
-                <div class="patient-card-actions">
-                    <select onchange="updateStatus('${actionId}', this.value)" style="${app.status === 'Cancelled' ? 'color: red;' : ''}">
+                <div class="patient-card-actions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                    <select onchange="updateStatus('${actionId}', this.value)" style="grid-column: span 2; ${app.status === 'Cancelled' ? 'color: red;' : ''}">
                         <option value="Pending" ${app.status === 'Pending' ? 'selected' : ''}>Pending</option>
                         <option value="Completed" ${app.status === 'Completed' ? 'selected' : ''}>Completed</option>
                         <option value="Cancelled" ${app.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
                     </select>
-                    <input type="number" value="${app.fee}" id="fee-card-${actionId}" placeholder="Fee (₹)">
-                    <button onclick="updateFeeCard('${actionId}')" title="Save Fee" class="btn-primary"><i class="fas fa-save"></i></button>
-                    <a href="${calUrl}" target="_blank" title="Calendar" class="btn-primary" style="background-color: #4CAF50; text-decoration: none;"><i class="fas fa-calendar"></i></a>
-                    <button onclick="deleteAppointment('${actionId}')" title="Delete" class="btn-primary" style="background-color: #dc3545;"><i class="fas fa-trash"></i></button>
+                    <button onclick="sendWhatsApp('${encodeURIComponent(JSON.stringify(app))}')" class="btn-primary" style="background:#25D366;"><i class="fab fa-whatsapp"></i> Chat</button>
+                    <button onclick="generateBill('${encodeURIComponent(JSON.stringify(app))}')" class="btn-primary" style="background:#0d4b9f;"><i class="fas fa-file-invoice"></i> Bill</button>
+                    <button onclick="openNotesModal('${actionId}')" title="Clinical Notes" class="btn-primary" style="background:#6c757d;"><i class="fas fa-notes-medical"></i> Notes</button>
+                    <a href="${calUrl}" target="_blank" class="btn-primary" style="background-color: #4CAF50; text-align: center;"><i class="fas fa-calendar"></i></a>
+                    <button onclick="deleteAppointment('${actionId}')" class="btn-primary" style="background-color: #dc3545;"><i class="fas fa-trash"></i></button>
                 </div>
             `;
             cardsContainer.appendChild(card);
@@ -419,6 +443,9 @@ async function loadAppointments() {
                 <td>
                     <div style="display: flex; gap: 5px;">
                         <button onclick="updateFee('${actionId}')" title="Save Fee" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem;"><i class="fas fa-save"></i></button>
+                        <button onclick="sendWhatsApp('${encodeURIComponent(JSON.stringify(app))}')" title="WhatsApp" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background:#25D366;"><i class="fab fa-whatsapp"></i></button>
+                        <button onclick="generateBill('${encodeURIComponent(JSON.stringify(app))}')" title="Bill" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background:#0d4b9f;"><i class="fas fa-file-invoice"></i></button>
+                        <button onclick="openNotesModal('${actionId}')" title="Clinical Notes" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background:#6c757d;"><i class="fas fa-notes-medical"></i></button>
                         <a href="${calUrl}" target="_blank" title="Add to Calendar" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background-color: #4CAF50; text-decoration: none;"><i class="fas fa-calendar"></i></a>
                         <button onclick="deleteAppointment('${actionId}')" title="Delete" class="btn-primary" style="padding: 5px 10px; font-size: 0.8rem; background-color: #dc3545;"><i class="fas fa-trash"></i></button>
                     </div>
@@ -1120,3 +1147,122 @@ function dismissPWABanner() {
     if (banner) banner.style.display = 'none';
     sessionStorage.setItem('pwa_banner_dismissed', '1');
 }
+// --- FREE PREMIUM UTILITIES ---
+
+// 1. One-Tap WhatsApp
+function sendWhatsApp(appJson) {
+    const app = JSON.parse(decodeURIComponent(appJson));
+    const phone = window.phoneUtils.normalizePhone(app.mobile);
+    if (!phone) { alert("Invalid phone number"); return; }
+
+    const message = encodeURIComponent(`Hello ${app.name},
+This is a reminder for your appointment at My Dental Clinic.
+📅 Date: ${app.appointmentDate}
+⏰ Time: ${formatTime12Hour(app.appointmentTime)}
+Looking forward to seeing you!`);
+
+    window.open(`https://wa.me/91${phone}?text=${message}`, '_blank');
+}
+
+// 2. Client-Side PDF Billing
+function generateBill(appJson) {
+    const app = JSON.parse(decodeURIComponent(appJson));
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const settings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
+    const clinicName = settings.name || "My Dental Clinic";
+
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(38, 166, 154); // Primary color
+    doc.text(clinicName.toUpperCase(), 105, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(settings.subtitle || "Advanced Dental & Aesthetic Smile Center", 105, 28, { align: 'center' });
+
+    doc.setDrawColor(200);
+    doc.line(20, 35, 190, 35);
+
+    // Patient Info
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text(`Invoice No: INV-${app.id}`, 20, 45);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 150, 45);
+
+    doc.setFont("helvetica", "bold");
+    doc.text("BILL TO:", 20, 60);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Patient Name: ${app.name}`, 20, 67);
+    doc.text(`Mobile: +91 ${app.mobile}`, 20, 74);
+
+    // Table Header
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, 85, 170, 10, 'F');
+    doc.setFont("helvetica", "bold");
+    doc.text("Treatment Description", 25, 92);
+    doc.text("Amount (INR)", 150, 92);
+
+    // Table Content
+    doc.setFont("helvetica", "normal");
+    doc.text(app.reason || "General Dental Consultation", 25, 105);
+    doc.text(`Rs. ${app.fee || 0}/-`, 150, 105);
+
+    doc.line(20, 115, 190, 115);
+    doc.setFont("helvetica", "bold");
+    doc.text("TOTAL DUE:", 120, 125);
+    doc.text(`Rs. ${app.fee || 0}/-`, 150, 125);
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "italic");
+    doc.text("Thank you for choosing us for your dental health!", 105, 150, { align: 'center' });
+
+    doc.save(`Bill_${app.name.replace(/\s/g, '_')}.pdf`);
+}
+
+// 3. Clinical Examination Logic
+async function openNotesModal(apptId) {
+    const modal = document.getElementById('notesModal');
+    const form = document.getElementById('notesForm');
+    document.getElementById('notesApptId').value = apptId;
+
+    // Reset fields
+    form.reset();
+
+    // Fetch existing notes
+    const existing = await window.dbAPI.getClinicalNotes(apptId);
+    if (existing) {
+        document.getElementById('noteSoftTissue').value = existing.softTissue || "";
+        document.getElementById('noteHardTissue').value = existing.hardTissue || "";
+        document.getElementById('noteHygiene').value = existing.hygiene || "Good";
+        document.getElementById('notePeriodontal').value = existing.periodontal || "";
+        document.getElementById('noteRadiographic').value = existing.radiographic || "";
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeNotesModal() {
+    document.getElementById('notesModal').style.display = 'none';
+}
+
+document.getElementById('notesForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const apptId = document.getElementById('notesApptId').value;
+    const data = {
+        softTissue: document.getElementById('noteSoftTissue').value,
+        hardTissue: document.getElementById('noteHardTissue').value,
+        hygiene: document.getElementById('noteHygiene').value,
+        periodontal: document.getElementById('notePeriodontal').value,
+        radiographic: document.getElementById('noteRadiographic').value
+    };
+
+    const success = await window.dbAPI.saveClinicalNotes(apptId, data);
+    if (success) {
+        alert('Examination report saved successfully!');
+        closeNotesModal();
+    } else {
+        alert('Failed to save report. Please try again.');
+    }
+});
