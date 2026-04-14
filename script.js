@@ -159,38 +159,46 @@ function renderTimeline(history) {
 
     const totalVisits = history.length;
     
+    // Reverse sort so newest is on top
     history.sort((a,b) => (b.appointmentDate||b.date).localeCompare(a.appointmentDate||a.date)).forEach((appt, index) => {
         const visitNumber = totalVisits - index;
-        // Generate Calendar URL...
-        const title = encodeURIComponent(`Dental Seating: ${appt.name} - ${appt.reason}`);
-        const datePart = (appt.appointmentDate || "").replace(/-/g, "");
-        const timePart = (appt.appointmentTime || "11:00").replace(/:/g, "") + "00";
-        const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${datePart}T${timePart}/${datePart}T${timePart}`;
-
+        
         const item = document.createElement('div');
         item.className = 'timeline-item';
         item.innerHTML = `
             <div class="timeline-date">
-                <span style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; margin-right: 8px;">VISIT #${visitNumber}</span>
-                ${appt.appointmentDate || appt.date} ${appt.appointmentTime || ''}
+                <span class="visit-tag">VISIT #${visitNumber}</span>
+                <span>${appt.appointmentDate || appt.date} | ${appt.appointmentTime || ''}</span>
             </div>
             <div class="seating-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong>${appt.reason || 'Treatment'}</strong>
-                    <select onchange="updateStatus('${appt.id}', this.value)" style="padding: 2px 5px; font-size: 0.8rem;">
-                        <option value="Pending" ${appt.status==='Pending'?'selected':''}>Pending</option>
-                        <option value="Completed" ${appt.status==='Completed'?'selected':''}>Completed</option>
-                        <option value="Cancelled" ${appt.status==='Cancelled'?'selected':''}>Cancelled</option>
-                    </select>
+                <select class="status-select" onchange="updateStatus('${appt.id}', this.value)">
+                    <option value="Pending" ${appt.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                    <option value="Completed" ${appt.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                    <option value="Cancelled" ${appt.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                </select>
+                <h4>${appt.reason || 'General Consultation'}</h4>
+                
+                <div style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">
+                    Fee: ₹ <input type="number" value="${appt.fee || 0}" 
+                        style="width: 80px; border: none; border-bottom: 2px solid #E2E8F0; background: transparent; padding: 2px 5px; font-weight: 800; color: var(--secondary);"
+                        onchange="updateFee('${appt.id}', this.value)">
                 </div>
-                <div style="margin-top: 5px; color: var(--text-muted); font-size: 0.85rem; display: flex; align-items: center; gap: 10px;">
-                    Fee: ₹<input type="number" value="${appt.fee}" onblur="updateFee('${appt.id}', this.value)" style="width: 70px; border: 1px solid #ccc; font-size: 0.8rem;">
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 10px;">
-                    <button onclick="event.stopPropagation(); openNotesModal('${appt.id}')" class="btn-primary" style="padding: 5px 10px; font-size: 0.75rem; background: #6c757d;"><i class="fas fa-notes-medical"></i> Notes</button>
-                    <button onclick="event.stopPropagation(); generateBill('${encodeURIComponent(JSON.stringify(appt))}')" class="btn-primary" style="padding: 5px 10px; font-size: 0.75rem;"><i class="fas fa-file-invoice"></i> Bill</button>
-                    <a href="${calUrl}" target="_blank" onclick="event.stopPropagation()" class="btn-primary" style="padding: 5px 10px; font-size: 0.75rem; background: #4285f4; text-decoration: none;"><i class="fas fa-calendar-plus"></i></a>
-                    <button onclick="event.stopPropagation(); sendWhatsApp('${encodeURIComponent(JSON.stringify(appt))}')" class="btn-primary" style="padding: 5px 10px; font-size: 0.75rem; background: #25D366;"><i class="fab fa-whatsapp"></i></button>
+
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <button onclick="openNotesModal('${appt.id}')" class="btn-primary" style="background: #64748b; padding: 0.5rem 1rem; font-size: 0.65rem;">
+                        <i class="fas fa-notes-medical"></i> NOTES
+                    </button>
+                    <button onclick="generateBill('${encodeURIComponent(JSON.stringify(appt))}')" class="btn-primary" style="background: var(--secondary); padding: 0.5rem 1rem; font-size: 0.65rem;">
+                        <i class="fas fa-file-invoice-dollar"></i> BILL
+                    </button>
+                    <button onclick="sendQuickUpdate('${appt.mobile}', 'Hi ${appt.name}, just a follow up regarding your visit for ${appt.reason}.')" 
+                        class="btn-primary" style="background: #3b82f6; padding: 0.5rem 1rem; font-size: 0.65rem; min-width: auto; width: 40px; justify-content: center;">
+                        <i class="fab fa-whatsapp"></i>
+                    </button>
+                    <button onclick="window.location.href='tel:${appt.mobile}'" 
+                        class="btn-primary" style="background: #22c55e; padding: 0.5rem 1rem; font-size: 0.65rem; min-width: auto; width: 40px; justify-content: center;">
+                        <i class="fas fa-phone-alt"></i>
+                    </button>
                 </div>
             </div>
         `;

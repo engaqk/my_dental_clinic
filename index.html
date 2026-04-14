@@ -202,19 +202,19 @@
             <div class="profile-header">
                 <h2 id="profileName">Loading...</h2>
                 <p id="profileMeta">Mobile: Loading...</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem;">
-                    <button onclick="quickWhatsApp()" class="btn-primary" style="background: #25D366; border: none; font-size: 0.8rem; padding: 0.6rem 1.2rem;">
+                <div class="action-grid" style="margin-top: 1.5rem;">
+                    <button onclick="quickWhatsApp()" class="btn-primary" style="background: #25D366; border: none;">
                         <i class="fab fa-whatsapp"></i> Chat
                     </button>
-                    <button onclick="openBookingForCurrentPatient()" class="btn-primary" style="background: var(--primary); border: none; font-size: 0.8rem; padding: 0.6rem 1.2rem;">
+                    <button onclick="openBookingForCurrentPatient()" class="btn-primary" style="background: var(--primary); border: none;">
                         <i class="fas fa-calendar-plus"></i> Next Seating
                     </button>
-                    <button onclick="showQuickPayment()" class="btn-primary" style="background: var(--accent); color: white; border: none; font-size: 0.8rem; padding: 0.6rem 1.2rem;">
+                    <button onclick="showQuickPayment()" class="btn-primary" style="background: var(--accent); color: white; border: none;">
                         <i class="fas fa-rupee-sign"></i> Payment
                     </button>
                 </div>
             </div>
-            <div class="profile-tabs">
+            <div class="tab-container">
                 <button class="profile-tab-btn active" onclick="switchProfileTab('timeline')">Clinical History</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('finances')">Financial Health</button>
             </div>
@@ -244,58 +244,72 @@
         </div>
     </div>
 
-    <!-- Notes Modal -->
+    <!-- Notes Modal (Premium Clinical Assessment) -->
     <div id="notesModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 700px;">
             <span class="close-modal" onclick="closeNotesModal()">&times;</span>
-            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Examination Report</h2>
-            <form id="notesForm" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="margin-bottom: 2rem; text-align: center;">
+                <span class="hero-label">CLINICAL EXAM</span>
+                <h2 style="font-family: 'Outfit'; font-weight: 800; font-size: 2rem; margin:0;">Treatment Assessment</h2>
+            </div>
+            <form id="notesForm">
                 <input type="hidden" id="notesApptId">
-                <div class="form-group"><label>Soft Tissue</label><textarea id="noteSoftTissue"></textarea></div>
-                <div class="form-group"><label>Hard Tissue</label><textarea id="noteHardTissue"></textarea></div>
-                <div class="form-group"><label>Oral Hygiene</label><select id="noteHygiene"><option>Good</option><option>Fair</option><option>Poor</option></select></div>
-                <div class="form-group"><label>Periodontal</label><textarea id="notePeriodontal"></textarea></div>
-                <div class="form-group"><label>Radiographic</label><textarea id="noteRadiographic"></textarea></div>
-                <button type="submit" class="btn-primary" style="width:100%">Save Report</button>
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group"><label>Soft Tissue</label><textarea id="noteSoftTissue" rows="2"></textarea></div>
+                    <div class="form-group"><label>Hard Tissue</label><textarea id="noteHardTissue" rows="2"></textarea></div>
+                    <div class="form-group"><label>Oral Hygiene</label><select id="noteHygiene"><option>Good</option><option>Fair</option><option>Poor</option></select></div>
+                    <div class="form-group"><label>Periodontal</label><textarea id="notePeriodontal" rows="2"></textarea></div>
+                </div>
+                <div class="form-group"><label>Radiographic Analysis</label><textarea id="noteRadiographic" rows="3"></textarea></div>
+                <button type="submit" class="btn-primary" style="margin-top: 1rem;"><i class="fas fa-save"></i> Save Assessment</button>
             </form>
         </div>
     </div>
 
     <!-- Login Modal -->
     <div id="loginModal" class="modal">
-        <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-content" style="max-width: 450px;">
             <span class="close-modal" id="closeLogin">&times;</span>
-                    <div id="loginError" style="color: #dc3545; font-size: 0.85rem; text-align: center; display: none; margin-bottom: 1rem;">Invalid username or password.</div>
-                    <form id="loginForm" style="display: flex; flex-direction: column; gap: 1.2rem;">
+            <div style="text-align: center; margin-bottom: 2.5rem;">
+                <span class="hero-label">AUTHENTICATION</span>
+                <h2 style="font-family: 'Outfit'; margin:0;">Staff Access</h2>
+            </div>
+            <div id="loginError" style="color: #dc3545; font-size: 0.85rem; text-align: center; display: none; margin-bottom: 1.5rem;">Invalid username or password.</div>
+            <form id="loginForm">
                 <div class="form-group">
-                    <label>Email / Username</label>
+                    <label>Professional ID</label>
                     <input type="text" id="username" required placeholder="admin@example.com">
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
+                    <label>Secure Key</label>
                     <input type="password" id="password" required>
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; font-weight: 700;">PROCEED TO DASHBOARD</button>
+                <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">ACCESS DASHBOARD</button>
             </form>
         </div>
     </div>
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-content" style="max-width: 700px;">
             <span class="close-modal" onclick="document.getElementById('settingsModal').style.display='none'">&times;</span>
-            <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Clinic Settings</h2>
-            <form id="settingsForm" style="display: flex; flex-direction: column; gap: 1rem;">
-                <!-- Super Admin Fields -->
-                <div class="form-group"><label>Clinic Name</label><input type="text" id="settingClinicName"></div>
-                <div class="form-group"><label>Slogan</label><input type="text" id="settingSubtitle"></div>
-                <!-- Admin Users (Hidden for normal admin, shown for Super Admin) -->
-                <div id="superAdminFields" style="border-top: 1px solid #eee; padding-top: 1rem;">
-                    <h3 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--accent-color);">Administrative Sync</h3>
-                    <div class="form-group"><label>Admin User</label><input type="text" id="settingAdminUser"></div>
-                    <div class="form-group"><label>Admin Pass</label><input type="password" id="settingAdminPass"></div>
+            <div style="text-align: center; margin-bottom: 2.5rem;">
+                <span class="hero-label">GLOBAL CONFIG</span>
+                <h2 style="font-family: 'Outfit'; margin:0;">Clinic Settings</h2>
+            </div>
+            <form id="settingsForm">
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group"><label>Clinic Branding</label><input type="text" id="settingClinicName" placeholder="Clinic Name"></div>
+                    <div class="form-group"><label>Slogan / Tagline</label><input type="text" id="settingSubtitle" placeholder="Clinical Slogan"></div>
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%;">Save Global Settings</button>
+                <div id="superAdminFields">
+                    <div class="admin-sync-title"><i class="fas fa-sync-alt"></i> Administrative Sync</div>
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="form-group"><label>Admin User</label><input type="text" id="settingAdminUser"></div>
+                        <div class="form-group"><label>Admin Pass</label><input type="password" id="settingAdminPass"></div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top: 2rem;">SAVE GLOBAL SETTINGS</button>
             </form>
         </div>
     </div>
