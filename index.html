@@ -20,7 +20,7 @@
                 <ul>
                     <li><a href="#" onclick="showSection('home')" id="home-nav" class="active">Home</a></li>
                     <li><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Dashboard</a></li>
-                    <li><button id="auth-btn" class="btn-primary" style="background:#0d4b9f;"><i class="fas fa-sign-in-alt"></i> Staff Login</button></li>
+                    <li><button id="auth-btn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Staff Login</button></li>
                 </ul>
             </nav>
         </div>
@@ -103,16 +103,49 @@
             </div>
         </section>
 
+        <!-- Features Section (View Services) -->
+        <section id="features" class="section" style="display:none;">
+            <div class="container">
+                <div style="text-align: center; margin-bottom: 4rem;">
+                    <span class="hero-label">PREMIUM SERVICES</span>
+                    <h2 class="gradient-text" style="font-size: 3rem;">Clinical Excellence</h2>
+                    <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Our team provides a full range of state-of-the-art dental procedures using the latest digital technology.</p>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="stat-box" style="flex-direction: column; text-align: center;">
+                        <i class="fas fa-tooth"></i>
+                        <h3>Implantology</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Permanently restore missing teeth with natural-looking implants.</p>
+                    </div>
+                    <div class="stat-box" style="flex-direction: column; text-align: center;">
+                        <i class="fas fa-smile"></i>
+                        <h3>Cosmetic Veneers</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Achieve your perfect smile with custom-shaded porcelain layers.</p>
+                    </div>
+                    <div class="stat-box" style="flex-direction: column; text-align: center;">
+                        <i class="fas fa-magic"></i>
+                        <h3>Teeth Whitening</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Professional laser whitening for a brighter smile in one session.</p>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 4rem;">
+                    <button onclick="showSection('home')" class="btn-primary">Back to Booking</button>
+                </div>
+            </div>
+        </section>
+
         <!-- Dashboard Section -->
         <section id="dashboard" class="section" style="display:none; padding-top: 2rem;">
             <div class="container">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                    <h2 style="font-weight: 800; color: var(--primary-color);">Patient Explorer</h2>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="showDashboardTab('patients')" class="btn-primary"><i class="fas fa-users"></i></button>
-                        <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent-color); color:var(--primary-color)"><i class="fas fa-qrcode"></i></button>
-                        <button id="settingsBtn" onclick="openSettingsModal()" class="btn-primary" style="background: #64748b; display: none;"><i class="fas fa-cog"></i></button>
-                        <button onclick="logout()" class="btn-primary" style="background:#dc3545;"><i class="fas fa-sign-out-alt"></i></button>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                    <h2 style="font-weight: 800; color: var(--secondary); margin:0;">Patient Explorer</h2>
+                    <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                        <button onclick="showDashboardTab('patients')" class="btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.7rem;"><i class="fas fa-users"></i> <span>Patients</span></button>
+                        <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent); color:white; padding: 0.6rem 1.2rem; font-size: 0.7rem;"><i class="fas fa-qrcode"></i> <span>Clinic QR</span></button>
+                        <button id="settingsBtn" onclick="openSettingsModal()" class="btn-primary" style="background: #64748b; display: none; padding: 0.6rem 1.2rem; font-size: 0.7rem;"><i class="fas fa-cog"></i> <span>Settings</span></button>
+                        <button onclick="logout()" class="btn-primary" style="background:#dc3545; padding: 0.6rem 1.2rem; font-size: 0.7rem;"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></button>
                     </div>
                 </div>
 

@@ -28,6 +28,14 @@ function closeForgotPasswordModal() {
 
 // Handle login form submission
 document.addEventListener('DOMContentLoaded', () => {
+    // Open login modal
+    const authBtn = document.getElementById('auth-btn');
+    if (authBtn) {
+        authBtn.addEventListener('click', () => {
+            showLoginModal();
+        });
+    }
+
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
