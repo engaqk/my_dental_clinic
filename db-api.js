@@ -8,13 +8,16 @@ class DatabaseAPI {
 
         const firebaseConfig = {
             apiKey: "AIzaSyAW9f8YvUDWpTkaJiwjXSaancicOJcKnBk",
-            authDomain: "dr-drashti-clinic-d1.firebaseapp.com",
-            projectId: "dr-drashti-clinic-d1",
-            storageBucket: "dr-drashti-clinic-d1.firebasestorage.app",
+            authDomain: "my-dental-clinic-wl.firebaseapp.com",
+            projectId: "my-dental-clinic-wl",
+            storageBucket: "my-dental-clinic-wl.firebasestorage.app",
             messagingSenderId: "222622897500",
             appId: "1:222622897500:web:6f0b52907a052d5d91dd99",
             measurementId: "G-H67S5BWGTZ"
         };
+        
+        // Initialize Analytics if needed (via compat)
+        this.analytics = null;
 
         try {
             if (typeof firebase !== 'undefined') {
