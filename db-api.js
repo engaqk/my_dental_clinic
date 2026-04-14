@@ -50,16 +50,11 @@ class DatabaseAPI {
         }
     }
 
-    // Get all appointments
+    // Get Appointments
     async getAppointments() {
         if (!this.useFirebase) {
-            try {
-                return JSON.parse(localStorage.getItem('dentalAppointments')) || [];
-            } catch (e) {
-                return [];
-            }
+            return JSON.parse(localStorage.getItem('appointments')) || [];
         }
-
         try {
             console.log('Fetching appointments from Firestore...');
             const snapshot = await this.db.collection('appointments').get();

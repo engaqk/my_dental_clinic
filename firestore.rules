@@ -1,48 +1,31 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper: Is staff logged in?
-    function isStaff() {
-      return request.auth != null;
-    }
-
-    // --- APPOINTMENTS RULES ---
+    // Appointments: Anyone can read/book, only staff can manage
     match /appointments/{appointmentId} {
-      // Patients can read to see their own booking or check slots
-      // Staff can read all
-      allow read: if true; 
-      
-      // Anyone can book an appointment
-      allow create: if true;
-      
-      // Only staff can update status or delete
-      allow update, delete: if isStaff();
+      allow read, create: if true; 
+      allow update, delete: if request.auth != null;
     }
 
-    // --- SETTINGS RULES ---
-    match /settings/clinic {
-      allow read: if true;      // Let patients see clinic name/branding/colors
-      allow write: if isStaff();
+    // Settings: Public can read, only staff can update
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Marketing Contacts & Broadcasts: Staff Only
+    match /marketing_contacts/{contactId} {
+      allow read, write: if request.auth != null;
     }
     
-    match /settings/gateway {
-      allow read, write: if isStaff(); // SECURE: Only staff can see SMS API keys
+    match /sms_broadcasts/{historyId} {
+      allow read, write: if request.auth != null;
     }
 
-    // --- MARKETING & BROADCAST RULES ---
-    match /marketing_contacts/{id} {
-      allow read, write: if isStaff();
-    }
-    
-    match /broadcast_history/{id} {
-      allow read, write: if isStaff();
-    }
-
-    // --- FALLBACK ---
+    // Default: Deny everything else
     match /{document=**} {
-      allow read, write: if isStaff();
+      allow read, write: if request.auth != null;
     }
   }
 }
