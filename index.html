@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Dental Clinic | Premium Care</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -64,42 +64,48 @@
             </div>
 
             <div class="container">
-                <div class="appointment-form">
-                    <h2 class="section-title" style="color: var(--primary-dark); margin-bottom: 2rem; text-align: center;">Schedule Your Visit</h2>
-                    <form id="bookingForm">
+            <div class="appointment-form">
+                <h2 class="section-title">Schedule Your Visit</h2>
+                <form id="bookingForm">
+                    <div class="form-group">
+                        <label><i class="fas fa-user-md"></i> Patient Full Name</label>
+                        <input type="text" id="name" required placeholder="Enter name as per records">
+                    </div>
+                    
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 0;">
                         <div class="form-group">
-                            <label><i class="fas fa-user"></i> Full Name</label>
-                            <input type="text" id="name" required placeholder="Enter patient name">
-                        </div>
-                        <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                            <div>
-                                <label><i class="fas fa-phone"></i> Mobile</label>
-                                <input type="number" id="mobile" required placeholder="WhatsApp No.">
-                            </div>
-                            <div>
-                                <label><i class="fas fa-map-marker-alt"></i> Location</label>
-                                <input type="text" id="place" required placeholder="Your City">
-                            </div>
-                        </div>
-                        <div class="form-group" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                            <div>
-                                <label><i class="fas fa-calendar-day"></i> Preferred Date</label>
-                                <input type="date" id="appointmentDate" required>
-                            </div>
-                            <div>
-                                <label><i class="fas fa-clock"></i> Select Slot</label>
-                                <select id="appointmentTime" required></select>
-                            </div>
+                            <label><i class="fab fa-whatsapp"></i> WhatsApp Contact</label>
+                            <input type="number" id="mobile" required placeholder="+91 XXXX XXX XXX">
                         </div>
                         <div class="form-group">
-                            <label><i class="fas fa-stethoscope"></i> Treatment Requirement</label>
-                            <textarea id="reason" rows="2" placeholder="Describe your dental concern..."></textarea>
+                            <label><i class="fas fa-map-marker-alt"></i> Location / City</label>
+                            <input type="text" id="place" required placeholder="e.g. Mumbai, Doha, etc.">
                         </div>
-                        <button type="submit" class="btn-primary" style="width:100%; padding:1.2rem; font-size: 1rem;">
-                            <i class="fas fa-check-circle"></i> Confirm Appointment
-                        </button>
-                    </form>
-                </div>
+                    </div>
+
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 0;">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-check"></i> Examination Date</label>
+                            <input type="date" id="appointmentDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-clock"></i> Clinical Slot</label>
+                            <select id="appointmentTime" required>
+                                <option value="">Select available timing...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label><i class="fas fa-notes-medical"></i> Clinical Concern / Treatment Requirement</label>
+                        <textarea id="reason" rows="3" placeholder="Briefly describe your dental concern..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 1.5rem;">
+                        <i class="fas fa-shield-alt"></i> SECURE APPOINTMENT
+                    </button>
+                </form>
+            </div>
             </div>
         </section>
 
@@ -141,11 +147,11 @@
             <div class="container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
                     <h2 style="font-weight: 800; color: var(--secondary); margin:0;">Patient Explorer</h2>
-                    <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                        <button onclick="showDashboardTab('patients')" class="btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.7rem;"><i class="fas fa-users"></i> <span>Patients</span></button>
-                        <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent); color:white; padding: 0.6rem 1.2rem; font-size: 0.7rem;"><i class="fas fa-qrcode"></i> <span>Clinic QR</span></button>
-                        <button id="settingsBtn" onclick="openSettingsModal()" class="btn-primary" style="background: #64748b; display: none; padding: 0.6rem 1.2rem; font-size: 0.7rem;"><i class="fas fa-cog"></i> <span>Settings</span></button>
-                        <button onclick="logout()" class="btn-primary" style="background:#dc3545; padding: 0.6rem 1.2rem; font-size: 0.7rem;"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></button>
+                    <div style="display:flex; gap:1.25rem; flex-wrap: wrap;">
+                        <button onclick="showDashboardTab('patients')" class="btn-primary"><i class="fas fa-users"></i> Patients</button>
+                        <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent);"><i class="fas fa-qrcode"></i> Clinic QR</button>
+                        <button id="settingsBtn" onclick="openSettingsModal()" class="btn-primary" style="background: #64748b; display: none;"><i class="fas fa-cog"></i> Settings</button>
+                        <button onclick="logout()" class="btn-primary" style="background:var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</button>
                     </div>
                 </div>
 
