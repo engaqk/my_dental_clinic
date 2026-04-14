@@ -125,14 +125,14 @@
                         </div>
                     </div>
                     <div class="stat-box">
-                        <i class="fas fa-hand-holding-usd"></i>
+                        <i class="fas fa-hand-holding-usd" style="color: var(--accent); background: rgba(245, 158, 11, 0.1);"></i>
                         <div>
                             <span>Revenue Settled</span>
                             <span id="totalEarnings" class="stat-val">₹0</span>
                         </div>
                     </div>
                     <div class="stat-box">
-                        <i class="fas fa-hourglass-half"></i>
+                        <i class="fas fa-hourglass-half" style="color: #64748b; background: rgba(100, 116, 139, 0.1);"></i>
                         <div>
                             <span>Pending Care</span>
                             <span id="pendingVisits" class="stat-val">0</span>
@@ -141,9 +141,9 @@
                 </div>
 
                 <div id="patientsTab" class="dashboard-tab">
-                    <div class="search-box" style="margin-bottom: 2rem;">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
                         <input type="text" id="searchInput" placeholder="Search by name, phone or city..." onkeyup="filterPatients()">
-                        <i class="fas fa-search" style="left: 20px;"></i>
                     </div>
                     <div id="patientExplorer" class="dashboard-grid"></div>
                     <div id="noDataMessage" style="text-align: center; padding: 4rem; display: none;">
