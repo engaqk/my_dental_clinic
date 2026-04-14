@@ -217,18 +217,20 @@ class DatabaseAPI {
         }
 
         try {
-            // Optimized query: Only fetch relevant slots for the day
+            // Simplified query to avoid composite index requirement
             const snapshot = await this.db.collection('appointments')
                 .where('appointmentDate', '==', date)
-                .where('status', '!=', 'Cancelled')
                 .get();
 
             const bookedSlots = [];
             snapshot.forEach(doc => {
                 const data = doc.data();
-                const time = data.appointmentTime || data.appointment_time;
-                if (time) {
-                    bookedSlots.push(time.length > 5 ? time.substring(0, 5) : time);
+                // Filter status in-memory
+                if (data.status !== 'Cancelled') {
+                    const time = data.appointmentTime || data.appointment_time;
+                    if (time) {
+                        bookedSlots.push(time.length > 5 ? time.substring(0, 5) : time);
+                    }
                 }
             });
             return bookedSlots;
