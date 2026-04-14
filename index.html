@@ -119,22 +119,22 @@
                 <div class="stats-row">
                     <div class="stat-box">
                         <i class="fas fa-user-check"></i>
-                        <div class="mini-stat">
+                        <div>
                             <span>Total Patients</span>
                             <span id="totalPatients" class="stat-val">0</span>
                         </div>
                     </div>
                     <div class="stat-box">
-                        <i class="fas fa-wallet"></i>
-                        <div class="mini-stat">
-                            <span>Settled Bill</span>
+                        <i class="fas fa-hand-holding-usd"></i>
+                        <div>
+                            <span>Revenue Settled</span>
                             <span id="totalEarnings" class="stat-val">₹0</span>
                         </div>
                     </div>
                     <div class="stat-box">
-                        <i class="fas fa-clock"></i>
-                        <div class="mini-stat">
-                            <span>Outstanding</span>
+                        <i class="fas fa-hourglass-half"></i>
+                        <div>
+                            <span>Pending Care</span>
                             <span id="pendingVisits" class="stat-val">0</span>
                         </div>
                     </div>
@@ -182,23 +182,25 @@
                 <button class="profile-tab-btn active" onclick="switchProfileTab('timeline')">Clinical History</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('finances')">Financial Health</button>
             </div>
-            <div class="profile-content">
+            <div class="profile-content" style="padding: 2rem;">
                 <div id="profileTimelineSection">
-                    <div id="patientTimeline" class="timeline"></div>
+                    <div id="patientTimeline" class="timeline" style="margin-left: 1rem;"></div>
                 </div>
                 <div id="profileFinanceSection" style="display: none;">
-                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; margin-top: 0; gap: 15px;">
-                        <div class="dashboard-card" style="background: #fdf2f2; border: none; padding: 1rem;">
-                            <h4 style="color: #9b1c1c; font-size: 0.8rem;">TOTAL BILLED</h4>
-                            <p id="totalBilledProfile" style="font-size: 1.3rem; font-weight: 800; color: #9b1c1c;">₹0</p>
+                    <div class="stats-row" style="margin-bottom: 2rem;">
+                        <div class="dashboard-card" style="border-left: 6px solid var(--danger); padding: 2rem;">
+                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted);">TOTAL CHARGED</span>
+                            <p id="totalBilledProfile" style="font-size: 2.5rem; font-weight: 900; color: var(--secondary);">₹0</p>
                         </div>
-                        <div class="dashboard-card" style="background: #f0fdf4; border: none; padding: 1rem;">
-                            <h4 style="color: #166534; font-size: 0.8rem;">TOTAL PAID</h4>
-                            <p id="totalPaidProfile" style="font-size: 1.3rem; font-weight: 800; color: #166534;">₹0</p>
+                        <div class="dashboard-card" style="border-left: 6px solid var(--success); padding: 2rem;">
+                            <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted);">TOTAL RECEIVED</span>
+                            <p id="totalPaidProfile" style="font-size: 2.5rem; font-weight: 900; color: var(--success);">₹0</p>
                         </div>
                     </div>
-                    <div class="dashboard-card" style="margin-top: 1rem;">
-                        <h4 style="margin-bottom: 1rem;">Payment History</h4>
+                    <div class="dashboard-card">
+                        <h4 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-history" style="color: var(--primary);"></i> Transaction History
+                        </h4>
                         <div id="paymentLog" class="payment-section"></div>
                     </div>
                 </div>
