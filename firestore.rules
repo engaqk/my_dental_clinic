@@ -8,10 +8,10 @@ service cloud.firestore {
       allow update, delete: if request.auth != null;
     }
 
-    // Settings: Public can read, only staff can update
+    // Settings: Public can read, only staff can update (temporary open write for 'clinic' doc for setup)
     match /settings/{docId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if docId == 'clinic' || request.auth != null;
     }
 
     // Marketing Contacts & Broadcasts: Staff Only
