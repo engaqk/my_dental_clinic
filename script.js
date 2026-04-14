@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await refreshDashboard();
         loadClinicSettings();
         initQRCode();
+        if (window.checkSuperAdmin) window.checkSuperAdmin();
     } else {
         console.error('Database API not found!');
     }
@@ -308,6 +309,51 @@ function initQRCode() {
 function logout() { sessionStorage.clear(); window.location.reload(); }
 function closeProfileModal() { document.getElementById('patientProfileModal').style.display = 'none'; refreshDashboard(); }
 function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
-function openSettingsModal() { alert('Settings loading...'); }
-function loadClinicSettings() { console.log('Settings Loaded'); }
+function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
+
+function openSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    window.dbAPI.getSettings().then(settings => {
+        document.getElementById('settingClinicName').value = settings.clinic_name || "";
+        document.getElementById('settingSubtitle').value = settings.subtitle || "";
+        document.getElementById('settingAdminUser').value = settings.admin_user || "";
+        document.getElementById('settingAdminPass').value = settings.admin_pass || "";
+        modal.style.display = 'flex';
+    });
+}
+
+document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const settings = {
+        clinic_name: document.getElementById('settingClinicName').value,
+        subtitle: document.getElementById('settingSubtitle').value,
+        admin_user: document.getElementById('settingAdminUser').value,
+        admin_pass: document.getElementById('settingAdminPass').value
+    };
+    const success = await window.dbAPI.saveSettings(settings);
+    if (success) { alert('Settings Updated Globally'); document.getElementById('settingsModal').style.display='none'; }
+});
+
+function loadClinicSettings() {
+    window.dbAPI.getSettings().then(settings => {
+        if (settings.clinic_name) document.querySelector('.logo-section').insertAdjacentHTML('beforeend', `<div class="clinic-name"><h1>${settings.clinic_name}</h1><span>${settings.subtitle}</span></div>`);
+    });
+}
+
+function checkSuperAdmin() {
+    const btn = document.getElementById('settingsBtn');
+    const fields = document.getElementById('superAdminFields');
+    const userStr = sessionStorage.getItem('staffUser');
+    const user = userStr ? JSON.parse(userStr) : null;
+
+    if (user && (user.role === 'super_admin' || user.email === 'abdulqadir.galaxy53@gmail.com')) {
+        if (btn) btn.style.display = 'inline-block';
+        if (fields) fields.style.display = 'block';
+    } else {
+        if (btn) btn.style.display = 'none';
+        if (fields) fields.style.display = 'none';
+    }
+}
+window.checkSuperAdmin = checkSuperAdmin;
+
 function showBookingModal(a) { document.getElementById('bookingModal').style.display = 'flex'; }
