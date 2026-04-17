@@ -84,7 +84,42 @@ input:focus, select:focus, textarea:focus { outline:none; background:white; bord
 @media (max-width: 768px) {
   .nav-container { padding:0 1.5rem; }
   nav ul { display:none; }
+  .hero { height: auto; min-height: 100vh; padding: 150px 0 100px; }
+  .hero-content h1 { font-size: 2.5rem !important; }
+  .hero-content p { font-size: 1rem !important; }
   .appointment-form { padding:2.5rem 1.5rem; margin-top:-80px; }
-  .section-title { font-size:2.2rem; }
-  .dashboard-grid { grid-template-columns: 1fr; }
+  .section-title { font-size:2.2rem; margin-bottom: 2rem; }
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+  .form-row { grid-template-columns: 1fr !important; gap: 0 !important; }
+  .stats-row { flex-direction: column !important; gap: 1.5rem !important; }
+  .stat-box { padding: 2rem; }
+  .modal-content { padding: 2.5rem 1.5rem; }
+}
+
+/* FORM RESPONSIVENESS AND VALIDATION */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 0; }
+.stats-row { display: flex; justify-content: space-between; gap: 2rem; }
+
+input:invalid:not(:focus):not(:placeholder-shown),
+select:invalid:not(:focus):not(:placeholder-shown),
+textarea:invalid:not(:focus):not(:placeholder-shown) {
+  border-color: var(--danger);
+  background: #fffafa;
+}
+
+input:valid:not(:focus):not(:placeholder-shown),
+select:valid:not(:focus):not(:placeholder-shown),
+textarea:valid:not(:focus):not(:placeholder-shown) {
+  border-color: #10B981;
+}
+
+.invalid-feedback {
+  color: var(--danger);
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  display: none;
+}
+input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback {
+  display: block;
 }
