@@ -23,10 +23,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 // --- DASHBOARD: PATIENT EXPLORER ---
 
 async function refreshDashboard() {
-    console.log('💎 Premium Engine: Refreshing Patient Explorer...');
+    console.log('💎 Premium Engine: Syncing Dashboard Analytics...');
+    
     const appointments = await window.dbAPI.getAppointments();
     
-    // Fetch all financial transactions
+    // Total Revenue Sync (Whole Clinic)
     let allTxns = [];
     if (window.dbAPI.db && window.dbAPI.useFirebase) {
         const snap = await window.dbAPI.db.collection('payments').get();
@@ -34,11 +35,9 @@ async function refreshDashboard() {
     } else {
         allTxns = JSON.parse(localStorage.getItem('dentalPayments')) || [];
     }
+    
+    const revenue = allTxns.filter(t => t.type === 'payment').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
-    const totalRevenue = allTxns.filter(t => t.type === 'payment').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-    const totalBilled = allTxns.filter(t => t.type === 'charge').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
-
-    // Group by Mobile
     const patientMap = new Map();
     let pendingVisits = 0;
 
@@ -61,10 +60,12 @@ async function refreshDashboard() {
     const patients = Array.from(patientMap.values());
     renderPatientExplorer(patients);
     
-    // Update Stats
+    // Force DOM Update for Totals
     if (document.getElementById('totalPatients')) document.getElementById('totalPatients').innerText = patients.length;
-    if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').innerText = '₹' + totalRevenue.toLocaleString();
+    if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').innerText = '₹' + revenue.toLocaleString();
     if (document.getElementById('pendingVisits')) document.getElementById('pendingVisits').innerText = pendingVisits;
+    
+    console.log(`📊 Sync Complete: ${patients.length} Patients | ₹${revenue} Revenue`);
 }
 
 function renderPatientExplorer(patients) {
