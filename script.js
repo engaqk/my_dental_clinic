@@ -28,8 +28,13 @@ async function refreshDashboard() {
     
     // Group by Mobile
     const patientMap = new Map();
-    let grandTotalEarnings = 0;
+    let grandTotalRevenue = 0; // Settled revenue
     let pendingVisits = 0;
+
+    // Fetch all payments to calculate settled revenue accurately
+    const allPayments = await Promise.all(appointments.map(a => window.dbAPI.getPayments(a.id)));
+    const flatPayments = allPayments.flat();
+    grandTotalRevenue = flatPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
     appointments.forEach(app => {
         const phone = app.mobile || 'Unknown';
@@ -39,15 +44,13 @@ async function refreshDashboard() {
                 name: app.name || 'Anonymous Patient',
                 place: app.place || '',
                 history: [],
-                totalBilled: 0,
-                totalPaid: 0
+                totalBilled: 0
             });
         }
         const patient = patientMap.get(phone);
         patient.history.push(app);
-        const fee = parseFloat(app.fee) || 0;
-        patient.totalBilled += fee;
-        grandTotalEarnings += fee;
+        patient.totalBilled += (parseFloat(app.fee) || 0);
+        
         if (app.status === 'Pending') pendingVisits++;
     });
 
@@ -56,7 +59,7 @@ async function refreshDashboard() {
     
     // Update Stats
     if (document.getElementById('totalPatients')) document.getElementById('totalPatients').innerText = patients.length;
-    if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').innerText = '₹' + grandTotalEarnings.toLocaleString();
+    if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').innerText = '₹' + grandTotalRevenue.toLocaleString();
     if (document.getElementById('pendingVisits')) document.getElementById('pendingVisits').innerText = pendingVisits;
 }
 
@@ -150,6 +153,7 @@ async function showQuickPayment() {
     if (success) {
         alert("Payment Recorded Successfully.");
         await renderFinances(currentPatient);
+        await refreshDashboard(); // Refresh dashboard stats
     }
 }
 
@@ -378,12 +382,19 @@ document.getElementById('settingsForm')?.addEventListener('submit', async (e) =>
         admin_pass: document.getElementById('settingAdminPass').value
     };
     const success = await window.dbAPI.saveSettings(settings);
-    if (success) { alert('Settings Updated Globally'); document.getElementById('settingsModal').style.display='none'; }
+    if (success) { 
+        alert('Settings Updated Globally'); 
+        document.getElementById('settingsModal').style.display='none'; 
+        loadClinicSettings(); // Refresh UI immediately
+    }
 });
 
 function loadClinicSettings() {
     window.dbAPI.getSettings().then(settings => {
-        if (settings.clinic_name) document.querySelector('.logo-section').insertAdjacentHTML('beforeend', `<div class="clinic-name"><h1>${settings.clinic_name}</h1><span>${settings.subtitle}</span></div>`);
+        const nameEl = document.getElementById('mainClinicName');
+        const subEl = document.getElementById('mainClinicSubtitle');
+        if (nameEl) nameEl.innerText = settings.clinic_name || 'MY DENTAL CLINIC';
+        if (subEl) subEl.innerText = settings.subtitle || 'Dental & Cosmetic Clinic';
     });
 }
 
@@ -404,6 +415,12 @@ function checkSuperAdmin() {
 window.checkSuperAdmin = checkSuperAdmin;
 
 function showBookingModal(a) { document.getElementById('bookingModal').style.display = 'flex'; }
+
+function quickWhatsApp() {
+    if (!currentPatient) return;
+    const msg = encodeURIComponent(`Hi ${currentPatient.name}, this is MY DENTAL CLINIC. We are following up regarding your treatment.`);
+    window.open(`https://wa.me/${currentPatient.mobile.replace(/\D/g,'')}?text=${msg}`, '_blank');
+}
 
 function openBookingForCurrentPatient() {
     if (!currentPatient) return;

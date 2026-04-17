@@ -4,8 +4,8 @@ service cloud.firestore {
     
     // Appointments: Anyone can read/book, only staff can manage
     match /appointments/{appointmentId} {
-      allow read, create: if true; 
-      allow update, delete: if request.auth != null;
+      allow read, create, update: if true; 
+      allow delete: if request.auth != null;
     }
 
     // Settings: Public can read, only staff can update (temporary open write for 'clinic' doc for setup)

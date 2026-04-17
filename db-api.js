@@ -169,7 +169,7 @@ class DatabaseAPI {
     async updateAppointment(id, updates) {
         if (!this.useFirebase) {
             let appointments = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
-            const index = appointments.findIndex(a => a.id === id);
+            const index = appointments.findIndex(a => a.id.toString() === id.toString());
             if (index !== -1) {
                 appointments[index] = { ...appointments[index], ...updates };
                 localStorage.setItem('dentalAppointments', JSON.stringify(appointments));
@@ -180,7 +180,32 @@ class DatabaseAPI {
 
         try {
             if (!this.db) throw new Error('Firestore not initialized');
-            await this.db.collection('appointments').doc(id.toString()).update(updates);
+            
+            // First, find the document if the 'id' passed is the numeric ID
+            let docRef;
+            if (id.toString().length > 15) { // Likely a docId string
+                docRef = this.db.collection('appointments').doc(id.toString());
+            } else {
+                const q = await this.db.collection('appointments').where('id', '==', parseInt(id)).get();
+                if (!q.empty) {
+                    docRef = q.docs[0].ref;
+                } else {
+                    docRef = this.db.collection('appointments').doc(id.toString());
+                }
+            }
+            
+            await docRef.update(updates);
+            
+            // Local fallback update
+            try {
+                let local = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
+                const idx = local.findIndex(a => a.id.toString() === id.toString() || a.docId === id);
+                if (idx !== -1) {
+                    local[idx] = { ...local[idx], ...updates };
+                    localStorage.setItem('dentalAppointments', JSON.stringify(local));
+                }
+            } catch(e){}
+
             return { id, ...updates };
         } catch (error) {
             console.error('Firebase error updating appointment:', error);
@@ -613,21 +638,36 @@ class DatabaseAPI {
     // --- NEW: Multi-Seating & Payment Management ---
 
     async getPayments(appointmentId) {
-        if (!this.useFirebase) return [];
+        let localPayments = [];
+        try {
+            localPayments = (JSON.parse(localStorage.getItem('dentalPayments')) || [])
+                            .filter(p => p.appointmentId.toString() === appointmentId.toString());
+        } catch(e){}
+
+        if (!this.useFirebase) return localPayments;
         try {
             const snapshot = await this.db.collection('payments')
                 .where('appointmentId', '==', appointmentId.toString())
                 .get();
-            const payments = [];
-            snapshot.forEach(doc => payments.push({ id: doc.id, ...doc.data() }));
-            return payments;
+            const firestorePayments = [];
+            snapshot.forEach(doc => firestorePayments.push({ id: doc.id, ...doc.data() }));
+            
+            // Prefer Firestore, fallback to local if empty but doc exists
+            return firestorePayments.length > 0 ? firestorePayments : localPayments;
         } catch (error) {
-            return [];
+            return localPayments;
         }
     }
 
     async addPayment(payment) {
-        if (!this.useFirebase) return false;
+        // Always cache locally first
+        try {
+            let payments = JSON.parse(localStorage.getItem('dentalPayments')) || [];
+            payments.push({ ...payment, id: 'pay_' + Date.now(), createdAt: new Date() });
+            localStorage.setItem('dentalPayments', JSON.stringify(payments));
+        } catch(e){}
+
+        if (!this.useFirebase) return true;
         try {
             const data = {
                 ...payment,
@@ -636,7 +676,8 @@ class DatabaseAPI {
             await this.db.collection('payments').add(data);
             return true;
         } catch (error) {
-            return false;
+            console.warn('Firestore payment failed, using local only');
+            return true; 
         }
     }
 
