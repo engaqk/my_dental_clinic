@@ -129,13 +129,17 @@ async function openPatientProfile(patient) {
 function switchProfileTab(tab) {
     const timeline = document.getElementById('profileTimelineSection');
     const finances = document.getElementById('profileFinanceSection');
+    const booking = document.getElementById('profileBookingSection');
+    
     if (timeline) timeline.style.display = tab === 'timeline' ? 'block' : 'none';
     if (finances) finances.style.display = tab === 'finances' ? 'block' : 'none';
+    if (booking) booking.style.display = tab === 'next-seating' ? 'block' : 'none';
     
     document.querySelectorAll('.profile-tab-btn').forEach(btn => {
         const text = btn.innerText.toLowerCase();
         if (tab === 'timeline') btn.classList.toggle('active', text.includes('history') || text.includes('clinical'));
         if (tab === 'finances') btn.classList.toggle('active', text.includes('financial') || text.includes('finances'));
+        if (tab === 'next-seating') btn.classList.toggle('active', text.includes('seating'));
     });
 }
 
@@ -429,14 +433,40 @@ function quickWhatsApp() {
 
 function openBookingForCurrentPatient() {
     if (!currentPatient) return;
-    showSection('home');
-    document.getElementById('name').value = currentPatient.name;
-    document.getElementById('mobile').value = currentPatient.mobile;
-    document.getElementById('place').value = currentPatient.place || "";
-    document.getElementById('reason').value = "Follow-up for " + (currentPatient.history[0]?.reason || "previous treatment");
+    switchProfileTab('next-seating');
+}
+
+async function saveProfileBooking() {
+    if (!currentPatient) return;
     
-    // Smooth scroll to form
-    setTimeout(() => {
-        document.querySelector('.appointment-form').scrollIntoView({behavior: 'smooth'});
-    }, 100);
+    const nextDate = document.getElementById('profileNextDate').value;
+    const nextTime = document.getElementById('profileNextTime').value;
+    const nextReason = document.getElementById('profileNextReason').value;
+
+    if (!nextDate) { alert("Please select a date."); return; }
+
+    const newAppt = {
+        name: currentPatient.name,
+        mobile: currentPatient.mobile,
+        place: currentPatient.place || '',
+        appointmentDate: nextDate,
+        appointmentTime: nextTime,
+        reason: nextReason,
+        fee: 0,
+        status: 'Pending'
+    };
+
+    const saved = await window.dbAPI.createAppointment(newAppt);
+    if (saved) {
+        alert("Success: Next seating scheduled.");
+        // Refresh local patient data
+        const updatedHistory = await window.dbAPI.getPatientHistory(currentPatient.mobile);
+        currentPatient.history = updatedHistory;
+        renderTimeline(currentPatient.history);
+        switchProfileTab('timeline');
+        // Clear inputs
+        document.getElementById('profileNextDate').value = '';
+        document.getElementById('profileNextReason').value = '';
+        refreshDashboard();
+    }
 }

@@ -249,6 +249,7 @@
             <div class="tab-container">
                 <button class="profile-tab-btn active" onclick="switchProfileTab('timeline')">Clinical History</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('finances')">Financial Health</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')">Next Seating</button>
             </div>
             <div class="profile-content" style="padding: 2rem;">
                 <div id="profileTimelineSection">
@@ -270,6 +271,36 @@
                             <i class="fas fa-history" style="color: var(--primary);"></i> Transaction History
                         </h4>
                         <div id="paymentLog" class="payment-section"></div>
+                    </div>
+                </div>
+
+                <!-- New Integrated Booking Section -->
+                <div id="profileBookingSection" style="display: none;">
+                    <div class="seating-card">
+                        <h3 style="margin-bottom: 1.5rem; color: var(--primary-dark);">Schedule Next Sitting</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:800;">APPOINTMENT DATE</label>
+                                <input type="date" id="profileNextDate" class="form-control" style="width:100%; height:48px; border-radius:12px; border:2px solid var(--primary-light); padding:0 1rem;">
+                            </div>
+                            <div class="form-group">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:800;">TIME SLOT</label>
+                                <select id="profileNextTime" class="form-control" style="width:100%; height:48px; border-radius:12px; border:2px solid var(--primary-light); padding:0 1rem;">
+                                    <option value="10:00 AM">10:00 AM</option>
+                                    <option value="11:00 AM">11:00 AM</option>
+                                    <option value="12:00 PM">12:00 PM</option>
+                                    <option value="05:00 PM">05:00 PM</option>
+                                    <option value="06:00 PM">06:00 PM</option>
+                                    <option value="07:00 PM">07:00 PM</option>
+                                    <option value="08:00 PM">08:00 PM</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 2rem;">
+                            <label style="display:block; margin-bottom:0.5rem; font-weight:800;">PROCEDURE / REASON</label>
+                            <input type="text" id="profileNextReason" placeholder="e.g. Scaling, Root Canal, Follow-up" class="form-control" style="width:100%; height:48px; border-radius:12px; border:2px solid var(--primary-light); padding:0 1rem;">
+                        </div>
+                        <button onclick="saveProfileBooking()" class="btn-primary" style="width:100%; height:55px; border-radius:15px; font-weight:900; font-size:1rem; text-transform:uppercase; letter-spacing:1px;">Confirm & Add Sitting</button>
                     </div>
                 </div>
             </div>

@@ -714,9 +714,9 @@ input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback { display:
 }
 
 .section { animation: fadeInUp 0.8s ease-out both; padding-top: 100px; }
-.dashboard-view { padding-top: 40px; }
+.dashboard-view { padding-top: 100px !important; }
 
 @media (min-width: 768px) {
   .section { padding-top: 120px; }
-  .dashboard-view { padding-top: 60px; }
+  .dashboard-view { padding-top: 140px !important; }
 }
