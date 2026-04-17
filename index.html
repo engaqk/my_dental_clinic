@@ -12,12 +12,15 @@
 </head>
 <body>
     <header>
-        <div class="nav-container">
+        <div class="container nav-container">
             <div class="logo-section" onclick="showSection('home')" style="cursor: pointer;">
                 <img src="logo-blue.png" alt="Clinic Logo">
+                <div class="clinic-name">
+                    <h1>DR. DRASHTI'S</h1>
+                    <span>Dental & Cosmetic Clinic</span>
+                </div>
             </div>
             
-            <!-- Hamburger Menu for Mobile -->
             <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Menu">
                 <i class="fas fa-bars"></i>
             </button>
@@ -27,7 +30,7 @@
                     <li><a href="#" onclick="showSection('home')" id="home-nav" class="active">Home</a></li>
                     <li><a href="#" onclick="showSection('features')" id="features-nav">Services</a></li>
                     <li><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Dashboard</a></li>
-                    <li><button id="auth-btn-nav" class="btn-primary auth-btn-trigger"><i class="fas fa-sign-in-alt"></i> Staff Login</button></li>
+                    <li><button id="auth-btn-nav" class="btn-primary auth-btn-trigger"><i class="fas fa-user-lock"></i> Staff Login</button></li>
                 </ul>
             </nav>
         </div>
@@ -38,125 +41,129 @@
             <div class="hero">
                 <div class="container">
                     <div class="hero-content">
-                        <span class="hero-label">WORLD-CLASS DENTISTRY</span>
-                        <h1 class="gradient-text">Excellence in Every <br>Smile.</h1>
-                        <p class="hero-p">Experience a new standard of dental care with our precision-driven treatment and state-of-the-art digital diagnostics.</p>
-                        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1.5rem;">
-                             <button onclick="document.querySelector('.appointment-form').scrollIntoView({behavior:'smooth'})" class="btn-primary">Book Now</button>
-                             <button onclick="showSection('features')" class="btn-outline">View Services</button>
+                        <span class="hero-label">Leading-Edge Dental Care</span>
+                        <h1 class="gradient-text">Excellence in Every Smile.</h1>
+                        <p class="hero-p">Experience the future of dentistry with our digital-first precision treatments in an ultra-premium, spa-like environment.</p>
+                        <div class="hero-btns">
+                             <button onclick="document.querySelector('.appointment-form').scrollIntoView({behavior:'smooth'})" class="btn-primary">Book Appointment</button>
+                             <button onclick="showSection('features')" class="btn-outline">Explore Services</button>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Features Quick View -->
-            <div class="container" style="margin-top: -6rem; margin-bottom: 6rem; position: relative; z-index: 10;">
+            <div class="container">
                 <div class="stats-row">
-                    <div class="stat-box" style="border-top: 4px solid var(--primary); background: white;">
+                    <div class="stat-box">
                         <i class="fas fa-microscope"></i>
-                        <div style="flex: 1;">
-                            <h3 style="font-family:'Outfit'; margin-bottom:0.5rem; font-size: 1.25rem;">Precision Diagnostics</h3>
-                            <p style="color:var(--text-light); font-size:0.85rem;">Advanced 3D imaging and digital impressions for absolute accuracy.</p>
+                        <div>
+                            <h3>Precision Care</h3>
+                            <p>Digital 3D diagnostics for absolute accuracy in treatment.</p>
                         </div>
                     </div>
-                    <div class="stat-box" style="border-top: 4px solid var(--accent); background: white;">
+                    <div class="stat-box">
                         <i class="fas fa-crown"></i>
-                        <div style="flex: 1;">
-                            <h3 style="font-family:'Outfit'; margin-bottom:0.5rem; font-size: 1.25rem;">Luxury Comfort</h3>
-                            <p style="color:var(--text-light); font-size:0.85rem;">Experience sedation dentistry in a curated, spa-like environment.</p>
+                        <div>
+                            <h3>Luxury Comfort</h3>
+                            <p>Experience pain-free treatments in a curated environment.</p>
                         </div>
                     </div>
-                    <div class="stat-box" style="border-top: 4px solid var(--secondary); background: white;">
+                    <div class="stat-box">
                         <i class="fas fa-user-md"></i>
-                        <div style="flex: 1;">
-                            <h3 style="font-family:'Outfit'; margin-bottom:0.5rem; font-size: 1.25rem;">Expert Care</h3>
-                            <p style="color:var(--text-light); font-size:0.85rem;">Led by world-class specialists with decades of clinical excellence.</p>
+                        <div>
+                            <h3>Expert Specialists</h3>
+                            <p>Led by clinicians with decades of international excellence.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="container">
-            <div class="appointment-form">
-                <h2 class="section-title">Schedule Your Visit</h2>
-                <form id="bookingForm">
-                    <div class="form-group">
-                        <label><i class="fas fa-user-md"></i> Patient Full Name</label>
-                        <input type="text" id="name" required placeholder="Enter name as per records" pattern="[A-Za-z\s]{3,50}" title="Only alphabets and spaces, length between 3 and 50 characters." autocomplete="name">
-                        <span class="invalid-feedback">Please provide a valid full name.</span>
+                <div class="appointment-form">
+                    <div style="text-align: center; margin-bottom: 3.5rem;">
+                        <span class="hero-label" style="margin-bottom: 1rem;">SCHEDULE</span>
+                        <h2 class="section-title" style="margin-bottom: 0;">Secure Your Slot</h2>
+                        <p style="color: var(--text-muted); margin-top: 1rem;">Fill out the form below for a priority consultation.</p>
                     </div>
-                    
-                    <div class="form-row">
+                    <form id="bookingForm">
                         <div class="form-group">
-                            <label><i class="fab fa-whatsapp"></i> WhatsApp Contact</label>
-                            <input type="tel" id="mobile" required placeholder="+91 XXXX XXX XXX" pattern="^\+?\d{10,15}$" title="Enter a valid mobile number (10-15 digits), can start with +" autocomplete="tel">
-                            <span class="invalid-feedback">A valid mobile number is required.</span>
+                            <label><i class="fas fa-user-circle"></i> Patient Full Name</label>
+                            <input type="text" id="name" required placeholder="Full Name as per records" pattern="[A-Za-z\s]{3,50}" autocomplete="name">
+                            <span class="invalid-feedback">Please enter a valid name (3-50 characters).</span>
                         </div>
-                        <div class="form-group">
-                            <label><i class="fas fa-map-marker-alt"></i> Location / City</label>
-                            <input type="text" id="place" required placeholder="e.g. Mumbai, Doha, etc." minlength="2" maxlength="50" autocomplete="address-level2">
-                            <span class="invalid-feedback">Please enter your city/location.</span>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fab fa-whatsapp"></i> WhatsApp Contact</label>
+                                <input type="tel" id="mobile" required placeholder="+91 XXXX XXX XXX" pattern="^\+?\d{10,15}$" autocomplete="tel">
+                                <span class="invalid-feedback">Enter a valid 10-15 digit mobile number.</span>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-map-marker-alt"></i> Location/City</label>
+                                <input type="text" id="place" required placeholder="e.g. Mumbai, Doha, etc." minlength="2" maxlength="50" autocomplete="address-level2">
+                                <span class="invalid-feedback">Required field.</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label><i class="fas fa-calendar-check"></i> Examination Date</label>
-                            <input type="date" id="appointmentDate" required min="">
-                            <span class="invalid-feedback">Select a valid forward date.</span>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-calendar-day"></i> Preferred Date</label>
+                                <input type="date" id="appointmentDate" required>
+                                <span class="invalid-feedback">Select a valid future date.</span>
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-clock"></i> Clinical Slot</label>
+                                <select id="appointmentTime" required>
+                                    <option value="">Checking availability...</option>
+                                </select>
+                                <span class="invalid-feedback">Please select a time.</span>
+                            </div>
                         </div>
+
                         <div class="form-group">
-                            <label><i class="fas fa-clock"></i> Clinical Slot</label>
-                            <select id="appointmentTime" required>
-                                <option value="">Select available timing...</option>
-                            </select>
-                            <span class="invalid-feedback">Please select a time slot.</span>
+                            <label><i class="fas fa-notes-medical"></i> Clinical Concern</label>
+                            <textarea id="reason" rows="3" required minlength="10" maxlength="500" placeholder="Briefly describe your treatment requirement..."></textarea>
+                            <span class="invalid-feedback">Minimum 10 characters required.</span>
                         </div>
-                    </div>
 
-                    <div class="form-group">
-                        <label><i class="fas fa-notes-medical"></i> Clinical Concern / Treatment Requirement</label>
-                        <textarea id="reason" rows="3" required minlength="10" maxlength="500" placeholder="Briefly describe your dental concern..."></textarea>
-                        <span class="invalid-feedback">Provide a brief description (min 10 characters).</span>
-                    </div>
-
-                    <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 1.5rem;">
-                        <i class="fas fa-shield-alt"></i> SECURE APPOINTMENT
-                    </button>
-                </form>
-            </div>
+                        <button type="submit" class="btn-primary" style="width: 100%; padding: 1.5rem; justify-content: center; font-size: 1.1rem; border-radius: 16px;">
+                            <i class="fas fa-check-circle"></i> REQUEST APPOINTMENT
+                        </button>
+                    </form>
+                </div>
             </div>
         </section>
 
         <!-- Features Section (View Services) -->
-        <section id="features" class="section" style="display:none;">
+        <section id="features" class="section" style="display:none; padding-top: 120px; padding-bottom: 80px;">
             <div class="container">
-                <div style="text-align: center; margin-bottom: 4rem;">
-                    <span class="hero-label">PREMIUM SERVICES</span>
-                    <h2 class="gradient-text" style="font-size: 3rem;">Clinical Excellence</h2>
-                    <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto;">Our team provides a full range of state-of-the-art dental procedures using the latest digital technology.</p>
+                <div style="text-align: center; margin-bottom: 5rem;">
+                    <span class="hero-label">OUR EXPERTISE</span>
+                    <h2 class="gradient-text" style="font-size: 3rem; margin-top: 1rem;">Specialized Treatments</h2>
+                    <p style="color: var(--text-muted); max-width: 600px; margin: 1.5rem auto 0;">World-class dental procedures performed with the latest digital integration.</p>
                 </div>
                 
                 <div class="dashboard-grid">
-                    <div class="stat-box" style="flex-direction: column; text-align: center;">
-                        <i class="fas fa-tooth"></i>
+                    <div class="stat-box" style="flex-direction: column; text-align: center; padding: 3rem 2rem;">
+                        <i class="fas fa-tooth" style="margin: 0 auto 1.5rem;"></i>
                         <h3>Implantology</h3>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Permanently restore missing teeth with natural-looking implants.</p>
+                        <p>Permanent solutions for missing teeth using titanium root technology and custom crowns.</p>
                     </div>
-                    <div class="stat-box" style="flex-direction: column; text-align: center;">
-                        <i class="fas fa-smile"></i>
-                        <h3>Cosmetic Veneers</h3>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Achieve your perfect smile with custom-shaded porcelain layers.</p>
+                    <div class="stat-box" style="flex-direction: column; text-align: center; padding: 3rem 2rem;">
+                        <i class="fas fa-award" style="margin: 0 auto 1.5rem;"></i>
+                        <h3>Smile Designing</h3>
+                        <p>Complete aesthetic overhauls using porcelain veneers and advanced digital mapping.</p>
                     </div>
-                    <div class="stat-box" style="flex-direction: column; text-align: center;">
-                        <i class="fas fa-magic"></i>
+                    <div class="stat-box" style="flex-direction: column; text-align: center; padding: 3rem 2rem;">
+                        <i class="fas fa-sparkles" style="margin: 0 auto 1.5rem;"></i>
                         <h3>Teeth Whitening</h3>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Professional laser whitening for a brighter smile in one session.</p>
+                        <p>Professional grade laser-assisted bleaching for a radiant, long-lasting transformation.</p>
                     </div>
                 </div>
                 
-                <div style="text-align: center; margin-top: 4rem;">
-                    <button onclick="showSection('home')" class="btn-primary">Back to Booking</button>
+                <div style="text-align: center; margin-top: 5rem;">
+                    <button onclick="showSection('home')" class="btn-primary">Back to Home</button>
                 </div>
             </div>
         </section>
@@ -371,6 +378,9 @@
                 const navLink = document.getElementById(id + '-nav');
                 if (navLink) navLink.classList.add('active');
                 
+                // Scroll to top for better mobile UX
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
                 // Hide mobile menu after selection
                 const mainNav = document.getElementById('mainNav');
                 if (mainNav.classList.contains('active')) {

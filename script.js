@@ -178,13 +178,12 @@ function renderTimeline(history) {
                 </select>
                 <h4>${appt.reason || 'General Consultation'}</h4>
                 
-                <div style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted); font-weight: 600;">
-                    Fee: ₹ <input type="number" value="${appt.fee || 0}" 
-                        style="width: 80px; border: none; border-bottom: 2px solid #E2E8F0; background: transparent; padding: 2px 5px; font-weight: 800; color: var(--secondary);"
-                        onchange="updateFee('${appt.id}', this.value)">
+                <div class="seating-fee-input">
+                    <label>Treatment Fee: ₹</label>
+                    <input type="number" value="${appt.fee || 0}" onchange="updateFee('${appt.id}', this.value)">
                 </div>
 
-                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                <div class="timeline-actions">
                     <button onclick="openNotesModal('${appt.id}')" class="btn-notes">
                         <i class="fas fa-notes-medical"></i> NOTES
                     </button>
@@ -192,11 +191,11 @@ function renderTimeline(history) {
                         <i class="fas fa-file-invoice-dollar"></i> BILL
                     </button>
                     <button onclick="sendQuickUpdate('${appt.mobile}', 'Hi ${appt.name}, just a follow up regarding your visit for ${appt.reason}.')" 
-                        class="btn-chat" style="min-width: auto; width: 44px; justify-content: center;">
+                        class="btn-chat-small">
                         <i class="fab fa-whatsapp"></i>
                     </button>
                     <button onclick="window.location.href='tel:${appt.mobile}'" 
-                        class="btn-call" style="min-width: auto; width: 44px; justify-content: center;">
+                        class="btn-call-small">
                         <i class="fas fa-phone-alt"></i>
                     </button>
                 </div>
