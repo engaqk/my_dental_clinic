@@ -698,6 +698,47 @@ class DatabaseAPI {
             return [];
         }
     }
+
+    // --- NEW: Patient Diagnosis History ---
+    async getDiagnoses(mobile) {
+        if (!this.useFirebase) {
+            return (JSON.parse(localStorage.getItem('dentalDiagnoses')) || [])
+                .filter(d => d.mobile === mobile);
+        }
+        try {
+            const snapshot = await this.db.collection('diagnoses')
+                .where('mobile', '==', mobile)
+                .get();
+            const diagnoses = [];
+            snapshot.forEach(doc => diagnoses.push({ id: doc.id, ...doc.data() }));
+            return diagnoses.sort((a, b) => b.timestamp - a.timestamp);
+        } catch (error) {
+            return [];
+        }
+    }
+
+    async addDiagnosis(diagnosis) {
+        const data = {
+            ...diagnosis,
+            timestamp: Date.now(),
+            createdAt: this.useFirebase ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+        };
+
+        // Local cache
+        try {
+            let local = JSON.parse(localStorage.getItem('dentalDiagnoses')) || [];
+            local.push(data);
+            localStorage.setItem('dentalDiagnoses', JSON.stringify(local));
+        } catch(e){}
+
+        if (!this.useFirebase) return true;
+        try {
+            await this.db.collection('diagnoses').add(data);
+            return true;
+        } catch (error) {
+            return true;
+        }
+    }
 }
 
 // Export singleton instance

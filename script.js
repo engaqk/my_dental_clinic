@@ -128,19 +128,24 @@ async function openPatientProfile(patient) {
 
 function switchProfileTab(tab) {
     const timeline = document.getElementById('profileTimelineSection');
+    const diagnoses = document.getElementById('profileDiagnosisSection');
     const finances = document.getElementById('profileFinanceSection');
     const booking = document.getElementById('profileBookingSection');
     
     if (timeline) timeline.style.display = tab === 'timeline' ? 'block' : 'none';
+    if (diagnoses) diagnoses.style.display = tab === 'diagnoses' ? 'block' : 'none';
     if (finances) finances.style.display = tab === 'finances' ? 'block' : 'none';
     if (booking) booking.style.display = tab === 'next-seating' ? 'block' : 'none';
     
     document.querySelectorAll('.profile-tab-btn').forEach(btn => {
         const text = btn.innerText.toLowerCase();
         if (tab === 'timeline') btn.classList.toggle('active', text.includes('history') || text.includes('clinical'));
+        if (tab === 'diagnoses') btn.classList.toggle('active', text.includes('diagnosis'));
         if (tab === 'finances') btn.classList.toggle('active', text.includes('financial') || text.includes('finances'));
         if (tab === 'next-seating') btn.classList.toggle('active', text.includes('seating'));
     });
+
+    if (tab === 'diagnoses') renderDiagnoses(currentPatient.mobile);
 }
 
 async function showQuickPayment() {
@@ -469,4 +474,59 @@ async function saveProfileBooking() {
         document.getElementById('profileNextReason').value = '';
         refreshDashboard();
     }
+}
+
+// --- DIAGNOSIS ENGINE ---
+async function renderDiagnoses(mobile) {
+    const list = document.getElementById('diagnosisList');
+    if (!list) return;
+    list.innerHTML = '<p style="text-align:center;">Loading history...</p>';
+    
+    const records = await window.dbAPI.getDiagnoses(mobile);
+    if (!records.length) {
+        list.innerHTML = '<p style="text-align:center; color:var(--text-muted); padding:2rem;">No diagnostic history recorded.</p>';
+        return;
+    }
+
+    list.innerHTML = records.map(r => `
+        <div class="seating-card" style="margin-top:0; border-left:4px solid var(--primary);">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <h4 style="margin:0; color:var(--secondary);">${r.title}</h4>
+                <span style="font-size:0.7rem; font-weight:800; color:var(--text-muted);">${new Date(r.timestamp).toLocaleDateString()}</span>
+            </div>
+            <p style="margin-top:0.5rem; font-size:0.85rem; line-height:1.5;">${r.notes || 'No detailed notes.'}</p>
+        </div>
+    `).join('');
+}
+
+async function saveNewDiagnosis() {
+    if (!currentPatient) return;
+    const title = document.getElementById('diagTitle').value.trim();
+    const notes = document.getElementById('diagNotes').value.trim();
+
+    if (!title) { alert("Please enter the diagnostic condition."); return; }
+
+    const success = await window.dbAPI.addDiagnosis({
+        mobile: currentPatient.mobile,
+        title: title,
+        notes: notes
+    });
+
+    if (success) {
+        alert("Diagnosis Saved Successfully.");
+        document.getElementById('diagTitle').value = '';
+        document.getElementById('diagNotes').value = '';
+        renderDiagnoses(currentPatient.mobile);
+    }
+}
+
+// --- PWA REGISTRATION ---
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').then(reg => {
+            console.log('💎 Premium Engine: PWA Service Worker Registered');
+        }).catch(err => {
+            console.warn('SW: Registration failed:', err);
+        });
+    });
 }
