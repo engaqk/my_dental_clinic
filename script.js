@@ -26,9 +26,20 @@ async function refreshDashboard() {
     console.log('💎 Premium Engine: Refreshing Patient Explorer...');
     const appointments = await window.dbAPI.getAppointments();
     
+    // Fetch all financial transactions
+    let allTxns = [];
+    if (window.dbAPI.db && window.dbAPI.useFirebase) {
+        const snap = await window.dbAPI.db.collection('payments').get();
+        snap.forEach(doc => allTxns.push(doc.data()));
+    } else {
+        allTxns = JSON.parse(localStorage.getItem('dentalPayments')) || [];
+    }
+
+    const totalRevenue = allTxns.filter(t => t.type === 'payment').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+    const totalBilled = allTxns.filter(t => t.type === 'charge').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+
     // Group by Mobile
     const patientMap = new Map();
-    let totalExpectedRevenue = 0; 
     let pendingVisits = 0;
 
     appointments.forEach(app => {
@@ -44,15 +55,6 @@ async function refreshDashboard() {
         }
         const patient = patientMap.get(phone);
         patient.history.push(app);
-        
-        const fee = parseFloat(app.fee) || 0;
-        patient.totalBilled += fee;
-        
-        // Sum fee for completed or pending as "Expected Revenue"
-        // If the user wants "Settled", we could fetch payments, 
-        // but for immediate feedback on "100 amount", we use fee.
-        totalExpectedRevenue += fee;
-        
         if (app.status === 'Pending') pendingVisits++;
     });
 
@@ -61,7 +63,7 @@ async function refreshDashboard() {
     
     // Update Stats
     if (document.getElementById('totalPatients')) document.getElementById('totalPatients').innerText = patients.length;
-    if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').innerText = '₹' + totalExpectedRevenue.toLocaleString();
+    if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').innerText = '₹' + totalRevenue.toLocaleString();
     if (document.getElementById('pendingVisits')) document.getElementById('pendingVisits').innerText = pendingVisits;
 }
 
@@ -148,24 +150,77 @@ function switchProfileTab(tab) {
     if (tab === 'diagnoses') renderDiagnoses(currentPatient.mobile);
 }
 
-async function showQuickPayment() {
-    const amount = prompt("Enter payment amount (₹):");
-    if (!amount || isNaN(amount)) return;
-    if (!currentPatient || !currentPatient.history[0]) {
-        alert("Select a service to link payment.");
-        return;
+let currentTxnType = 'payment';
+
+function openPaymentModal() {
+    if (!currentPatient) return;
+    document.getElementById('paymentModal').style.display = 'flex';
+    setTxnType('payment'); // Default
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').style.display = 'none';
+    document.getElementById('txnAmount').value = '';
+    document.getElementById('txnNote').value = '';
+}
+
+function setTxnType(type) {
+    currentTxnType = type;
+    const payBtn = document.getElementById('txnTypePay');
+    const billBtn = document.getElementById('txnTypeBill');
+    const label = document.getElementById('txnAmountLabel');
+    const processBtn = document.getElementById('txnProcessBtn');
+    
+    if (type === 'payment') {
+        payBtn.style.background = 'var(--primary)';
+        payBtn.style.color = 'white';
+        billBtn.style.background = 'transparent';
+        billBtn.style.color = 'var(--text-main)';
+        label.innerText = 'PAYMENT RECEIVED (₹)';
+        processBtn.innerText = 'RECORD PAYMENT';
+        processBtn.style.background = 'var(--success)';
+    } else {
+        billBtn.style.background = 'var(--primary)';
+        billBtn.style.color = 'white';
+        payBtn.style.background = 'transparent';
+        payBtn.style.color = 'var(--text-main)';
+        label.innerText = 'CHARGE / TREATMENT FEE (₹)';
+        processBtn.innerText = 'ADD CHARGE';
+        processBtn.style.background = 'var(--danger)';
     }
-    const success = await window.dbAPI.addPayment({
-        appointmentId: currentPatient.history[0].id.toString(),
+}
+
+async function processTransaction() {
+    if (!currentPatient) return;
+    const amount = parseFloat(document.getElementById('txnAmount').value);
+    const note = document.getElementById('txnNote').value;
+    
+    if (isNaN(amount) || amount <= 0) { alert("Please enter a valid amount."); return; }
+
+    const txnData = {
+        appointmentId: currentPatient.history[0]?.id.toString() || 'general',
         mobile: currentPatient.mobile,
-        amount: parseFloat(amount),
-        method: 'Recorded Payment'
-    });
-    if (success) {
-        alert("Payment Recorded Successfully.");
-        await renderFinances(currentPatient);
-        await refreshDashboard(); // Refresh dashboard stats
+        amount: amount,
+        note: note || (currentTxnType === 'payment' ? 'Clinic Payment' : 'Treatment Charge')
+    };
+
+    let success = false;
+    if (currentTxnType === 'payment') {
+        success = await window.dbAPI.addPayment(txnData);
+    } else {
+        success = await window.dbAPI.addCharge(txnData);
     }
+
+    if (success) {
+        alert(currentTxnType === 'payment' ? "Payment Recorded!" : "Charge Added!");
+        closePaymentModal();
+        await renderFinances(currentPatient);
+        refreshDashboard();
+    }
+}
+
+function showQuickPayment() {
+    openPaymentModal();
 }
 
 function renderTimeline(history) {
@@ -221,22 +276,43 @@ function renderTimeline(history) {
 }
 
 async function renderFinances(patient) {
-    let allPayments = [];
-    for (const appt of patient.history) {
-        const p = await window.dbAPI.getPayments(appt.id);
-        allPayments = allPayments.concat(p);
-    }
-    const totalPaid = allPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    if (!window.dbAPI) return;
     
-    document.getElementById('totalBilledProfile').innerText = '₹' + patient.totalBilled.toLocaleString();
+    // Fetch all financial records linked to this mobile number
+    // In a real app we'd query by mobile, for now assuming we get them via appointment IDs
+    let allTxns = [];
+    if (window.dbAPI.db && window.dbAPI.useFirebase) {
+        const payments = await window.dbAPI.db.collection('payments').get().then(snap => snap.docs.map(doc => doc.data()));
+        const revenue = payments.filter(p => p.type === 'payment').reduce((sum, p) => sum + (p.amount || 0), 0);
+    } else {
+        const local = JSON.parse(localStorage.getItem('dentalPayments')) || [];
+        allTxns = local.filter(p => p.mobile === patient.mobile);
+    }
+
+    const totalPaid = allTxns.filter(t => t.type === 'payment').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+    const totalBilled = allTxns.filter(t => t.type === 'charge').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+    
+    document.getElementById('totalBilledProfile').innerText = '₹' + totalBilled.toLocaleString();
     document.getElementById('totalPaidProfile').innerText = '₹' + totalPaid.toLocaleString();
 
     const paymentLog = document.getElementById('paymentLog');
     paymentLog.innerHTML = '';
-    allPayments.sort((a,b) => b.createdAt - a.createdAt).forEach(pay => {
+    
+    allTxns.sort((a,b) => (b.createdAt?.seconds || Date.now()) - (a.createdAt?.seconds || 0)).forEach(txn => {
         const div = document.createElement('div');
         div.className = 'payment-log-item';
-        div.innerHTML = `<span>${new Date().toLocaleDateString()}</span> <span class="amount">₹${pay.amount}</span>`;
+        div.style.borderLeft = txn.type === 'payment' ? '4px solid var(--success)' : '4px solid var(--danger)';
+        
+        const dateStr = txn.createdAt?.toDate ? txn.createdAt.toDate().toLocaleDateString() : new Date(txn.createdAt).toLocaleDateString();
+        const typeLabel = txn.type === 'payment' ? 'RECEIVED' : 'BILLED';
+        
+        div.innerHTML = `
+            <div style="display:flex; flex-direction:column;">
+                <span style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">${typeLabel} - ${dateStr}</span>
+                <span style="font-size:0.85rem; font-weight:600;">${txn.note || ''}</span>
+            </div>
+            <span class="amount" style="color: ${txn.type === 'payment' ? 'var(--success)' : 'var(--danger)'}">₹${txn.amount}</span>
+        `;
         paymentLog.appendChild(div);
     });
 }

@@ -660,25 +660,39 @@ class DatabaseAPI {
     }
 
     async addPayment(payment) {
-        // Always cache locally first
+        const data = { ...payment, type: 'payment', createdAt: new Date() };
         try {
-            let payments = JSON.parse(localStorage.getItem('dentalPayments')) || [];
-            payments.push({ ...payment, id: 'pay_' + Date.now(), createdAt: new Date() });
-            localStorage.setItem('dentalPayments', JSON.stringify(payments));
+            let local = JSON.parse(localStorage.getItem('dentalPayments')) || [];
+            local.push(data);
+            localStorage.setItem('dentalPayments', JSON.stringify(local));
         } catch(e){}
 
         if (!this.useFirebase) return true;
         try {
-            const data = {
-                ...payment,
+            await this.db.collection('payments').add({
+                ...data,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            await this.db.collection('payments').add(data);
+            });
             return true;
-        } catch (error) {
-            console.warn('Firestore payment failed, using local only');
-            return true; 
-        }
+        } catch (error) { return true; }
+    }
+
+    async addCharge(charge) {
+        const data = { ...charge, type: 'charge', createdAt: new Date() };
+        try {
+            let local = JSON.parse(localStorage.getItem('dentalPayments')) || [];
+            local.push(data);
+            localStorage.setItem('dentalPayments', JSON.stringify(local));
+        } catch(e){}
+
+        if (!this.useFirebase) return true;
+        try {
+            await this.db.collection('payments').add({
+                ...data,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return true;
+        } catch (error) { return true; }
     }
 
     async getPatientHistory(mobile) {

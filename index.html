@@ -416,6 +416,34 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="phoneUtils.js"></script>
+    <!-- Financial Transaction Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Financial Transaction</h3>
+                <span class="close" onclick="closePaymentModal()">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; background: var(--bg-body); padding: 0.5rem; border-radius: 12px;">
+                    <button id="txnTypePay" onclick="setTxnType('payment')" class="btn-primary" style="flex:1; font-size: 0.8rem;">RECEIVE PAYMENT</button>
+                    <button id="txnTypeBill" onclick="setTxnType('bill')" class="btn-primary" style="flex:1; background: transparent; color: var(--text-main); font-size: 0.8rem;">ADD CHARGE / FEE</button>
+                </div>
+
+                <div class="form-group">
+                    <label id="txnAmountLabel" style="font-weight: 800; display: block; margin-bottom: 0.5rem;">AMOUNT (₹)</label>
+                    <input type="number" id="txnAmount" placeholder="0.00" class="form-control" style="width: 100%; height: 55px; font-size: 1.5rem; text-align: center; border-radius: 15px; border: 2px solid var(--primary-light);">
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label style="font-weight: 800; display: block; margin-bottom: 0.5rem;">TRANSACTION NOTE</label>
+                    <input type="text" id="txnNote" placeholder="e.g. Tooth Extraction, Full Payment" class="form-control" style="width: 100%; border-radius: 12px; border: 2px solid var(--bg-card); padding: 1rem;">
+                </div>
+
+                <button onclick="processTransaction()" id="txnProcessBtn" class="btn-primary" style="width: 100%; height: 60px; margin-top: 2rem; font-weight: 900; font-size: 1.1rem;">RECORD TRANSACTION</button>
+            </div>
+        </div>
+    </div>
+
     <script src="db-api.js"></script>
     <script src="auth.js"></script>
     <script src="script.js"></script>
