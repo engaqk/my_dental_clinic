@@ -29,9 +29,17 @@ function closeForgotPasswordModal() {
 // Handle login form submission
 document.addEventListener('DOMContentLoaded', () => {
     // Open login modal
-    const authBtn = document.getElementById('auth-btn');
-    if (authBtn) {
-        authBtn.addEventListener('click', () => {
+    const authTriggers = document.querySelectorAll('.auth-btn-trigger');
+    authTriggers.forEach(btn => {
+        btn.addEventListener('click', () => {
+            showLoginModal();
+        });
+    });
+
+    // Fallback for legacy ID if still in use elsewhere
+    const legacyAuthBtn = document.getElementById('auth-btn');
+    if (legacyAuthBtn) {
+        legacyAuthBtn.addEventListener('click', () => {
             showLoginModal();
         });
     }

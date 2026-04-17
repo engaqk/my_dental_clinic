@@ -13,14 +13,21 @@
 <body>
     <header>
         <div class="nav-container">
-            <div class="logo-section">
+            <div class="logo-section" onclick="showSection('home')" style="cursor: pointer;">
                 <img src="logo-blue.png" alt="Clinic Logo">
             </div>
+            
+            <!-- Hamburger Menu for Mobile -->
+            <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Menu">
+                <i class="fas fa-bars"></i>
+            </button>
+
             <nav id="mainNav">
-                <ul>
+                <ul class="nav-links">
                     <li><a href="#" onclick="showSection('home')" id="home-nav" class="active">Home</a></li>
+                    <li><a href="#" onclick="showSection('features')" id="features-nav">Services</a></li>
                     <li><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Dashboard</a></li>
-                    <li><button id="auth-btn" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Staff Login</button></li>
+                    <li><button id="auth-btn-nav" class="btn-primary auth-btn-trigger"><i class="fas fa-sign-in-alt"></i> Staff Login</button></li>
                 </ul>
             </nav>
         </div>
@@ -363,8 +370,22 @@
                 document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
                 const navLink = document.getElementById(id + '-nav');
                 if (navLink) navLink.classList.add('active');
+                
+                // Hide mobile menu after selection
+                const mainNav = document.getElementById('mainNav');
+                if (mainNav.classList.contains('active')) {
+                    mainNav.classList.remove('active');
+                    document.getElementById('mobileMenuBtn').innerHTML = '<i class="fas fa-bars"></i>';
+                }
             }
         }
+
+        // Mobile Menu Toggle
+        document.getElementById('mobileMenuBtn').addEventListener('click', function() {
+            const mainNav = document.getElementById('mainNav');
+            mainNav.classList.toggle('active');
+            this.innerHTML = mainNav.classList.contains('active') ? '<i class="fas fa-times"></i>' : '<i class="fas fa-bars"></i>';
+        });
 
         // Set min date for appointment to today
         const today = new Date().toISOString().split('T')[0];
