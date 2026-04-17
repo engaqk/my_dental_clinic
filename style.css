@@ -429,8 +429,12 @@ nav a.active { color: var(--primary); }
   margin-bottom: 60px;
 }
 
+/* Fix for dashboard view where hero is not present */
+.dashboard-view .stats-row { margin-top: 0; }
+
 @media (min-width: 768px) {
   .stats-row { grid-template-columns: repeat(3, 1fr); margin-top: -80px; }
+  .dashboard-view .stats-row { margin-top: 0; }
 }
 
 .stat-box {
@@ -709,4 +713,10 @@ input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback { display:
   to { opacity: 1; transform: translateY(0); }
 }
 
-.section { animation: fadeInUp 0.8s ease-out both; }
+.section { animation: fadeInUp 0.8s ease-out both; padding-top: 100px; }
+.dashboard-view { padding-top: 40px; }
+
+@media (min-width: 768px) {
+  .section { padding-top: 120px; }
+  .dashboard-view { padding-top: 60px; }
+}

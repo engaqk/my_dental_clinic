@@ -403,15 +403,18 @@ function loadClinicSettings() {
 function checkSuperAdmin() {
     const btn = document.getElementById('settingsBtn');
     const fields = document.getElementById('superAdminFields');
+    const logoutNav = document.getElementById('logout-nav-item');
     const userStr = sessionStorage.getItem('staffUser');
     const user = userStr ? JSON.parse(userStr) : null;
 
     if (user && (user.role === 'super_admin' || user.role === 'admin' || user.email === 'abdulqadir.galaxy53@gmail.com')) {
         if (btn) btn.style.display = 'inline-block';
         if (fields) fields.style.display = 'block';
+        if (logoutNav) logoutNav.style.display = 'block';
     } else {
         if (btn) btn.style.display = 'none';
         if (fields) fields.style.display = 'none';
+        if (logoutNav) logoutNav.style.display = 'none';
     }
 }
 window.checkSuperAdmin = checkSuperAdmin;

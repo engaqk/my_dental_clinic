@@ -26,10 +26,11 @@
             </button>
 
             <nav id="mainNav">
-                <ul class="nav-links">
+                <ul class="nav-links" id="navLinks">
                     <li><a href="#" onclick="showSection('home')" id="home-nav" class="active">Home</a></li>
                     <li><a href="#" onclick="showSection('features')" id="features-nav">Services</a></li>
-                    <li><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Clinical Portal</a></li>
+                    <li id="portal-nav-item"><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Clinical Portal</a></li>
+                    <li id="logout-nav-item" style="display: none;"><a href="#" onclick="logout()" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
         </div>
@@ -168,15 +169,15 @@
         </section>
 
         <!-- Dashboard Section -->
-        <section id="dashboard" class="section" style="display:none; padding-top: 2rem;">
+        <section id="dashboard" class="section dashboard-view" style="display:none;">
             <div class="container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
                     <h2 style="font-weight: 800; color: var(--secondary); margin:0;">Patient Explorer</h2>
-                    <div style="display:flex; gap:1.25rem; flex-wrap: wrap;">
-                        <button onclick="showDashboardTab('patients')" class="btn-primary"><i class="fas fa-users"></i> Patients</button>
-                        <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent);"><i class="fas fa-qrcode"></i> Clinic QR</button>
-                        <button id="settingsBtn" onclick="openSettingsModal()" class="btn-primary" style="background: #64748b; display: none;"><i class="fas fa-cog"></i> Settings</button>
-                        <button onclick="logout()" class="btn-primary" style="background:var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                    <div style="display:flex; gap:0.75rem; flex-wrap: wrap;">
+                        <button onclick="showDashboardTab('patients')" class="btn-primary" title="Patient Database"><i class="fas fa-users"></i> Records</button>
+                        <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent);" title="Get Booking QR"><i class="fas fa-qrcode"></i> QR</button>
+                        <button id="settingsBtn" onclick="openSettingsModal()" class="btn-primary" style="background: var(--primary-dark); display: none;" title="Clinic Configuration"><i class="fas fa-sliders-h"></i> Settings</button>
+                        <button onclick="logout()" class="btn-primary" style="background:var(--danger);" title="Secure Exit"><i class="fas fa-power-off"></i> Exit</button>
                     </div>
                 </div>
 

@@ -80,8 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     closeLoginModal();
 
                     // Show dashboard
-                    document.getElementById('dashboard').style.display = 'block';
-                    document.getElementById('main-content').style.display = 'none';
+                    if (typeof showSection === 'function') {
+                        showSection('dashboard');
+                    } else {
+                        document.getElementById('dashboard').style.display = 'block';
+                        document.getElementById('main-content').style.display = 'none';
+                    }
 
                     if (typeof loadAppointments === 'function') {
                         loadAppointments();
@@ -178,21 +182,10 @@ function checkAuth() {
 
 // Logout function
 async function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        // Sign out from Supabase
-        await window.dbAPI.signOut();
-
-        // Clear session
-        sessionStorage.removeItem('staffLoggedIn');
-        sessionStorage.removeItem('staffUser');
-
-        // Update UI
-        document.getElementById('dashboard').style.display = 'none';
-        const stBtn = document.getElementById('settingsBtn');
-        if (stBtn) stBtn.style.display = 'none';
-
-        document.getElementById('main-content').style.display = 'block';
-        showSection('home');
+    if (confirm('Are you sure you want to end your clinical session?')) {
+        if (window.dbAPI && window.dbAPI.signOut) await window.dbAPI.signOut();
+        sessionStorage.clear();
+        window.location.reload();
     }
 }
 
