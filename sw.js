@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dental-clinic-v2'; // Incremented version
+const CACHE_NAME = 'dental-clinic-v3'; // Version 3 Production Ready
 const ASSETS = [
     './',
     'index.html',
