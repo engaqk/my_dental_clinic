@@ -28,13 +28,8 @@ async function refreshDashboard() {
     
     // Group by Mobile
     const patientMap = new Map();
-    let grandTotalRevenue = 0; // Settled revenue
+    let totalExpectedRevenue = 0; 
     let pendingVisits = 0;
-
-    // Fetch all payments to calculate settled revenue accurately
-    const allPayments = await Promise.all(appointments.map(a => window.dbAPI.getPayments(a.id)));
-    const flatPayments = allPayments.flat();
-    grandTotalRevenue = flatPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
     appointments.forEach(app => {
         const phone = app.mobile || 'Unknown';
@@ -49,7 +44,14 @@ async function refreshDashboard() {
         }
         const patient = patientMap.get(phone);
         patient.history.push(app);
-        patient.totalBilled += (parseFloat(app.fee) || 0);
+        
+        const fee = parseFloat(app.fee) || 0;
+        patient.totalBilled += fee;
+        
+        // Sum fee for completed or pending as "Expected Revenue"
+        // If the user wants "Settled", we could fetch payments, 
+        // but for immediate feedback on "100 amount", we use fee.
+        totalExpectedRevenue += fee;
         
         if (app.status === 'Pending') pendingVisits++;
     });
@@ -59,7 +61,7 @@ async function refreshDashboard() {
     
     // Update Stats
     if (document.getElementById('totalPatients')) document.getElementById('totalPatients').innerText = patients.length;
-    if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').innerText = '₹' + grandTotalRevenue.toLocaleString();
+    if (document.getElementById('totalEarnings')) document.getElementById('totalEarnings').innerText = '₹' + totalExpectedRevenue.toLocaleString();
     if (document.getElementById('pendingVisits')) document.getElementById('pendingVisits').innerText = pendingVisits;
 }
 
@@ -404,7 +406,7 @@ function checkSuperAdmin() {
     const userStr = sessionStorage.getItem('staffUser');
     const user = userStr ? JSON.parse(userStr) : null;
 
-    if (user && (user.role === 'super_admin' || user.email === 'abdulqadir.galaxy53@gmail.com')) {
+    if (user && (user.role === 'super_admin' || user.role === 'admin' || user.email === 'abdulqadir.galaxy53@gmail.com')) {
         if (btn) btn.style.display = 'inline-block';
         if (fields) fields.style.display = 'block';
     } else {
