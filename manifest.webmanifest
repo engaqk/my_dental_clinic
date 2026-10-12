@@ -1,7 +1,7 @@
 {
-  "name": "My Dental Clinic Management System",
-  "short_name": "MyDental",
-  "start_url": "index.html",
+  "name": "My Dental App",
+  "short_name": "My Dental App",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#ffffff",

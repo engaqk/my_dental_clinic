@@ -1,17 +1,26 @@
-const CACHE_NAME = 'dental-clinic-v3'; // Version 3 Production Ready
+const CACHE_NAME = 'dental-clinic-v33'; // Force reload for dashboard card sizes and SCHEDULE text
 const ASSETS = [
     './',
     'index.html',
     'style.css',
     'script.js',
+    'premium-features.js',
+    'translations.js',
     'db-api.js',
     'auth.js',
     'phoneUtils.js',
     'theme-switcher.js',
     'logo.png',
+    'logo-blue.png',
+    'logo-green.png',
+    'favicon.ico',
+    'app-icon.png',
     'manifest.webmanifest',
-    'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+    'screenshot-home.png',
+    'screenshot-services.png',
+    'screenshot-dashboard.png',
+    'screenshot-profile.png',
+    'screenshot-bill.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -31,7 +40,7 @@ self.addEventListener('activate', (event) => {
             return Promise.all(
                 keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 

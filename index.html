@@ -1,17 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<!DOCTYPE html><html lang="en"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Dental Clinic | Premium Care</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=10">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#10B981">
     <link rel="apple-touch-icon" href="app-icon.png">
+    <script src="translations.js?v=8"></script>
 </head>
 <body>
     <header>
@@ -20,10 +20,19 @@
                 <img src="logo-blue.png" alt="Clinic Logo">
                 <div class="clinic-name">
                     <h1 id="mainClinicName">MY DENTAL CLINIC</h1>
-                    <span id="mainClinicSubtitle">Dental & Cosmetic Clinic</span>
+                    <span id="mainClinicSubtitle">Dental &amp; Cosmetic Clinic</span>
                 </div>
             </div>
             
+            <div class="lang-selector-container">
+                <i class="fas fa-globe" style="color: var(--primary); margin-right: 6px; font-size: 0.9rem;"></i>
+                <select id="langSelect" onchange="changeLanguage(this.value)" class="lang-select">
+                    <option value="en">EN</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="gu">ગુજરાતી</option>
+                </select>
+            </div>
+
             <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Menu">
                 <i class="fas fa-bars"></i>
             </button>
@@ -31,8 +40,10 @@
             <nav id="mainNav">
                 <ul class="nav-links" id="navLinks">
                     <li><a href="#" onclick="showSection('home')" id="home-nav" class="active">Home</a></li>
-                    <li><a href="#" onclick="showSection('features')" id="features-nav">Services</a></li>
-                    <li id="portal-nav-item"><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Clinical Portal</a></li>
+                    <li><a href="#" onclick="scrollToTour()" id="tour-nav">Portal Tour</a></li>
+                    <li><a href="#" onclick="scrollToBooking()">Book Appointment</a></li>
+                    <li id="portal-nav-item"><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Clinical Portal (Admin/Staff)</a></li>
+                    <li id="pwa-install-item"><a href="#" id="pwaInstallBtn" style="color: var(--primary);"><i class="fas fa-download"></i> Install App</a></li>
                     <li id="logout-nav-item" style="display: none;"><a href="#" onclick="logout()" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
@@ -41,70 +52,35 @@
 
     <main>
         <section id="home" class="section">
-            <div class="hero">
-                <div class="container">
-                    <div class="hero-content">
-                        <span class="hero-label">Leading-Edge Dental Care</span>
-                        <h1 class="gradient-text">Excellence in Every Smile.</h1>
-                        <p class="hero-p">Experience the future of dentistry with our digital-first precision treatments in an ultra-premium, spa-like environment.</p>
-                        <div class="hero-btns">
-                             <button onclick="document.querySelector('.appointment-form').scrollIntoView({behavior:'smooth'})" class="btn-primary">Book Appointment</button>
-                             <button onclick="showSection('features')" class="btn-outline">Explore Services</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Features Quick View -->
-            <div class="container">
-                <div class="stats-row">
-                    <div class="stat-box">
-                        <i class="fas fa-microscope"></i>
-                        <div>
-                            <h3>Precision Care</h3>
-                            <p>Digital 3D diagnostics for absolute accuracy in treatment.</p>
-                        </div>
-                    </div>
-                    <div class="stat-box">
-                        <i class="fas fa-crown"></i>
-                        <div>
-                            <h3>Luxury Comfort</h3>
-                            <p>Experience pain-free treatments in a curated environment.</p>
-                        </div>
-                    </div>
-                    <div class="stat-box">
-                        <i class="fas fa-user-md"></i>
-                        <div>
-                            <h3>Expert Specialists</h3>
-                            <p>Led by clinicians with decades of international excellence.</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="container">
+            <!-- Booking Form Section (Now at the absolute top) -->
+            <div class="container booking-form-wrapper" style="margin-top: 20px;">
                 <div class="appointment-form">
                     <div style="text-align: center; margin-bottom: 3.5rem;">
-                        <span class="hero-label" style="margin-bottom: 1rem;">SCHEDULE</span>
+                        <span class="hero-label" style="margin-bottom: 1rem; text-transform: none;">Book Appointment</span>
                         <h2 class="section-title" style="margin-bottom: 0;">Secure Your Slot</h2>
                         <p style="color: var(--text-muted); margin-top: 1rem;">Fill out the form below for a priority consultation.</p>
                     </div>
                     <form id="bookingForm">
                         <div class="form-group">
                             <label><i class="fas fa-user-circle"></i> Patient Full Name</label>
-                            <input type="text" id="name" required placeholder="Full Name as per records" pattern="[A-Za-z\s]{3,50}" autocomplete="name">
+                            <input type="text" id="name" required="" placeholder="Full Name as per records" pattern="[A-Za-z\s]{3,50}" autocomplete="name">
                             <span class="invalid-feedback">Please enter a valid name (3-50 characters).</span>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-envelope"></i> Email Address</label>
+                            <input type="email" id="email" required="" placeholder="example@gmail.com" autocomplete="email">
+                            <span class="invalid-feedback">Please enter a valid email address.</span>
                         </div>
                         
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fab fa-whatsapp"></i> WhatsApp Contact</label>
-                                <input type="tel" id="mobile" required placeholder="+91 XXXX XXX XXX" pattern="^\+?\d{10,15}$" autocomplete="tel">
+                                <input type="tel" id="mobile" required="" placeholder="+91 XXXX XXX XXX" pattern="^\+?\d{10,15}$" autocomplete="tel">
                                 <span class="invalid-feedback">Enter a valid 10-15 digit mobile number.</span>
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-map-marker-alt"></i> Location/City</label>
-                                <input type="text" id="place" required placeholder="e.g. Mumbai, Doha, etc." minlength="2" maxlength="50" autocomplete="address-level2">
+                                <input type="text" id="place" required="" placeholder="e.g. Mumbai, Doha, etc." minlength="2" maxlength="50" autocomplete="address-level2">
                                 <span class="invalid-feedback">Required field.</span>
                             </div>
                         </div>
@@ -112,12 +88,12 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label><i class="fas fa-calendar-day"></i> Preferred Date</label>
-                                <input type="date" id="appointmentDate" required>
+                                <input type="date" id="appointmentDate" required="">
                                 <span class="invalid-feedback">Select a valid future date.</span>
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-clock"></i> Clinical Slot</label>
-                                <select id="appointmentTime" required>
+                                <select id="appointmentTime" required="">
                                     <option value="">Checking availability...</option>
                                 </select>
                                 <span class="invalid-feedback">Please select a time.</span>
@@ -126,7 +102,7 @@
 
                         <div class="form-group">
                             <label><i class="fas fa-notes-medical"></i> Clinical Concern</label>
-                            <textarea id="reason" rows="3" required minlength="10" maxlength="500" placeholder="Briefly describe your treatment requirement..."></textarea>
+                            <textarea id="reason" rows="3" required="" minlength="10" maxlength="500" placeholder="Briefly describe your treatment requirement..."></textarea>
                             <span class="invalid-feedback">Minimum 10 characters required.</span>
                         </div>
 
@@ -134,6 +110,83 @@
                             <i class="fas fa-check-circle"></i> REQUEST APPOINTMENT
                         </button>
                     </form>
+                </div>
+            </div>
+
+            <!-- APP PREVIEW SHOWCASE CAROUSEL (Now follows the booking form) -->
+            <div class="container carousel-wrapper" id="portal-tour" style="margin-top: 40px; margin-bottom: 60px;">
+                <div style="text-align: center; margin-bottom: 3.5rem;">
+                    <span class="hero-label" style="margin-bottom: 1rem;">PORTAL TOUR</span>
+                    <h2 class="section-title" style="margin-bottom: 0;">Interactive Portal Tour</h2>
+                    <p style="color: var(--text-muted); margin-top: 1rem;">Take a visual tour of our dental clinic management platform features.</p>
+                </div>
+
+                <!-- Browser Frame -->
+                <div class="mock-browser-frame">
+                    <div class="mock-browser-header">
+                        <div class="browser-dots">
+                            <span class="dot dot-red"></span>
+                            <span class="dot dot-amber"></span>
+                            <span class="dot dot-green"></span>
+                        </div>
+                        <div class="browser-address-bar">
+                            <i class="fas fa-lock" style="color: var(--success); font-size: 0.75rem;"></i>
+                            <span id="browserUrl">portal.mydentalclinic.com/home</span>
+                        </div>
+                    </div>
+
+                    <!-- Slide Display -->
+                    <div class="mock-browser-content">
+                        <div class="mock-carousel-track" id="mockCarouselTrack">
+                            <div class="mock-carousel-slide">
+                                <div class="carousel-slide-overlay">
+                                    <h3>Home &amp; Booking Terminal</h3>
+                                </div>
+                                <img src="screenshot-home.png" alt="Home Landing Page" onerror="this.src='hero-bg.png'">
+                            </div>
+                            <div class="mock-carousel-slide">
+                                <div class="carousel-slide-overlay">
+                                    <h3>Specialized Services</h3>
+                                </div>
+                                <img src="screenshot-services.png" alt="Services Overview" onerror="this.src='logo-blue.png'">
+                            </div>
+                            <div class="mock-carousel-slide">
+                                <div class="carousel-slide-overlay">
+                                    <h3>Clinical Explorer Dashboard</h3>
+                                </div>
+                                <img src="screenshot-dashboard.png" alt="Clinical Explorer Portal" onerror="this.src='logo-green.png'">
+                            </div>
+                            <div class="mock-carousel-slide">
+                                <div class="carousel-slide-overlay">
+                                    <h3>Patient Profiles &amp; Treatment History</h3>
+                                </div>
+                                <img src="screenshot-profile.png" alt="Patient Profile &amp; Financial Ledger" onerror="this.src='app-icon.png'">
+                            </div>
+                            <div class="mock-carousel-slide">
+                                <div class="carousel-slide-overlay">
+                                    <h3>Branded PDF Statements Generator</h3>
+                                </div>
+                                <img src="screenshot-bill.png" alt="Generated PDF Invoice" onerror="this.src='logo-blue.png'">
+                            </div>
+                            <div class="mock-carousel-slide">
+                                <div class="carousel-slide-overlay">
+                                    <h3>Multi-Language Support (हिंदी / ગુજરાતી)</h3>
+                                </div>
+                                <img src="screenshot-multilingual.png" alt="Multilingual Portal Demo" onerror="this.src='hero-bg.png'">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Slider Footer & Controls -->
+                    <div class="mock-browser-footer">
+                        <button class="carousel-control-btn prev" onclick="moveMockCarousel(-1)" aria-label="Previous view">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <div class="carousel-dots-container" id="mockCarouselDots"></div>
+                        <button class="carousel-control-btn next" onclick="moveMockCarousel(1)" aria-label="Next view">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -175,40 +228,49 @@
         <section id="dashboard" class="section dashboard-view" style="display:none;">
             <div class="container">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                    <h2 style="font-weight: 800; color: var(--secondary); margin:0;">Patient Explorer</h2>
+                    <h2 style="font-weight: 800; color: var(--secondary); margin:0; display:flex; align-items:center; gap:1rem;">
+                        Patient Explorer
+                        <select id="tenantSwitcher" onchange="switchTenant(this.value)" class="form-input" style="display: none; padding: 0.25rem 0.5rem; font-size: 0.9rem; max-width: 200px; font-weight: bold; background: var(--primary-light); color: var(--primary-dark); border-color: var(--primary); margin: 0;">
+                            <option value="default">Default Clinic</option>
+                        </select>
+                    </h2>
                     <div style="display:flex; gap:0.75rem; flex-wrap: wrap;">
+                        <button id="manageClinicsBtn" onclick="showDashboardTab('superadmin')" class="btn-primary" style="background: #8B5CF6; display: none;" title="Manage Clinics"><i class="fas fa-building"></i> Super Admin</button>
                         <button onclick="showDashboardTab('patients')" class="btn-primary" title="Patient Database"><i class="fas fa-users"></i> Records</button>
                         <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent);" title="Get Booking QR"><i class="fas fa-qrcode"></i> QR</button>
-                        <button id="settingsBtn" onclick="openSettingsModal()" class="btn-primary" style="background: var(--primary-dark); display: none;" title="Clinic Configuration"><i class="fas fa-sliders-h"></i> Settings</button>
+                        <button id="securityLogsBtn" onclick="openSecurityLogsModal()" class="btn-primary" style="background: rgb(71, 85, 105); display: none;" title="Admin Login History"><i class="fas fa-shield-alt"></i> Logs</button>
+                        <button id="settingsBtn" onclick="showDashboardTab('settings')" class="btn-primary" style="background: var(--primary-dark); display: none;" title="Clinic Configuration"><i class="fas fa-sliders-h"></i> Settings</button>
+                        <button onclick="showSection('premium-features')" class="btn-primary" style="background: linear-gradient(135deg, #FFD700, #FDB931); color: #333;" title="Premium Features Showcase"><i class="fas fa-star"></i> Premium Features</button>
                         <button onclick="logout()" class="btn-primary" style="background:var(--danger);" title="Secure Exit"><i class="fas fa-power-off"></i> Exit</button>
                     </div>
                 </div>
 
                 <div class="stats-row">
-                    <div class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center;">
-                        <i class="fas fa-user-check" style="margin-bottom:0.5rem;"></i>
+                    <div class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 1rem;">
+                        <i class="fas fa-user-check" style="margin-bottom:0.25rem; font-size: 1.2rem;"></i>
                         <div style="display:flex; flex-direction:column; align-items:center;">
-                            <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Total Patients</span>
-                            <span id="totalPatients" class="stat-val" style="font-size:1.75rem;">0</span>
+                            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Total Patients</span>
+                            <span id="totalPatients" class="stat-val" style="font-size:1.25rem; font-weight: 800;">0</span>
                         </div>
                     </div>
-                    <div class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center;">
-                        <i class="fas fa-hand-holding-usd" style="color: var(--accent); background: rgba(245, 158, 11, 0.1); margin-bottom:0.5rem;"></i>
+                    <div id="stats-earnings" class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 1rem;">
+                        <i class="fas fa-hand-holding-usd" style="color: var(--accent); background: rgba(245, 158, 11, 0.1); margin-bottom:0.25rem; font-size: 1.2rem;"></i>
                         <div style="display:flex; flex-direction:column; align-items:center;">
-                            <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Total Revenue</span>
-                            <span id="totalEarnings" class="stat-val" style="font-size:1.75rem;">₹0</span>
+                            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Total Revenue</span>
+                            <span id="totalEarnings" class="stat-val" style="font-size:1.25rem; font-weight: 800;">₹0</span>
                         </div>
                     </div>
-                    <div class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center;">
-                        <i class="fas fa-hourglass-half" style="color: #64748b; background: rgba(100, 116, 139, 0.1); margin-bottom:0.5rem;"></i>
+                    <div class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 1rem;">
+                        <i class="fas fa-hourglass-half" style="color: #64748b; background: rgba(100, 116, 139, 0.1); margin-bottom:0.25rem; font-size: 1.2rem;"></i>
                         <div style="display:flex; flex-direction:column; align-items:center;">
-                            <span style="font-size:0.75rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Pending Care</span>
-                            <span id="pendingVisits" class="stat-val" style="font-size:1.75rem;">0</span>
+                            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Pending Care</span>
+                            <span id="pendingVisits" class="stat-val" style="font-size:1.25rem; font-weight: 800;">0</span>
                         </div>
                     </div>
                 </div>
 
                 <div id="patientsTab" class="dashboard-tab">
+                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--secondary); margin-bottom: 1rem;">Patient Database</h3>
                     <div class="search-box">
                         <i class="fas fa-search"></i>
                         <input type="text" id="searchInput" placeholder="Search by name, phone or city..." onkeyup="filterPatients()">
@@ -216,6 +278,21 @@
                     <div id="patientExplorer" class="dashboard-grid"></div>
                     <div id="noDataMessage" style="text-align: center; padding: 4rem; display: none;">
                         <p style="color: var(--text-muted);">No records found.</p>
+                    </div>
+
+                    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 2rem; margin-bottom: 2rem;">
+                        <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 1rem;">
+                            <h4 style="font-size: 1.1rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-calendar-day" style="color: var(--primary); margin-right: 8px;"></i> Today's Schedule</h4>
+                            <div id="todayScheduleList" style="display: flex; flex-direction: column; gap: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+                                <i>Schedule will load dynamically...</i>
+                            </div>
+                        </div>
+                        <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 1rem;">
+                            <h4 style="font-size: 1.1rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-users" style="color: var(--primary); margin-right: 8px;"></i> Recent Patients</h4>
+                            <div id="recentPatientsList" style="display: flex; flex-direction: column; gap: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
+                                <i>Recent patients will load dynamically...</i>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -226,6 +303,209 @@
                         <button onclick="window.print()" class="btn-primary"><i class="fas fa-print"></i> Print QR Poster</button>
                     </div>
                 </div>
+            <div id="settingsTab" class="dashboard-tab" style="display: none;"><div class="card" style="max-width: 1000px; margin: 0px auto;">
+            
+            <div style="text-align: center; margin-bottom: 2.5rem;">
+                <span class="hero-label">GLOBAL CONFIG</span>
+                <h2 style="font-family: 'Outfit'; margin:0;">Clinic Settings</h2>
+            </div>
+            <form id="settingsForm">
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="form-group"><label>Clinic Branding</label><input type="text" id="settingClinicName" placeholder="Clinic Name"></div>
+                    <div class="form-group"><label>Slogan / Tagline</label><input type="text" id="settingSubtitle" placeholder="Clinical Slogan"></div>
+                </div>
+                <div id="superAdminFields">
+                    <div class="admin-sync-title"><i class="fas fa-sync-alt"></i> Administrative Sync</div>
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div class="form-group"><label>Admin User</label><input type="text" id="settingAdminUser"></div>
+                        <div class="form-group"><label>Admin Pass</label><input type="password" id="settingAdminPass"></div>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary" style="margin-top: 2rem;">SAVE GLOBAL SETTINGS</button>
+            </form>
+
+        <!-- Staff Management -->
+        <div class="card admin-only" style="margin-top:2rem;" id="staffManagementCard">
+            <h2 class="card-title"><i class="fas fa-users-cog"></i> Staff Management</h2>
+            <p style="color:#64748B; font-size:0.9rem; margin-bottom:1rem;">Create and manage staff accounts for this clinic.</p>
+            
+            <div style="margin-bottom:1.5rem; overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.9rem;">
+                    <thead>
+                        <tr style="border-bottom:2px solid #e2e8f0; color:#64748B;">
+                            <th style="padding:0.75rem 0;">Name</th>
+                            <th style="padding:0.75rem 0;">Username</th>
+                            <th style="padding:0.75rem 0;">Role</th>
+                            <th style="padding:0.75rem 0;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="staffListTable">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+
+            <form id="addStaffForm" class="appointment-form" style="background:#F8FAFC; padding:1.5rem; border-radius:10px; margin:0;">
+                <h3 style="font-size:1rem; margin-bottom:1rem; color:#0F172A;">Add New Staff</h3>
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="newStaffName" required="">
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="newStaffEmail" required="">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="newStaffPassword" required="">
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="newStaffRole" required="">
+                        <option value="staff">Staff (Limited Access)</option>
+                        <option value="admin">Admin (Full Access)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%;">Create Staff Account</button>
+            </form>
+        </div>
+        </div></div><div id="superadminTab" class="dashboard-tab" style="display: none;"><div class="card" style="max-width: 1000px; margin: 0px auto 2rem;">
+            <span class="close" onclick="closeManageClinicsModal()">×</span>
+            <h2 style="margin-top:0; color:var(--secondary);"><i class="fas fa-building"></i> Manage Clinics (Multi-Tenant)</h2>
+            <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem;">Create new isolated clinic environments. Each clinic has its own patients, settings, and appointments.</p>
+            
+            <form id="addClinicForm" style="margin-bottom: 2rem; background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <div class="form-group">
+                    <label>Clinic Slug (e.g., 'smile-dental')</label>
+                    <input type="text" id="newClinicSlug" class="form-input" required="" pattern="[a-z0-9-]+" title="Only lowercase letters, numbers, and hyphens allowed">
+                </div>
+                <div class="form-group">
+                    <label>Clinic Name</label>
+                    <input type="text" id="newClinicName" class="form-input" required="">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Create New Clinic</button>
+            </form>
+
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Existing Clinics</h3>
+            <div id="clinicsList" style="max-height: 300px; overflow-y: auto;">
+                <!-- Populated dynamically -->
+            </div>
+        </div><div class="card" style="max-width: 1000px; margin: 0px auto;">
+            <div class="modal-header">
+                <h3>Admin Login History</h3>
+                <span class="close" onclick="closeSecurityLogsModal()">×</span>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div style="background: var(--bg-soft); border-radius: 12px; padding: 1rem; max-height: 400px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                        <thead>
+                            <tr>
+                                <th style="padding: 10px; border-bottom: 2px solid #E2E8F0; color: var(--text-muted); font-size: 0.85rem;">Date / Time</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #E2E8F0; color: var(--text-muted); font-size: 0.85rem;">IP Address</th>
+                                <th style="padding: 10px; border-bottom: 2px solid #E2E8F0; color: var(--text-muted); font-size: 0.85rem;">Account</th>
+                            </tr>
+                        </thead>
+                        <tbody id="securityLogsTableBody">
+                            <tr><td colspan="3" style="padding: 20px; text-align: center; color: var(--text-muted);">Loading logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div></div></div>
+        </section>
+
+        <!-- Premium Features Showcase Section -->
+        <section id="premium-features" class="section dashboard-view" style="display:none;">
+            <div class="container" style="max-width: 1000px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                    <h2 style="font-weight: 800; color: var(--secondary); margin:0;"><i class="fas fa-crown" style="color:#FFD700;"></i> Premium Features Showcase</h2>
+                    <button onclick="showSection('dashboard')" class="btn-primary"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
+                </div>
+                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.1rem;">These next-generation features are designed to impress your patients and optimize your clinical workflow.</p>
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 2rem;">
+                    <!-- Smart Analytics Dashboard -->
+                    <div class="dashboard-card" style="padding: 1.5rem;">
+                        <h3 style="margin-bottom: 1rem; color: var(--primary);"><i class="fas fa-chart-line"></i> Smart Analytics &amp; Revenue Trends</h3>
+                        <div style="position: relative; height: 300px; width: 100%;">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </section>
+
+        <!-- Patient Portal Section -->
+        <section id="patient-portal" class="section" style="display:none; padding-top: 100px;">
+            <div class="container" id="patientPortalAuth" style="max-width: 450px; margin: 0 auto;">
+                <div class="appointment-form" style="text-align: center; padding: 2.5rem 1.5rem;">
+                    <span class="hero-label">PATIENT ACCESS</span>
+                    <h2 style="font-family: 'Outfit'; font-weight: 800; font-size: 1.8rem; margin: 0.5rem 0 1rem; color: var(--secondary);">My Smile Portal</h2>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Access your treatment history, scheduled appointments, and billing statements.</p>
+                    
+                    <!-- Google Login Button -->
+                    <button onclick="loginPatientGoogle()" class="btn-primary" style="background: white; color: #475569; border: 1px solid #CBD5E1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; height: 48px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1rem; transition: all 0.2s;">
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo" style="width: 20px; height: 20px;">
+                        Sign in with Google
+                    </button>
+
+                    <div style="display: flex; align-items: center; gap: 1rem; margin: 1rem 0; color: var(--text-muted); font-size: 0.85rem;">
+                        <div style="flex: 1; height: 1px; background: #E2E8F0;"></div>
+                        <span>OR</span>
+                        <div style="flex: 1; height: 1px; background: #E2E8F0;"></div>
+                    </div>
+
+                    <!-- Email Login Option -->
+                    <form id="patientEmailLoginForm" onsubmit="loginPatientEmail(event)">
+                        <div class="form-group" style="text-align: left; margin-bottom: 1.25rem;">
+                            <label><i class="fas fa-envelope"></i> Registered Email Address</label>
+                            <input type="email" id="patientAuthEmail" required="" placeholder="Enter your registered email" style="width: 100%; height: 44px; border-radius: 12px; border: 2px solid var(--primary-light); padding: 0 1rem;">
+                        </div>
+                        <button type="submit" class="btn-primary" style="width: 100%; height: 48px; border-radius: 12px; font-weight: 800; justify-content: center;">ACCESS BOOKINGS</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Patient Portal Dashboard (shown when logged in) -->
+            <div class="container" id="patientPortalDashboard" style="display:none; max-width: 900px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2 style="font-weight: 800; color: var(--secondary); margin:0;" id="patientWelcomeName">Welcome, Patient</h2>
+                        <p style="color: var(--text-muted); margin-top: 0.25rem;" id="patientWelcomeEmail">email@example.com</p>
+                    </div>
+                    <button onclick="logoutPatient()" class="btn-primary" style="background: var(--danger); width: auto; padding: 0 1.5rem; height: 42px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </div>
+
+                <!-- Patient Portal Tabs -->
+                <div class="tab-container" style="margin-bottom: 2rem;">
+                    <button class="profile-tab-btn active" id="pTabBtnTimeline" onclick="switchPatientPortalTab('timeline')">My History</button>
+                    <button class="profile-tab-btn" id="pTabBtnDiagnoses" onclick="switchPatientPortalTab('diagnoses')">My Diagnoses</button>
+                    <button class="profile-tab-btn" id="pTabBtnFinances" onclick="switchPatientPortalTab('finances')">Invoices &amp; Bills</button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="profile-content" style="background: white; border-radius: var(--radius-xl); box-shadow: var(--shadow-premium); padding: 2rem; min-height: 250px; color: var(--secondary);">
+                    <!-- Timeline Section -->
+                    <div id="patientTimelineSection">
+                        <h3 style="margin-bottom: 1.5rem; color: var(--secondary);">Treatment History</h3>
+                        <div id="patientTimelineList" class="timeline"></div>
+                    </div>
+
+                    <!-- Diagnoses Section -->
+                    <div id="patientDiagnosesSection" style="display: none;">
+                        <h3 style="margin-bottom: 1.5rem; color: var(--secondary);">Diagnostic History</h3>
+                        <div id="patientDiagnosesList" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+                    </div>
+
+                    <!-- Finances Section -->
+                    <div id="patientFinancesSection" style="display: none;">
+                        <h3 style="margin-bottom: 1.5rem; color: var(--secondary);">My Transactions &amp; Bills</h3>
+                        <div id="patientPaymentsList"></div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
@@ -233,7 +513,7 @@
     <!-- Patient Profile Modal -->
     <div id="patientProfileModal" class="modal">
         <div class="modal-content profile-modal">
-            <span class="close-modal" onclick="closeProfileModal()">&times;</span>
+            <span class="close-modal" onclick="closeProfileModal()">×</span>
             <div class="profile-header">
                 <h2 id="profileName">Loading...</h2>
                 <p id="profileMeta">Mobile: Loading...</p>
@@ -250,10 +530,11 @@
                 </div>
             </div>
             <div class="tab-container">
-                <button class="profile-tab-btn active" onclick="switchProfileTab('timeline')">Clinical History</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('diagnoses')">Diagnosis</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('finances')">Financial Health</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')">Next Seating</button>
+                <button class="profile-tab-btn active" onclick="switchProfileTab('timeline')"><i class="fas fa-history"></i> History</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')"><i class="fas fa-calendar-check"></i> Next Visit</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('diagnoses')"><i class="fas fa-stethoscope"></i> Diagnostic</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('finances')"><i class="fas fa-rupee-sign"></i> Finance</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> Charting</button>
             </div>
             <div class="profile-content" style="padding: 2rem;">
                 <div id="profileTimelineSection">
@@ -279,8 +560,36 @@
                         <div id="diagnosisList" style="display: flex; flex-direction: column; gap: 1rem;"></div>
                     </div>
                 </div>
+                <!-- New Charting & Consent Section -->
+                <div id="profileChartingSection" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 2rem;">
+                        <!-- Interactive Visual Dental Charting -->
+                        <div class="dashboard-card" style="padding: 1.5rem; text-align: center;">
+                            <h3 style="margin-bottom: 1rem; color: var(--primary);"><i class="fas fa-tooth"></i> Interactive 3D/Visual Dental Charting</h3>
+                            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Click on a tooth to simulate marking a cavity or crown.</p>
+                            <div id="interactiveTeethChart" style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
+                                <!-- SVG teeth injected via JS -->
+                            </div>
+                            <div id="toothStatusText" style="font-weight: 800; color: var(--secondary); min-height: 24px;"></div>
+                        </div>
+
+                        <!-- Digital E-Signature Pad -->
+                        <div class="dashboard-card" style="padding: 1.5rem;">
+                            <h3 style="margin-bottom: 1rem; color: var(--primary);"><i class="fas fa-file-signature"></i> Digital E-Signature Pad</h3>
+                            <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">Sign below to consent to the simulated treatment plan.</p>
+                            <div style="border: 2px dashed var(--border-light); border-radius: 8px; background: #fff; margin-bottom: 1rem; position: relative;">
+                                <canvas id="signaturePad" width="400" height="150" style="width: 100%; touch-action: none; cursor: crosshair;"></canvas>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <button class="btn-primary" style="background: var(--text-muted);" onclick="clearSignature()"><i class="fas fa-eraser"></i> Clear</button>
+                                <button class="btn-primary" style="background: var(--success);" onclick="saveSignature()"><i class="fas fa-check"></i> Save Signature</button>
+                            </div>
+                            <div id="signatureSuccessMessage" style="color: var(--success); font-weight: 800; display: none; margin-top: 1rem; text-align: center;"><i class="fas fa-check-circle"></i> Signature Saved Successfully!</div>
+                        </div>
+                    </div>
+                </div>
                 <div id="profileFinanceSection" style="display: none;">
-                    <div class="stats-row" style="margin-bottom: 2rem;">
+                    <div class="profile-stats-row" style="margin-bottom: 2rem;">
                         <div class="dashboard-card" style="border-left: 6px solid var(--danger); padding: 2rem;">
                             <span style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted);">TOTAL CHARGED</span>
                             <p id="totalBilledProfile" style="font-size: 2.5rem; font-weight: 900; color: var(--secondary);">₹0</p>
@@ -302,7 +611,7 @@
                 <div id="profileBookingSection" style="display: none;">
                     <div class="seating-card">
                         <h3 style="margin-bottom: 1.5rem; color: var(--primary-dark);">Schedule Next Sitting</h3>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="profile-booking-grid" style="margin-bottom: 1.5rem;">
                             <div class="form-group">
                                 <label style="display:block; margin-bottom:0.5rem; font-weight:800;">APPOINTMENT DATE</label>
                                 <input type="date" id="profileNextDate" class="form-control" style="width:100%; height:48px; border-radius:12px; border:2px solid var(--primary-light); padding:0 1rem;">
@@ -324,7 +633,7 @@
                             <label style="display:block; margin-bottom:0.5rem; font-weight:800;">PROCEDURE / REASON</label>
                             <input type="text" id="profileNextReason" placeholder="e.g. Scaling, Root Canal, Follow-up" class="form-control" style="width:100%; height:48px; border-radius:12px; border:2px solid var(--primary-light); padding:0 1rem;">
                         </div>
-                        <button onclick="saveProfileBooking()" class="btn-primary" style="width:100%; height:55px; border-radius:15px; font-weight:900; font-size:1rem; text-transform:uppercase; letter-spacing:1px;">Confirm & Add Sitting</button>
+                        <button onclick="saveProfileBooking()" class="btn-primary" style="width:100%; height:55px; border-radius:15px; font-weight:900; font-size:1rem; text-transform:uppercase; letter-spacing:1px;">Confirm &amp; Add Sitting</button>
                     </div>
                 </div>
             </div>
@@ -334,7 +643,7 @@
     <!-- Notes Modal (Premium Clinical Assessment) -->
     <div id="notesModal" class="modal">
         <div class="modal-content" style="max-width: 700px;">
-            <span class="close-modal" onclick="closeNotesModal()">&times;</span>
+            <span class="close-modal" onclick="closeNotesModal()">×</span>
             <div style="margin-bottom: 2rem; text-align: center;">
                 <span class="hero-label">CLINICAL EXAM</span>
                 <h2 style="font-family: 'Outfit'; font-weight: 800; font-size: 2rem; margin:0;">Treatment Assessment</h2>
@@ -356,7 +665,7 @@
     <!-- Login Modal -->
     <div id="loginModal" class="modal">
         <div class="modal-content" style="max-width: 450px;">
-            <span class="close-modal" id="closeLogin">&times;</span>
+            <span class="close-modal" id="closeLogin" onclick="closeLoginModal()">×</span>
             <div style="text-align: center; margin-bottom: 2.5rem;">
                 <span class="hero-label">AUTHENTICATION</span>
                 <h2 style="font-family: 'Outfit'; margin:0;">Staff Access</h2>
@@ -365,39 +674,72 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label>Professional ID</label>
-                    <input type="text" id="username" required placeholder="admin@example.com">
+                    <input type="text" id="username" required="">
                 </div>
                 <div class="form-group">
                     <label>Secure Key</label>
-                    <input type="password" id="password" required>
+                    <input type="password" id="password" required="">
                 </div>
                 <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">ACCESS DASHBOARD</button>
             </form>
         </div>
     </div>
 
+    <!-- Manage Clinics Modal -->
+    
+
     <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content" style="max-width: 700px;">
-            <span class="close-modal" onclick="document.getElementById('settingsModal').style.display='none'">&times;</span>
-            <div style="text-align: center; margin-bottom: 2.5rem;">
-                <span class="hero-label">GLOBAL CONFIG</span>
-                <h2 style="font-family: 'Outfit'; margin:0;">Clinic Settings</h2>
+    
+
+    <!-- Welcome Features Popup Modal -->
+    <div id="welcomeFeaturesModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 500px; text-align: center; padding: 2.5rem 2rem;">
+            <button onclick="closeWelcomeModal(); setTimeout(() => { const t = document.getElementById('portal-tour'); if(t) t.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);" class="btn-primary" style="width: 100%; height: 48px; font-weight: 800; border-radius: 12px; justify-content: center; margin-bottom: 2rem;">🔍 EXPLORE PORTAL</button>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <span class="hero-label">WELCOME PORTAL</span>
+                <h2 style="font-family: 'Outfit'; font-weight: 800; font-size: 2rem; margin-top: 0.5rem; color: var(--secondary);">Advanced Care Features</h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">Experience our new, digital-first clinical features.</p>
             </div>
-            <form id="settingsForm">
-                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                    <div class="form-group"><label>Clinic Branding</label><input type="text" id="settingClinicName" placeholder="Clinic Name"></div>
-                    <div class="form-group"><label>Slogan / Tagline</label><input type="text" id="settingSubtitle" placeholder="Clinical Slogan"></div>
-                </div>
-                <div id="superAdminFields">
-                    <div class="admin-sync-title"><i class="fas fa-sync-alt"></i> Administrative Sync</div>
-                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                        <div class="form-group"><label>Admin User</label><input type="text" id="settingAdminUser"></div>
-                        <div class="form-group"><label>Admin Pass</label><input type="password" id="settingAdminPass"></div>
+            
+            <div class="feature-popup-list" style="text-align: left; display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0; background: var(--bg-soft); padding: 1.25rem; border-radius: var(--radius-lg); border: 1px solid var(--primary-light);">
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <i class="fas fa-calendar-check" style="color: var(--primary); font-size: 1.25rem; margin-top: 2px; width: 20px; text-align: center;"></i>
+                    <div>
+                        <h4 style="font-size: 0.95rem; margin: 0; color: var(--secondary);">Priority Scheduling</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0;">Book appointments instantly with real-time slot availability.</p>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary" style="margin-top: 2rem;">SAVE GLOBAL SETTINGS</button>
-            </form>
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <i class="fas fa-file-invoice-dollar" style="color: var(--primary); font-size: 1.25rem; margin-top: 2px; width: 20px; text-align: center;"></i>
+                    <div>
+                        <h4 style="font-size: 0.95rem; margin: 0; color: var(--secondary);">Smart Invoicing</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0;">Download premium PDF receipts styled with clinic branding.</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <i class="fab fa-google" style="color: var(--accent); font-size: 1.25rem; margin-top: 2px; width: 20px; text-align: center;"></i>
+                    <div>
+                        <h4 style="font-size: 0.95rem; margin: 0; color: var(--secondary);">Google Calendar Sync</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0;">Add your bookings directly to your Google Calendar in one click.</p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 1rem; align-items: flex-start;">
+                    <i class="fas fa-mobile-alt" style="color: var(--primary); font-size: 1.25rem; margin-top: 2px; width: 20px; text-align: center;"></i>
+                    <div>
+                        <h4 style="font-size: 0.95rem; margin: 0; color: var(--secondary);">PWA App Installation</h4>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0;">Install the portal to your home screen and use it like an app.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Install app prompt inside welcome modal -->
+            <div id="pwaWelcomeInstallBox" style="display: none; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 1rem; margin-bottom: 1.5rem;">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Would you like to install the app on your device?</p>
+                <button id="pwaWelcomeInstallBtn" class="btn-primary" style="background: var(--primary); height: 40px; font-size: 0.85rem; padding: 0 1.5rem; width: auto; margin: 0 auto; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+                    <i class="fas fa-download"></i> INSTALL APP NOW
+                </button>
+            </div>
         </div>
     </div>
 
@@ -407,9 +749,15 @@
             <i class="fas fa-check-circle" style="font-size: 4rem; color: #25D366; margin-bottom: 1rem;"></i>
             <h2>Booking Confirmed!</h2>
             <p>Your appointment has been successfully recorded.</p>
-            <button onclick="closeBookingModal()" class="btn-primary" style="margin-top: 1.5rem; width: 100%;">DONE</button>
+            <button id="btnAddToCalendar" class="btn-primary" style="background: #4285F4; margin-top: 1.5rem; width: 100%; display: none;">
+                <i class="fab fa-google"></i> ADD TO GOOGLE CALENDAR
+            </button>
+            <button onclick="closeBookingModal()" class="btn-primary" style="margin-top: 1rem; width: 100%;">DONE</button>
         </div>
     </div>
+
+    <!-- Security Logs Modal -->
+    
 
     <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -421,7 +769,7 @@
         <div class="modal-content" style="max-width: 450px;">
             <div class="modal-header">
                 <h3>Financial Transaction</h3>
-                <span class="close" onclick="closePaymentModal()">&times;</span>
+                <span class="close" onclick="closePaymentModal()">×</span>
             </div>
             <div class="modal-body" style="padding: 2rem;">
                 <div style="display: flex; gap: 0.5rem; margin-bottom: 2rem; background: var(--bg-body); padding: 0.5rem; border-radius: 12px;">
@@ -444,13 +792,15 @@
         </div>
     </div>
 
-    <script src="db-api.js"></script>
-    <script src="auth.js"></script>
-    <script src="script.js"></script>
+    <script src="db-api.js?v=33"></script>
+    <script src="auth.js?v=33"></script>
+    <script src="script.js?v=33"></script>
+    <script src="premium-features.js?v=33"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {
-                document.getElementById('loginModal').style.display = 'flex';
+                window.scrollTo(0, 0);
+                showLoginModal();
                 return;
             }
             const section = document.getElementById(id);
@@ -461,14 +811,21 @@
                 const navLink = document.getElementById(id + '-nav');
                 if (navLink) navLink.classList.add('active');
                 
-                // Scroll to top for better mobile UX
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // Scroll to top instantly for better UX
+                window.scrollTo(0, 0);
 
                 // Hide mobile menu after selection
                 const mainNav = document.getElementById('mainNav');
                 if (mainNav.classList.contains('active')) {
                     mainNav.classList.remove('active');
                     document.getElementById('mobileMenuBtn').innerHTML = '<i class="fas fa-bars"></i>';
+                }
+
+                // Toggle body class for clinical portal sections
+                if (['dashboard', 'patient-portal', 'profile', 'services', 'premium-features'].includes(id)) {
+                    document.body.classList.add('clinical-portal-active');
+                } else {
+                    document.body.classList.remove('clinical-portal-active');
                 }
             }
         }
@@ -484,6 +841,175 @@
         const today = new Date().toISOString().split('T')[0];
         const appointmentDate = document.getElementById('appointmentDate');
         if (appointmentDate) appointmentDate.setAttribute('min', today);
+
+        // Mock Preview Carousel Logic
+        let currentMockSlide = 0;
+        const totalMockSlides = 6;
+        const mockUrls = [
+            'portal.mydentalclinic.com/home',
+            'portal.mydentalclinic.com/services',
+            'portal.mydentalclinic.com/dashboard',
+            'portal.mydentalclinic.com/patient-profile',
+            'portal.mydentalclinic.com/invoice',
+            'portal.mydentalclinic.com/multilingual'
+        ];
+
+        function initMockCarousel() {
+            const dotsContainer = document.getElementById('mockCarouselDots');
+            if (!dotsContainer) return;
+            dotsContainer.innerHTML = '';
+            for (let i = 0; i < totalMockSlides; i++) {
+                const dot = document.createElement('span');
+                dot.className = `carousel-dot ${i === 0 ? 'active' : ''}`;
+                dot.onclick = () => showMockSlide(i);
+                dotsContainer.appendChild(dot);
+            }
+        }
+
+        function showMockSlide(index) {
+            currentMockSlide = index;
+            if (currentMockSlide >= totalMockSlides) currentMockSlide = 0;
+            if (currentMockSlide < 0) currentMockSlide = totalMockSlides - 1;
+
+            const track = document.getElementById('mockCarouselTrack');
+            if (track) {
+                track.style.transform = `translateX(-${currentMockSlide * (100 / 6)}%)`;
+            }
+
+            const urlEl = document.getElementById('browserUrl');
+            if (urlEl) {
+                urlEl.innerText = mockUrls[currentMockSlide];
+            }
+
+            const dots = document.querySelectorAll('.carousel-dot');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('active', i === currentMockSlide);
+            });
+        }
+
+        function moveMockCarousel(direction) {
+            showMockSlide(currentMockSlide + direction);
+        }
+
+        // Auto slide
+        let mockInterval = setInterval(() => moveMockCarousel(1), 1000);
+        document.querySelector('.mock-browser-frame')?.addEventListener('mouseenter', () => clearInterval(mockInterval));
+        document.querySelector('.mock-browser-frame')?.addEventListener('mouseleave', () => {
+            clearInterval(mockInterval);
+            mockInterval = setInterval(() => moveMockCarousel(1), 1000);
+        });
+
+        // Initialize on load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                initMockCarousel();
+                checkWelcomePopup();
+            });
+        } else {
+            initMockCarousel();
+            checkWelcomePopup();
+        }
+
+        // Welcome popup modal logic
+        function checkWelcomePopup() {
+            if (!localStorage.getItem('clinic_welcome_popup_shown')) {
+                setTimeout(() => {
+                    const modal = document.getElementById('welcomeFeaturesModal');
+                    if (modal) modal.style.display = 'flex';
+                }, 1500);
+            }
+        }
+        
+        function closeWelcomeModal() {
+            const modal = document.getElementById('welcomeFeaturesModal');
+            if (modal) modal.style.display = 'none';
+            localStorage.setItem('clinic_welcome_popup_shown', 'true');
+        }
+
+        // PWA Install Prompt Logic
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            const welcomeInstallBox = document.getElementById('pwaWelcomeInstallBox');
+            if (welcomeInstallBox) welcomeInstallBox.style.display = 'block';
+        });
+        
+        function handlePWAInstall(btnId) {
+            if (!deferredPrompt) {
+                alert("To install this app on your device:\n\n1. Open your browser's menu (three dots or share button).\n2. Tap 'Add to Home Screen' or 'Install App'.");
+                return;
+            }
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the PWA install prompt');
+                } else {
+                    console.log('User dismissed the PWA install prompt');
+                }
+                deferredPrompt = null;
+                
+                const welcomeInstallBox = document.getElementById('pwaWelcomeInstallBox');
+                if (welcomeInstallBox) welcomeInstallBox.style.display = 'none';
+            });
+        }
+        
+        function scrollToBooking() {
+            showSection('home');
+            setTimeout(() => {
+                const form = document.querySelector('.appointment-form');
+                if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+            
+            // Close mobile menu if open
+            const mainNav = document.getElementById('mainNav');
+            if (mainNav && mainNav.classList.contains('active')) {
+                mainNav.classList.remove('active');
+                const btn = document.getElementById('mobileMenuBtn');
+                if (btn) btn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        }
+
+        function scrollToTour() {
+            showSection('home');
+            setTimeout(() => {
+                const el = document.getElementById('portal-tour');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+            
+            // Close mobile menu if open
+            const mainNav = document.getElementById('mainNav');
+            if (mainNav && mainNav.classList.contains('active')) {
+                mainNav.classList.remove('active');
+                const btn = document.getElementById('mobileMenuBtn');
+                if (btn) btn.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const navInstallBtn = document.getElementById('pwaInstallBtn');
+            if (navInstallBtn) {
+                navInstallBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handlePWAInstall('nav');
+                });
+            }
+            const modalInstallBtn = document.getElementById('pwaWelcomeInstallBtn');
+            if (modalInstallBtn) {
+                modalInstallBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    handlePWAInstall('modal');
+                });
+            }
+        });
+        
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA app was installed successfully');
+            const welcomeInstallBox = document.getElementById('pwaWelcomeInstallBox');
+            if (welcomeInstallBox) welcomeInstallBox.style.display = 'none';
+        });
     </script>
-</body>
-</html>
+
+</body></html>

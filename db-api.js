@@ -6,6 +6,17 @@ class DatabaseAPI {
         this.db = null;
         this.auth = null;
 
+        // 1. Initialize Default Values
+        const urlParams = new URLSearchParams(window.location.search);
+        let pathId = window.location.pathname.replace(/^\/+|\/+$/g, '');
+        // Ignore static files and api
+        if (pathId === 'index.html' || pathId.includes('.') || pathId.startsWith('api')) {
+            pathId = '';
+        }
+        this.tenantId = urlParams.get('c') || urlParams.get('clinic') || pathId || localStorage.getItem('activeTenantId') || 'default';
+        this.cacheVersion = '1.0.0';
+        localStorage.setItem('activeTenantId', this.tenantId);
+
         const firebaseConfig = {
             apiKey: "AIzaSyAW9f8YvUDWpTkaJiwjXSaancicOJcKnBk",
             authDomain: "my-dental-clinic-wl.firebaseapp.com",
@@ -51,13 +62,33 @@ class DatabaseAPI {
     }
 
     // Get Appointments
+    // --- STAFF MANAGEMENT ---
+    async addStaff(staffData) {
+        if (!this.db) throw new Error('Offline mode');
+        const emailKey = staffData.email.toLowerCase();
+        await this.getCollection('staff').doc(emailKey).set(staffData);
+        return true;
+    }
+
+    async getStaffList() {
+        if (!this.db) return [];
+        const snapshot = await this.getCollection('staff').get();
+        return snapshot.docs.map(doc => doc.data());
+    }
+
+    async deleteStaff(email) {
+        if (!this.db) throw new Error('Offline mode');
+        await this.getCollection('staff').doc(email.toLowerCase()).delete();
+        return true;
+    }
+
     async getAppointments() {
         if (!this.useFirebase) {
             return JSON.parse(localStorage.getItem('appointments')) || [];
         }
         try {
             console.log('Fetching appointments from Firestore...');
-            const snapshot = await this.db.collection('appointments').get();
+            const snapshot = await this.getCollection('appointments').get();
             const appointments = [];
             snapshot.forEach((doc) => {
                 const data = doc.data();
@@ -73,6 +104,7 @@ class DatabaseAPI {
                     appointmentDate: data.appointmentDate || data.appointment_date || '',
                     appointmentTime: data.appointmentTime || data.appointment_time || '',
                     name: data.name || data.patientName || 'Unknown Patient',
+                    email: data.email || '',
                     place: data.place || data.city || '',
                     mobile: data.mobile || data.phoneNumber || data.mobileNo || '', 
                     reason: data.reason || data.service || 'General',
@@ -120,9 +152,10 @@ class DatabaseAPI {
             
             // Use .add() instead of .doc().set() to ensure it's treated as a new document
             // and let Firestore generate a unique string ID.
-            const docRef = await this.db.collection('appointments').add({
+            const docRef = await this.getCollection('appointments').add({
                 id: appointment.id || Date.now(), // Keep numeric ID for sorting
                 name: appointment.name || 'Unknown',
+                email: appointment.email || '',
                 place: appointment.place || '',
                 mobile: normalizedMobile || appointment.mobile || '',
                 phoneNumber: normalizedMobile || appointment.mobile || '',
@@ -144,6 +177,7 @@ class DatabaseAPI {
                 appointmentDate: appointment.appointmentDate,
                 appointmentTime: appointment.appointmentTime,
                 name: appointment.name,
+                email: appointment.email || '',
                 place: appointment.place || '',
                 mobile: appointment.mobile,
                 reason: appointment.reason,
@@ -184,13 +218,13 @@ class DatabaseAPI {
             // First, find the document if the 'id' passed is the numeric ID
             let docRef;
             if (id.toString().length > 15) { // Likely a docId string
-                docRef = this.db.collection('appointments').doc(id.toString());
+                docRef = this.getCollection('appointments').doc(id.toString());
             } else {
-                const q = await this.db.collection('appointments').where('id', '==', parseInt(id)).get();
+                const q = await this.getCollection('appointments').where('id', '==', parseInt(id)).get();
                 if (!q.empty) {
                     docRef = q.docs[0].ref;
                 } else {
-                    docRef = this.db.collection('appointments').doc(id.toString());
+                    docRef = this.getCollection('appointments').doc(id.toString());
                 }
             }
             
@@ -224,7 +258,7 @@ class DatabaseAPI {
 
         try {
             if (!this.db) throw new Error('Firestore not initialized');
-            await this.db.collection('appointments').doc(id.toString()).delete();
+            await this.getCollection('appointments').doc(id.toString()).delete();
             return true;
         } catch (error) {
             console.error('Firebase error deleting appointment:', error);
@@ -232,85 +266,236 @@ class DatabaseAPI {
         }
     }
 
-    // Get booked time slots for a specific date
+    // Get booked time slots for a specific date (supporting multiple format variations)
     async getBookedTimeSlots(date) {
-        if (!this.useFirebase) {
-            const appointments = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
-            return appointments
-                .filter(app => app.appointmentDate === date && app.status !== 'Cancelled')
-                .map(app => app.appointmentTime);
+        if (!date) return [];
+        const dateStr = date.toString().trim();
+
+        const getDateVariations = (dStr) => {
+            const vars = [dStr];
+            try {
+                const parts = dStr.split('-');
+                if (parts.length === 3) {
+                    const y = parts[0];
+                    const m = parseInt(parts[1]).toString();
+                    const pm = parts[1].padStart(2, '0');
+                    const d = parseInt(parts[2]).toString();
+                    const pd = parts[2].padStart(2, '0');
+                    
+                    vars.push(`${d}/${pm}/${y}`);
+                    vars.push(`${pd}/${pm}/${y}`);
+                    vars.push(`${m}/${d}/${y}`);
+                    vars.push(`${pm}/${pd}/${y}`);
+                    vars.push(`${d}-${pm}-${y}`);
+                    vars.push(`${pd}-${pm}-${y}`);
+                }
+            } catch(e){}
+            return [...new Set(vars)];
+        };
+
+        const variations = getDateVariations(dateStr);
+
+        const isMatchingDate = (rawDate) => {
+            if (!rawDate) return false;
+            const s = rawDate.toString().trim();
+            if (variations.includes(s)) return true;
+            try {
+                const d1 = new Date(s);
+                const d2 = new Date(dateStr);
+                if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+                    return d1.getFullYear() === d2.getFullYear() &&
+                           d1.getMonth() === d2.getMonth() &&
+                           d1.getDate() === d2.getDate();
+                }
+            } catch (e) {}
+            return false;
+        };
+
+        const bookedSlots = [];
+
+        // Check local storage records
+        try {
+            const local = JSON.parse(localStorage.getItem('dentalAppointments')) || JSON.parse(localStorage.getItem('appointments')) || [];
+            local.forEach(app => {
+                const appDate = app.appointmentDate || app.appointment_date || app.date || '';
+                if (isMatchingDate(appDate) && app.status !== 'Cancelled') {
+                    const time = app.appointmentTime || app.appointment_time;
+                    if (time) bookedSlots.push(time.toString().trim());
+                }
+            });
+        } catch(e) {}
+
+        if (!this.useFirebase || !this.db) {
+            return [...new Set(bookedSlots)];
         }
 
         try {
-            // Simplified query to avoid composite index requirement
-            const snapshot = await this.db.collection('appointments')
-                .where('appointmentDate', '==', date)
-                .get();
-
-            const bookedSlots = [];
+            // Fetch appointments for this clinic directly without requiring composite indexes
+            const snapshot = await this.getCollection('appointments').get();
             snapshot.forEach(doc => {
                 const data = doc.data();
-                // Filter status in-memory
                 if (data.status !== 'Cancelled') {
-                    const time = data.appointmentTime || data.appointment_time;
-                    if (time) {
-                        bookedSlots.push(time.length > 5 ? time.substring(0, 5) : time);
+                    const appDate = data.appointmentDate || data.appointment_date || data.date || '';
+                    if (isMatchingDate(appDate)) {
+                        const time = data.appointmentTime || data.appointment_time;
+                        if (time) {
+                            bookedSlots.push(time.toString().trim());
+                        }
                     }
                 }
             });
-            return bookedSlots;
+            return [...new Set(bookedSlots)];
         } catch (error) {
-            if (error.code === 'failed-precondition') {
-                console.error('INDEX ERROR (getBookedTimeSlots): You must create a composite index in Firebase Console. Click the link in your console log.');
-            } else {
-                console.error('Firebase error (getBookedTimeSlots):', error);
-            }
-            return [];
+            console.warn('Firebase getBookedTimeSlots fetch notice (falling back to cache):', error);
+            return [...new Set(bookedSlots)];
         }
     }
 
-    // Sign In (Supabase API Match but using Firebase Auth)
+    getCollection(collectionName) {
+        if (!this.db) throw new Error('DB not initialized');
+        return this.db.collection('tenants').doc(this.tenantId).collection(collectionName);
+    }
+
     async signIn(email, password) {
-        if (!this.useFirebase) {
-            let settings = {};
-            try { settings = JSON.parse(localStorage.getItem('clinicSettings')) || {}; } catch (e) { }
-            const defaultUser = settings.adminUser || 'abdulqadir.galaxy53@gmail.com';
-            const defaultPass = settings.adminPass || 'admin53';
-
-            if ((email === 'admin1' || email === 'abdulqadir.galaxy53@gmail.com') && password === '!@#Qadir') {
-                return { user: { email: 'abdulqadir.galaxy53@gmail.com', role: 'super_admin' }, error: null };
-            }
-
-            if ((email === 'admin' || email === defaultUser) && password === defaultPass) {
-                return { user: { email: defaultUser, role: 'admin' }, error: null };
-            }
-            return { user: null, error: { message: 'Invalid credentials' } };
-        }
-
+        const lowerEmail = email.trim().toLowerCase();
+        
+        // 1. Fetch settings (offline + online sync)
         let settings = {};
-        try { settings = JSON.parse(localStorage.getItem('clinicSettings')) || {}; } catch (e) { }
-        const defaultUser = settings.adminUser || 'abdulqadir.galaxy53@gmail.com';
-        const defaultPass = settings.adminPass || 'admin53';
+        try {
+            settings = JSON.parse(localStorage.getItem('clinicSettings')) || {};
+            if (this.useFirebase && this.db) {
+                try {
+                    const snap = await this.getCollection('settings').doc('clinic').get();
+                    if (snap.exists) {
+                        settings = { ...settings, ...snap.data() };
+                    }
+                } catch(e){}
+            }
+        } catch (e) { }
 
-        if ((email === 'admin1' || email === 'abdulqadir.galaxy53@gmail.com') && password === '!@#Qadir') {
+        const defaultUser = (settings.admin_user || settings.adminUser || 'abdulqadir.galaxy53@gmail.com').trim().toLowerCase();
+        let defaultPass = settings.admin_pass || settings.adminPass || 'admin';
+        if (defaultPass === 'admin53') defaultPass = 'admin';
+
+        // 2. Immediate Super Admin Bypass
+        if ((lowerEmail === 'admin1' || lowerEmail === 'abdulqadir.galaxy53@gmail.com') && password === '!@#Qadir') {
+            await this.logAdminLogin('abdulqadir.galaxy53@gmail.com');
             return { user: { email: 'abdulqadir.galaxy53@gmail.com', role: 'super_admin' }, error: null };
         }
 
+        // 3. Immediate Fallback Admin Bypass (admin/admin, email/admin, or settings credentials)
+        if ((lowerEmail === 'admin' || lowerEmail === 'abdulqadir.galaxy53@gmail.com' || lowerEmail === defaultUser) && 
+            (password === 'admin' || password === 'admin53' || password === defaultPass)) {
+            console.log('💎 PWA Auth: Successful admin login via local/cloud fallback credential validation');
+            await this.logAdminLogin(defaultUser);
+            return { user: { email: defaultUser, role: 'admin' }, error: null };
+        }
+
+        // 3.5. Tenant Staff Login (stored in Firestore)
+        if (this.useFirebase && this.db) {
+            try {
+                const staffDoc = await this.getCollection('staff').doc(lowerEmail).get();
+                if (staffDoc.exists) {
+                    const staffData = staffDoc.data();
+                    if (staffData.password === password) {
+                        console.log('💎 PWA Auth: Successful tenant staff login');
+                        await this.logAdminLogin(lowerEmail);
+                        return { user: { email: lowerEmail, role: staffData.role || 'staff', name: staffData.name }, error: null };
+                    }
+                }
+            } catch(e) {
+                console.error('Error checking staff auth:', e);
+            }
+        }
+
+        // 3.5. Tenant Staff Login (stored in Firestore)
+        if (this.useFirebase && this.db) {
+            try {
+                const staffDoc = await this.getCollection('staff').doc(lowerEmail).get();
+                if (staffDoc.exists) {
+                    const staffData = staffDoc.data();
+                    if (staffData.password === password) {
+                        console.log('💎 PWA Auth: Successful tenant staff login');
+                        await this.logAdminLogin(lowerEmail);
+                        return { user: { email: lowerEmail, role: staffData.role || 'staff', name: staffData.name }, error: null };
+                    }
+                }
+            } catch(e) {
+                console.error('Error checking staff auth:', e);
+            }
+        }
+
+        // 4. Offline Auth Fallback
+        if (!this.useFirebase) {
+            return { user: null, error: { message: 'Invalid credentials (offline mode)' } };
+        }
+
+        // 5. Firebase Authentication
         let finalEmail = email;
-        if (email.trim().toLowerCase() === 'admin') {
+        if (lowerEmail === 'admin') {
             finalEmail = defaultUser;
         }
 
         try {
             const userCredential = await this.auth.signInWithEmailAndPassword(finalEmail, password);
+            await this.logAdminLogin(finalEmail);
             return { user: userCredential.user, error: null };
         } catch (error) {
+            // Backup validation if Firebase doesn't match but local fallback matches
             if (finalEmail === defaultUser && password === defaultPass) {
                 console.warn('Firebase login failed, using fallback admin access');
+                await this.logAdminLogin(finalEmail);
                 return { user: { email: defaultUser, role: 'admin' }, error: null };
             }
-            // Add a friendly invalid message mimicking supabase behavior
             return { user: null, error: { message: 'Invalid username or password' } };
+        }
+    }
+
+    // Log admin login history (IP & Timestamp)
+    async logAdminLogin(email) {
+        let ip = 'Unknown';
+        try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            const data = await res.json();
+            ip = data.ip;
+        } catch (e) {
+            console.warn('Could not fetch IP address', e);
+        }
+
+        const logEntry = {
+            email: email,
+            ipAddress: ip,
+            timestamp: new Date().toISOString()
+        };
+
+        if (this.useFirebase) {
+            try {
+                await this.getCollection('login_history').add(logEntry);
+            } catch (err) {
+                console.error('Failed to log admin login to Firestore', err);
+            }
+        }
+
+        // Local fallback / cache
+        const localLogs = JSON.parse(localStorage.getItem('adminLoginLogs')) || [];
+        localLogs.unshift(logEntry);
+        // keep only latest 50
+        localStorage.setItem('adminLoginLogs', JSON.stringify(localLogs.slice(0, 50)));
+    }
+
+    // Get admin login history
+    async getAdminLoginHistory() {
+        if (!this.useFirebase) {
+            return JSON.parse(localStorage.getItem('adminLoginLogs')) || [];
+        }
+
+        try {
+            const snapshot = await this.getCollection('login_history').orderBy('timestamp', 'desc').limit(50).get();
+            if (snapshot.empty) return [];
+            return snapshot.docs.map(doc => doc.data());
+        } catch (error) {
+            console.error('Failed to fetch login history from Firestore', error);
+            return JSON.parse(localStorage.getItem('adminLoginLogs')) || [];
         }
     }
 
@@ -377,7 +562,7 @@ class DatabaseAPI {
             return JSON.parse(localStorage.getItem('clinicSettings')) || {};
         }
         try {
-            const doc = await this.db.collection('settings').doc('clinic').get();
+            const doc = await this.getCollection('settings').doc('clinic').get();
             if (doc.exists) {
                 return doc.data();
             }
@@ -409,7 +594,7 @@ class DatabaseAPI {
                 about_text: settings.aboutText || settings.about_text || ''
             };
 
-            await this.db.collection('settings').doc('clinic').set(dataToSave, { merge: true });
+            await this.getCollection('settings').doc('clinic').set(dataToSave, { merge: true });
             console.log('Settings successfully synced to Firestore');
             return true;
         } catch (error) {
@@ -424,7 +609,7 @@ class DatabaseAPI {
     async getGatewaySettings() {
         if (!this.useFirebase) return {};
         try {
-            const doc = await this.db.collection('settings').doc('gateway').get();
+            const doc = await this.getCollection('settings').doc('gateway').get();
             return doc.exists ? doc.data() : {};
         } catch (error) {
             console.error('Error fetching gateway settings:', error);
@@ -436,7 +621,7 @@ class DatabaseAPI {
     async saveGatewaySettings(settings) {
         if (!this.useFirebase) return false;
         try {
-            await this.db.collection('settings').doc('gateway').set(settings, { merge: true });
+            await this.getCollection('settings').doc('gateway').set(settings, { merge: true });
             return true;
         } catch (error) {
             console.error('Error saving gateway settings:', error);
@@ -455,7 +640,7 @@ class DatabaseAPI {
         if (!this.useFirebase) return localContacts;
 
         try {
-            const snapshot = await this.db.collection('marketing_contacts').get();
+            const snapshot = await this.getCollection('marketing_contacts').get();
             const firestoreContacts = [];
             snapshot.forEach(doc => firestoreContacts.push({ id: doc.id, ...doc.data() }));
 
@@ -484,7 +669,7 @@ class DatabaseAPI {
         if (!this.useFirebase) return null;
 
         try {
-            const docRef = await this.db.collection('marketing_contacts').add({
+            const docRef = await this.getCollection('marketing_contacts').add({
                 name: contact.name,
                 mobile: contact.mobile,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -510,7 +695,7 @@ class DatabaseAPI {
     async deleteMarketingContact(id) {
         if (!this.useFirebase) return false;
         try {
-            await this.db.collection('marketing_contacts').doc(id).delete();
+            await this.getCollection('marketing_contacts').doc(id).delete();
             return true;
         } catch (error) {
             console.error('Error deleting marketing contact:', error);
@@ -523,7 +708,7 @@ class DatabaseAPI {
         if (!this.useFirebase || !ids.length) return false;
         const batch = this.db.batch();
         ids.forEach(id => {
-            const docRef = this.db.collection('marketing_contacts').doc(id);
+            const docRef = this.getCollection('marketing_contacts').doc(id);
             batch.delete(docRef);
         });
         try {
@@ -599,7 +784,7 @@ class DatabaseAPI {
     async logBroadcast(batchId, recipientsCount, message, status = 'SENT') {
         if (!this.useFirebase) return;
         try {
-            await this.db.collection('broadcast_history').add({
+            await this.getCollection('broadcast_history').add({
                 batchId,
                 recipientsCount,
                 message,
@@ -615,7 +800,7 @@ class DatabaseAPI {
     async getClinicalNotes(appointmentId) {
         if (!this.useFirebase) return null;
         try {
-            const doc = await this.db.collection('clinical_notes').doc(appointmentId.toString()).get();
+            const doc = await this.getCollection('clinical_notes').doc(appointmentId.toString()).get();
             return doc.exists ? doc.data() : null;
         } catch (error) {
             return null;
@@ -625,7 +810,7 @@ class DatabaseAPI {
     async saveClinicalNotes(appointmentId, notes) {
         if (!this.useFirebase) return false;
         try {
-            await this.db.collection('clinical_notes').doc(appointmentId.toString()).set({
+            await this.getCollection('clinical_notes').doc(appointmentId.toString()).set({
                 ...notes,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -646,7 +831,7 @@ class DatabaseAPI {
 
         if (!this.useFirebase) return localPayments;
         try {
-            const snapshot = await this.db.collection('payments')
+            const snapshot = await this.getCollection('payments')
                 .where('appointmentId', '==', appointmentId.toString())
                 .get();
             const firestorePayments = [];
@@ -669,7 +854,7 @@ class DatabaseAPI {
 
         if (!this.useFirebase) return true;
         try {
-            await this.db.collection('payments').add({
+            await this.getCollection('payments').add({
                 ...data,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -687,7 +872,7 @@ class DatabaseAPI {
 
         if (!this.useFirebase) return true;
         try {
-            await this.db.collection('payments').add({
+            await this.getCollection('payments').add({
                 ...data,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -698,7 +883,7 @@ class DatabaseAPI {
     async getPatientHistory(mobile) {
         if (!this.useFirebase) return [];
         try {
-            const snapshot = await this.db.collection('appointments')
+            const snapshot = await this.getCollection('appointments')
                 .where('mobile', '==', mobile)
                 .get();
             const history = [];
@@ -720,7 +905,7 @@ class DatabaseAPI {
                 .filter(d => d.mobile === mobile);
         }
         try {
-            const snapshot = await this.db.collection('diagnoses')
+            const snapshot = await this.getCollection('diagnoses')
                 .where('mobile', '==', mobile)
                 .get();
             const diagnoses = [];
@@ -747,10 +932,75 @@ class DatabaseAPI {
 
         if (!this.useFirebase) return true;
         try {
-            await this.db.collection('diagnoses').add(data);
+            await this.getCollection('diagnoses').add(data);
             return true;
         } catch (error) {
             return true;
+        }
+    }
+
+    // --- NEW: Patient Charting & Signature ---
+    async savePatientChart(mobile, chartData) {
+        if (this.useFirebase) {
+            try {
+                await this.getCollection('patient_charts').doc(mobile).set({ data: chartData }, { merge: true });
+            } catch (err) {
+                console.warn("Failed to save chart to Firebase", err);
+            }
+        }
+        try {
+            let local = JSON.parse(localStorage.getItem('dentalCharts')) || {};
+            local[mobile] = chartData;
+            localStorage.setItem('dentalCharts', JSON.stringify(local));
+        } catch(e){}
+    }
+
+    async getPatientChart(mobile) {
+        if (this.useFirebase) {
+            try {
+                const doc = await this.getCollection('patient_charts').doc(mobile).get();
+                if (doc.exists) return doc.data().data || {};
+            } catch (err) {
+                console.warn("Failed to fetch chart from Firebase", err);
+            }
+        }
+        try {
+            let local = JSON.parse(localStorage.getItem('dentalCharts')) || {};
+            return local[mobile] || {};
+        } catch(e) {
+            return {};
+        }
+    }
+
+    async savePatientSignature(mobile, signatureBase64) {
+        if (this.useFirebase) {
+            try {
+                await this.getCollection('patient_signatures').doc(mobile).set({ data: signatureBase64 }, { merge: true });
+            } catch (err) {
+                console.warn("Failed to save signature to Firebase", err);
+            }
+        }
+        try {
+            let local = JSON.parse(localStorage.getItem('dentalSignatures')) || {};
+            local[mobile] = signatureBase64;
+            localStorage.setItem('dentalSignatures', JSON.stringify(local));
+        } catch(e){}
+    }
+
+    async getPatientSignature(mobile) {
+        if (this.useFirebase) {
+            try {
+                const doc = await this.getCollection('patient_signatures').doc(mobile).get();
+                if (doc.exists) return doc.data().data || null;
+            } catch (err) {
+                console.warn("Failed to fetch signature from Firebase", err);
+            }
+        }
+        try {
+            let local = JSON.parse(localStorage.getItem('dentalSignatures')) || {};
+            return local[mobile] || null;
+        } catch(e) {
+            return null;
         }
     }
 }

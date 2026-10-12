@@ -6,6 +6,10 @@ function showLoginModal() {
     document.getElementById('loginModal').style.display = 'flex';
     document.getElementById('loginError').style.display = 'none';
     document.getElementById('loginForm').reset();
+    setTimeout(() => {
+        const usernameInput = document.getElementById('username');
+        if (usernameInput) usernameInput.focus();
+    }, 100);
 }
 
 function closeLoginModal() {
@@ -77,6 +81,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Successful login
                     sessionStorage.setItem('staffLoggedIn', 'true');
                     sessionStorage.setItem('staffUser', JSON.stringify(user));
+                    
+                    if (user.email === 'abdulqadir.galaxy53@gmail.com') {
+                        sessionStorage.setItem('isSuperAdmin', 'true');
+                    } else {
+                        sessionStorage.removeItem('isSuperAdmin');
+                    }
+                    if (typeof checkSuperAdminUI === 'function') checkSuperAdminUI();
+
                     closeLoginModal();
 
                     // Show dashboard

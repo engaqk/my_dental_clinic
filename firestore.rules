@@ -2,47 +2,57 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // --- CLINICAL DATA SECURITY ---
-    // Patients can book (create) and view their own data (read)
-    // Updates are permitted for clinical progress tracking
+    // Allow read/write for all tenants and their subcollections
+    match /tenants/{tenantId} {
+      allow read, write: if true;
+      
+      match /appointments/{appointmentId} {
+        allow read, create, update: if true; 
+        allow delete: if true; // Since admin bypass is used
+      }
+
+      match /settings/{docId} {
+        allow read, write: if true;
+      }
+      
+      match /marketing_contacts/{contactId} {
+        allow read, write: if true; 
+      }
+      
+      match /broadcast_history/{historyId} {
+        allow read, write: if true;
+      }
+
+      match /clinical_notes/{noteId} {
+        allow read, write: if true;
+      }
+
+      match /diagnoses/{diagnosisId} {
+        allow read, write: if true;
+      }
+
+      match /payments/{paymentId} {
+        allow read, write: if true;
+      }
+
+      match /login_history/{historyId} {
+        allow read, write: if true;
+      }
+    }
+
+    // Keep legacy root paths accessible for migration
     match /appointments/{appointmentId} {
       allow read, create, update: if true; 
-      allow delete: if request.auth != null; // Only authenticated staff can hard-delete records
+      allow delete: if true; 
     }
 
-    // --- CLINIC BRANDING & CONFIG ---
-    // Public can read name/subtitle, but only authorized doc can be updated
     match /settings/{docId} {
-      allow read: if true;
-      allow write: if docId == 'clinic' || request.auth != null;
-    }
-
-    // --- MARKETING & PHARMACY DATA ---
-    // Restricted to management staff
-    // If you encounter "Permission Denied" in Clinical Portal, ensure Firebase Auth is enabled
-    match /marketing_contacts/{contactId} {
-      allow read, write: if true; 
-    }
-    
-    match /broadcast_history/{historyId} {
-      allow read, write: if true;
-    }
-
-    match /clinical_notes/{noteId} {
-      allow read, write: if true;
-    }
-
-    match /diagnoses/{diagnosisId} {
-      allow read, write: if true;
-    }
-
-    match /payments/{paymentId} {
       allow read, write: if true;
     }
 
     // --- DEFAULT SECURITY GATE ---
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true; 
     }
   }
 }

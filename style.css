@@ -205,19 +205,73 @@ nav a.active { color: var(--primary); }
 
 @media (min-width: 1024px) {
   .mobile-menu-btn { display: none !important; }
+  header .nav-container {
+    max-width: 100% !important;
+    padding: 0 4rem !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo-section {
+    order: 1;
+  }
   #mainNav {
+    order: 2;
     position: static;
     transform: none;
     padding: 0;
     box-shadow: none;
     width: auto;
     background: transparent;
+    margin-left: auto;
+    display: block !important;
   }
   nav .nav-links {
     flex-direction: row;
-    gap: 3rem;
+    gap: 2rem;
+    align-items: center;
   }
-  nav a { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em; }
+  nav a {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 0;
+    transition: color 0.3s ease;
+    position: relative;
+  }
+  nav a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary);
+    transition: width 0.3s ease;
+  }
+  nav a:hover {
+    color: var(--primary);
+  }
+  nav a:hover::after, nav a.active::after {
+    width: 100%;
+  }
+  .lang-selector-container {
+    order: 3;
+    margin-left: 2rem;
+    margin-right: 0;
+  }
+  .lang-select {
+    background: var(--bg-soft);
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    color: var(--secondary);
+    font-size: 0.85rem;
+    padding: 0.4rem 0.75rem;
+  }
+  .lang-select:hover {
+    background: var(--primary-light);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
 }
 
 /* --- MODALS & SPECIAL COMPONENTS --- */
@@ -674,7 +728,10 @@ input:focus, select:focus, textarea:focus {
   box-shadow: var(--shadow-premium);
 }
 
-.patient-name { font-size: 1.4rem; font-weight: 800; color: var(--secondary); margin-bottom: 0.75rem; }
+.patient-name { font-size: 1.4rem; font-weight: 800; color: var(--secondary); margin-bottom: 0.75rem; white-space: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* Hide scrollbar for cleaner look but keep it scrollable */
+.patient-name::-webkit-scrollbar { display: none; }
+.patient-name { -ms-overflow-style: none; scrollbar-width: none; }
 .patient-meta { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-muted); }
 .patient-meta span { display: flex; align-items: center; gap: 0.5rem; }
 
@@ -719,4 +776,538 @@ input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback { display:
 @media (min-width: 768px) {
   .section { padding-top: 120px; }
   .dashboard-view { padding-top: 140px !important; }
+}
+
+/* --- APP PREVIEW SHOWCASE SYSTEM --- */
+.mock-browser-frame {
+  background: white;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.mock-browser-header {
+  background: var(--bg-soft);
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.browser-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.browser-dots .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-red { background: #EF4444; }
+.dot-amber { background: #F59E0B; }
+.dot-green { background: #10B981; }
+
+.browser-address-bar {
+  background: white;
+  border: 1px solid rgba(226, 232, 240, 0.6);
+  border-radius: 8px;
+  flex: 1;
+  padding: 0.35rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.mock-browser-content {
+  position: relative;
+  overflow: hidden;
+  height: 0;
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  background: #F8FAFC;
+}
+
+.mock-carousel-track {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 600%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.mock-carousel-slide {
+  flex-shrink: 0;
+  width: calc(100% / 6);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  overflow: hidden;
+}
+
+.mock-carousel-slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Mock Browser Footer Controls */
+.mock-browser-footer {
+  background: var(--bg-soft);
+  border-top: 1px solid rgba(226, 232, 240, 0.8);
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.carousel-control-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: white;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: var(--secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.carousel-control-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.carousel-dots-container {
+  display: flex;
+  gap: 8px;
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(148, 163, 184, 0.4);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.carousel-dot.active {
+  background: var(--primary);
+  transform: scale(1.3);
+}
+
+/* --- HOME SECTION RESPONSIVE FLEXBOX ORDERING & COMPACT SPACING --- */
+#home {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* Mobile: Booking form at the top, stats row, hero banner, carousel last with minimal spacing */
+@media (max-width: 767px) {
+  .section {
+    padding-top: 60px !important;
+    padding-bottom: 15px !important;
+  }
+  .section.dashboard-view {
+    padding-top: 90px !important;
+  }
+  .booking-form-wrapper {
+    order: 1 !important;
+    margin-top: 0px !important;
+    margin-bottom: 8px !important;
+  }
+  .stats-row-wrapper {
+    order: 2 !important;
+    margin-top: 0px !important;
+    margin-bottom: 12px !important;
+  }
+  .hero-wrapper {
+    order: 3 !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    margin-top: 0px !important;
+    margin-bottom: 12px !important;
+  }
+  .carousel-wrapper {
+    order: 4 !important;
+    margin-top: 8px !important;
+    margin-bottom: 15px !important;
+  }
+
+  /* Form padding reductions */
+  .appointment-form {
+    padding: 1.25rem !important;
+    margin-top: 0 !important;
+  }
+  .appointment-form .section-title {
+    font-size: 1.4rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  .appointment-form p {
+    margin-top: 0px !important;
+    margin-bottom: 0.75rem !important;
+    font-size: 0.75rem !important;
+  }
+  .form-group {
+    margin-bottom: 0.75rem !important;
+  }
+  .form-group label {
+    margin-bottom: 0.25rem !important;
+    font-size: 0.7rem !important;
+  }
+  .form-group input, 
+  .form-group select {
+    height: 40px !important;
+    font-size: 0.8rem !important;
+  }
+  .appointment-form button[type="submit"] {
+    height: 42px !important;
+    font-size: 0.85rem !important;
+    margin-top: 0.5rem !important;
+  }
+
+  /* Hero adjustments */
+  .hero {
+    padding: 20px 0 !important;
+  }
+  .hero-content {
+    padding: 0.5rem 0 !important;
+    text-align: center;
+  }
+  .hero-content .hero-label {
+    font-size: 0.65rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+  .hero-content h1 {
+    font-size: 1.6rem !important;
+    margin-bottom: 0.25rem !important;
+    line-height: 1.2 !important;
+  }
+  .hero-p {
+    font-size: 0.8rem !important;
+    margin-bottom: 0.75rem !important;
+    line-height: 1.4 !important;
+  }
+  .hero-btns {
+    margin-top: 0.75rem !important;
+    gap: 0.5rem !important;
+    justify-content: center;
+  }
+  .hero-btns button {
+    height: 38px !important;
+    padding: 0 1rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  /* Stats/quick info adjustments */
+  .stats-row {
+    gap: 0.5rem !important;
+  }
+  .stat-box {
+    padding: 0.6rem 0.8rem !important;
+  }
+  .stat-box i {
+    font-size: 1.1rem !important;
+  }
+  .stat-box h3 {
+    font-size: 0.85rem !important;
+    margin-bottom: 2px !important;
+  }
+  .stat-box p {
+    font-size: 0.7rem !important;
+    line-height: 1.3 !important;
+  }
+}
+
+/* Desktop/Web: Carousel at the top, hero, stats, booking form last with tight spaces */
+@media (min-width: 768px) {
+  .section {
+    padding-top: 100px !important;
+    padding-bottom: 30px !important;
+  }
+  .carousel-wrapper {
+    order: 1 !important;
+    margin-top: 0px !important;
+    margin-bottom: 25px !important;
+  }
+  .hero-wrapper {
+    order: 2 !important;
+    margin-bottom: 25px !important;
+  }
+  .stats-row-wrapper {
+    order: 3 !important;
+    margin-bottom: 25px !important;
+  }
+  .booking-form-wrapper {
+    order: 4 !important;
+    margin-top: 25px !important;
+  }
+}
+
+/* --- STAFF LOGIN FULL-SCREEN OPAQUE OVERLAY --- */
+#loginModal {
+  background: rgba(15, 23, 42, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+}
+#loginModal .modal-content {
+  box-shadow: none !important;
+  border: 1px solid rgba(226, 232, 240, 0.1);
+  background: var(--bg-soft) !important;
+  color: var(--text) !important;
+}
+#loginModal .close-modal {
+  color: var(--text-muted) !important;
+}
+#loginModal .form-group label {
+  color: var(--text-muted) !important;
+}
+
+/* --- PATIENT PROFILE MODAL FIXES (SCROLLABLE & USER FRIENDLY) --- */
+
+/* Hide home section when clinical portal is active */
+.clinical-portal-active #home { display: none !important; }
+.profile-modal {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.profile-modal .close-modal {
+  top: 1.5rem !important;
+  right: 1.5rem !important;
+  z-index: 10;
+}
+
+.profile-modal .profile-header {
+  padding: 2rem 2.5rem 1.5rem !important;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  flex-shrink: 0;
+}
+
+.profile-modal .tab-container {
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 0 !important;
+  background: white !important;
+  border-left: none !important;
+  border-right: none !important;
+  padding: 0.5rem 2.5rem !important;
+  flex-shrink: 0;
+}
+
+.profile-modal .profile-content {
+  flex: 1 !important;
+  overflow-y: auto !important;
+  padding: 2rem 2.5rem !important;
+}
+
+.profile-booking-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .profile-booking-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Responsive Patient Profile Modal optimizations for Mobile */
+@media (max-width: 767px) {
+  .profile-modal {
+    width: 96% !important;
+    max-height: 95vh !important;
+  }
+  .profile-modal .profile-header {
+    padding: 1.5rem 1.25rem 1rem !important;
+  }
+  .profile-modal .profile-header h2 {
+    font-size: 1.4rem !important;
+  }
+  .profile-modal .tab-container {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    padding: 0.5rem !important;
+    background: var(--bg-soft) !important;
+    border-radius: 12px !important;
+    margin-bottom: 0.75rem !important;
+  }
+  .profile-modal .profile-tab-btn {
+    flex: 1 1 30% !important;
+    text-align: center !important;
+    padding: 0.6rem 0.5rem !important;
+    font-size: 0.75rem !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+  .profile-modal .profile-tab-btn i {
+    font-size: 1.1rem;
+    margin-right: 0 !important;
+  }
+  .profile-modal .profile-content {
+    padding: 1.25rem !important;
+  }
+}
+
+/* --- PREMIUM MULTILINGUAL LANGUAGE SELECTOR --- */
+.lang-selector-container {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+  margin-right: 1.5rem;
+}
+.lang-select {
+  background: var(--bg-soft);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  border-radius: 8px;
+  color: var(--secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+}
+.lang-select:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.lang-select option {
+  background: var(--bg-soft);
+  color: var(--text);
+}
+
+@media (max-width: 767px) {
+  .lang-selector-container {
+    margin-right: 0.5rem;
+  }
+}
+
+/* --- CAROUSEL TEXT OVERLAYS --- */
+.mock-carousel-slide {
+  position: relative;
+}
+.carousel-slide-overlay {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  right: 20px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  z-index: 5;
+  text-align: left;
+}
+.carousel-slide-overlay h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: white !important;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 767px) {
+  .carousel-slide-overlay {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+  }
+  .carousel-slide-overlay h3 {
+    font-size: 0.75rem;
+  }
+}
+
+/* Profile Finance Stats Row Layout */
+.profile-stats-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 0 !important;
+  margin-bottom: 2rem;
+}
+@media (min-width: 768px) {
+  .profile-stats-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Mobile Optimizations for Clinical History Timeline */
+@media (max-width: 767px) {
+  .timeline-item {
+    padding-left: 1.25rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+  .seating-card {
+    padding: 1.25rem !important;
+  }
+  .status-select {
+    float: none !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    margin-bottom: 0.75rem !important;
+    display: block !important;
+  }
+  .seating-card h4 {
+    font-size: 1.1rem !important;
+    margin: 0.5rem 0 1rem !important;
+    clear: both !important;
+    line-height: 1.4 !important;
+  }
+  .seating-fee-input {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+    padding: 0.75rem !important;
+    margin-bottom: 1rem !important;
+  }
+  .seating-fee-input input {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .timeline-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+  }
+  .timeline-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 0.6rem 0.5rem !important;
+    font-size: 0.7rem !important;
+  }
 }

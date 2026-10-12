@@ -1,0 +1,134 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body { font-family: 'Helvetica', sans-serif; background: #F8FAFC; padding: 20px; margin: 0; display: flex; justify-content: center; }
+            .page { width: 595px; height: 842px; background: white; box-shadow: 0 10px 25px rgba(15,23,42,0.08); border-radius: 8px; position: relative; padding: 40px; box-sizing: border-box; display: flex; flex-direction: column; }
+            .top-bar { position: absolute; top: 0; left: 0; right: 0; height: 8px; background: #0D9488; border-top-left-radius: 8px; border-top-right-radius: 8px; }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-top: 15px; }
+            .clinic-name { font-size: 24px; font-weight: bold; color: #0F172A; margin: 0; }
+            .subtitle { font-size: 10px; color: #0D9488; font-weight: 600; text-transform: uppercase; margin-top: 4px; }
+            .title-invoice { font-size: 22px; font-weight: 900; color: #0F172A; margin: 0; text-align: right; }
+            .meta-invoice { font-size: 10px; color: #64748B; margin-top: 4px; text-align: right; line-height: 1.4; }
+            .divider { height: 1px; background: #E2E8F0; margin: 25px 0; }
+            .info-cols { display: flex; justify-content: space-between; }
+            .info-col { width: 45%; }
+            .info-label { font-size: 10px; font-weight: bold; color: #64748B; text-transform: uppercase; margin-bottom: 6px; }
+            .info-val-bold { font-size: 12px; font-weight: bold; color: #0F172A; margin-bottom: 4px; }
+            .info-val { font-size: 10px; color: #1E293B; margin-bottom: 2px; }
+            .table-container { margin-top: 30px; flex-grow: 1; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #0D9488; color: white; font-size: 10px; font-weight: bold; text-align: left; padding: 10px 14px; text-transform: uppercase; }
+            th:first-child { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+            th:last-child { border-top-right-radius: 4px; border-bottom-right-radius: 4px; text-align: right; }
+            td { font-size: 10px; padding: 12px 14px; border-bottom: 1px solid #F1F5F9; color: #1E293B; }
+            td.amount { font-weight: bold; color: #0F172A; text-align: right; }
+            td.type { font-style: italic; color: #64748B; }
+            .summary-section { display: flex; justify-content: space-between; margin-top: 30px; }
+            .status-block { width: 50%; }
+            .status-badge { background: #10B981; color: white; font-size: 9px; font-weight: bold; padding: 6px 14px; border-radius: 4px; display: inline-block; margin-top: 6px; }
+            .totals-block { width: 40%; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 6px; padding: 12px; box-sizing: border-box; }
+            .total-row { display: flex; justify-content: space-between; font-size: 9px; color: #64748B; margin-bottom: 6px; }
+            .total-row.bold { font-size: 11px; font-weight: bold; color: #0F172A; border-top: 1px solid #E2E8F0; padding-top: 6px; margin-top: 6px; }
+            .total-row.paid { color: #10B981; font-weight: bold; }
+            .instructions { background: #CCFBF1; border-radius: 6px; padding: 12px; margin-top: 40px; box-sizing: border-box; }
+            .inst-title { font-size: 9px; font-weight: bold; color: #0F766E; margin-bottom: 4px; text-transform: uppercase; }
+            .inst-text { font-size: 8px; color: #0F766E; line-height: 1.4; }
+            .footer { border-top: 1px solid #E2E8F0; padding-top: 8px; margin-top: 40px; display: flex; justify-content: space-between; font-size: 8px; color: #94A3B8; }
+        </style>
+    </head>
+    <body>
+        <div class="page">
+            <div class="top-bar"></div>
+            <div class="header">
+                <div>
+                    <h1 class="clinic-name">MY DENTAL CLINIC</h1>
+                    <div class="subtitle">Dental & Cosmetic Clinic</div>
+                </div>
+                <div>
+                    <h1 class="title-invoice">INVOICE</h1>
+                    <div class="meta-invoice">
+                        Invoice No: INV-1721626300<br>
+                        Date: 22 Jul 2026
+                    </div>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="info-cols">
+                <div class="info-col">
+                    <div class="info-label">BILLED TO:</div>
+                    <div class="info-val-bold">Abdul Qadir</div>
+                    <div class="info-val">Phone: +91 98765 43210</div>
+                    <div class="info-val">Location: Mumbai</div>
+                </div>
+                <div class="info-col">
+                    <div class="info-label">TREATMENT DETAILS:</div>
+                    <div class="info-val-bold">Root Canal Treatment</div>
+                    <div class="info-val">Scheduled Time: 11:00 AM</div>
+                    <div class="info-val">Clinical Status: Completed</div>
+                </div>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service Description / Procedure</th>
+                            <th>Date</th>
+                            <th>Type</th>
+                            <th style="text-align:right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Root Canal Treatment</td>
+                            <td>22 Jul 2026</td>
+                            <td class="type">Treatment Fee</td>
+                            <td class="amount">INR 8,500</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="summary-section">
+                <div class="status-block">
+                    <div class="info-label">PAYMENT STATUS</div>
+                    <div class="status-badge">PAID IN FULL</div>
+                </div>
+                <div class="totals-block">
+                    <div class="total-row">
+                        <span>Total Billed:</span>
+                        <span>INR 8,500</span>
+                    </div>
+                    <div class="total-row paid">
+                        <span>Total Paid:</span>
+                        <span>INR 8,500</span>
+                    </div>
+                    <div class="total-row bold">
+                        <span>Balance Due:</span>
+                        <span>INR 0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="instructions">
+                <div class="inst-title">CLINICAL INSTRUCTIONS & POLICIES:</div>
+                <div class="inst-text">
+                    1. Please maintain regular dental checkups every 6 months.<br>
+                    2. In case of emergency or severe discomfort post-treatment, contact the clinic immediately.
+                </div>
+            </div>
+            
+            <div class="footer">
+                <span>This invoice is digitally compiled and processed. No physical signature is required.</span>
+                <span>MY DENTAL CLINIC | Dental & Cosmetic Clinic</span>
+            </div>
+        </div>
+    </body>
+    </html>
+    
