@@ -1,3 +1,14 @@
+
+function escapeHtml(str) {
+    if (!str && str !== 0) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 /* 
    ==========================================================================
    State-of-the-Art Dental Clinic Management System
@@ -197,12 +208,18 @@ function renderPatientExplorer(patients) {
         card.className = 'patient-explorer-card';
         card.onclick = () => openPatientProfile(p);
         
+        const patientAlerts = p.medicalAlerts || (p.history && p.history.find(h => h.medicalAlerts && h.medicalAlerts.length)?.medicalAlerts) || [];
         card.innerHTML = `
             <div class="patient-name">${p.name}</div>
             <div class="patient-meta">
                 <span><i class="fas fa-phone-alt"></i> ${p.mobile}</span>
                 <span><i class="fas fa-map-marker-alt"></i> ${p.place || 'Local'}</span>
             </div>
+            ${patientAlerts.length > 0 ? `
+                <div style="margin: 0.35rem 0 0.5rem; display: flex; flex-wrap: wrap; gap: 4px;">
+                    ${patientAlerts.map(al => `<span class="medical-alert-tag alert-tag-danger" style="font-size: 0.68rem; padding: 1px 6px;"><i class="fas fa-exclamation-triangle"></i> ${al}</span>`).join('')}
+                </div>
+            ` : ''}
             <div class="patient-summary-stats">
                 <div class="mini-stat">
                     <span>Last Visit</span>
@@ -235,6 +252,7 @@ async function openPatientProfile(patient) {
         renderTimeline(patient.history);
         await renderFinances(patient);
         if (window.resetChartingFeatures) await window.resetChartingFeatures();
+        if (typeof renderPatientMedicalAlerts === 'function') await renderPatientMedicalAlerts(patient.mobile);
         modal.style.display = 'flex';
     }
 }
@@ -245,23 +263,31 @@ function switchProfileTab(tab) {
     const finances = document.getElementById('profileFinanceSection');
     const booking = document.getElementById('profileBookingSection');
     const charting = document.getElementById('profileChartingSection');
+    const rx = document.getElementById('profilePrescriptionsSection');
+    const plans = document.getElementById('profileTreatmentPlansSection');
     
     if (timeline) timeline.style.display = tab === 'timeline' ? 'block' : 'none';
     if (diagnoses) diagnoses.style.display = tab === 'diagnoses' ? 'block' : 'none';
     if (finances) finances.style.display = tab === 'finances' ? 'block' : 'none';
     if (booking) booking.style.display = tab === 'next-seating' ? 'block' : 'none';
     if (charting) charting.style.display = tab === 'charting' ? 'block' : 'none';
+    if (rx) rx.style.display = tab === 'prescriptions' ? 'block' : 'none';
+    if (plans) plans.style.display = tab === 'treatment-plans' ? 'block' : 'none';
     
     document.querySelectorAll('.profile-tab-btn').forEach(btn => {
-        const text = btn.innerText.toLowerCase();
+        const text = (btn.innerText || btn.textContent || '').toLowerCase();
         if (tab === 'timeline') btn.classList.toggle('active', text.includes('history') || text.includes('clinical'));
-        if (tab === 'diagnoses') btn.classList.toggle('active', text.includes('diagnosis'));
-        if (tab === 'finances') btn.classList.toggle('active', text.includes('financial') || text.includes('finances'));
-        if (tab === 'next-seating') btn.classList.toggle('active', text.includes('seating'));
+        if (tab === 'diagnoses') btn.classList.toggle('active', text.includes('diagnosis') || text.includes('diagnostic'));
+        if (tab === 'finances') btn.classList.toggle('active', text.includes('financial') || text.includes('finances') || text.includes('finance'));
+        if (tab === 'next-seating') btn.classList.toggle('active', text.includes('seating') || text.includes('next visit'));
         if (tab === 'charting') btn.classList.toggle('active', text.includes('charting') || text.includes('consent'));
+        if (tab === 'prescriptions') btn.classList.toggle('active', text.includes('prescription') || text.includes('rx'));
+        if (tab === 'treatment-plans') btn.classList.toggle('active', text.includes('treatment plan') || text.includes('plan'));
     });
 
-    if (tab === 'diagnoses') renderDiagnoses(currentPatient.mobile);
+    if (tab === 'diagnoses' && currentPatient) renderDiagnoses(activePatient.mobile);
+    if (tab === 'prescriptions' && currentPatient) loadPatientPrescriptions(activePatient.mobile);
+    if (tab === 'treatment-plans' && currentPatient) loadPatientTreatmentPlans(activePatient.mobile);
 }
 
 let currentTxnType = 'payment';
@@ -313,7 +339,7 @@ async function processTransaction() {
 
     const txnData = {
         appointmentId: currentPatient.history[0]?.id.toString() || 'general',
-        mobile: currentPatient.mobile,
+        mobile: activePatient.mobile,
         amount: amount,
         note: note || (currentTxnType === 'payment' ? 'Clinic Payment' : 'Treatment Charge')
     };
@@ -615,6 +641,9 @@ bookingForm?.addEventListener('submit', async (e) => {
         return;
     }
 
+    const selectedAlerts = Array.from(document.querySelectorAll('input[name="medicalAlert"]:checked')).map(cb => cb.value);
+    const medNotes = document.getElementById('medicalNotes')?.value?.trim() || '';
+
     const appt = {
         id: Date.now(),
         date: new Date().toLocaleDateString(),
@@ -625,17 +654,32 @@ bookingForm?.addEventListener('submit', async (e) => {
         mobile: document.getElementById('mobile').value,
         place: document.getElementById('place').value,
         reason: document.getElementById('reason').value,
+        medicalAlerts: selectedAlerts,
+        medicalNotes: medNotes,
         fee: 0,
         status: 'Pending'
     };
     
     const savedAppt = await window.dbAPI.createAppointment(appt);
     
+    if ((selectedAlerts.length > 0 || medNotes) && window.dbAPI && typeof window.dbAPI.savePatientMedicalAlerts === 'function') {
+        try {
+            await window.dbAPI.savePatientMedicalAlerts(appt.mobile, selectedAlerts, medNotes);
+        } catch (e) {
+            console.warn('Failed to save medical alerts during booking:', e);
+        }
+    }
+
     // Send email alert immediately using serverless endpoint
     sendBookingEmail(savedAppt || appt);
 
     alert('Appointment Booked!');
     bookingForm.reset();
+    
+    // Clear medical intake inputs
+    document.querySelectorAll('input[name="medicalAlert"]').forEach(cb => cb.checked = false);
+    const medNotesInput = document.getElementById('medicalNotes');
+    if (medNotesInput) medNotesInput.value = '';
 
     // Retain booked date so user immediately sees the slot marked as (Booked)
     const dateInput = document.getElementById('appointmentDate');
@@ -1117,8 +1161,8 @@ function showBookingModal(appt) {
 
 function quickWhatsApp() {
     if (!currentPatient) return;
-    const msg = `Hi ${currentPatient.name}, this is MY DENTAL CLINIC. We are following up regarding your treatment.`;
-    const waNum = formatWhatsAppNumber(currentPatient.mobile);
+    const msg = `Hi ${activePatient.name}, this is MY DENTAL CLINIC. We are following up regarding your treatment.`;
+    const waNum = formatWhatsAppNumber(activePatient.mobile);
     window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
@@ -1142,10 +1186,10 @@ async function saveProfileBooking() {
     if (!nextDate) { alert("Please select a date."); return; }
 
     const newAppt = {
-        name: currentPatient.name,
-        mobile: currentPatient.mobile,
+        name: activePatient.name,
+        mobile: activePatient.mobile,
         email: currentPatient.email || '',
-        place: currentPatient.place || '',
+        place: activePatient.place || '',
         appointmentDate: nextDate,
         appointmentTime: nextTime,
         reason: nextReason,
@@ -1156,7 +1200,7 @@ async function saveProfileBooking() {
     const saved = await window.dbAPI.createAppointment(newAppt);
     if (saved) {
         // Refresh local patient data
-        const updatedHistory = await window.dbAPI.getPatientHistory(currentPatient.mobile);
+        const updatedHistory = await window.dbAPI.getPatientHistory(activePatient.mobile);
         currentPatient.history = updatedHistory;
         renderTimeline(currentPatient.history);
         switchProfileTab('timeline');
@@ -1207,7 +1251,7 @@ async function saveNewDiagnosis() {
     if (!title) { alert("Please enter the diagnostic condition."); return; }
 
     const success = await window.dbAPI.addDiagnosis({
-        mobile: currentPatient.mobile,
+        mobile: activePatient.mobile,
         title: title,
         notes: notes
     });
@@ -1216,7 +1260,7 @@ async function saveNewDiagnosis() {
         alert("Diagnosis Saved Successfully.");
         document.getElementById('diagTitle').value = '';
         document.getElementById('diagNotes').value = '';
-        renderDiagnoses(currentPatient.mobile);
+        renderDiagnoses(activePatient.mobile);
     }
 }
 
@@ -1530,7 +1574,7 @@ function applyLanguage(lang) {
     const bookingFormTitle = document.querySelector('#home .section-title');
     if (bookingFormTitle) bookingFormTitle.innerText = dict.sec_booking_title;
     const bookingFormSub = document.querySelector('#home p');
-    if (bookingFormSub && bookingFormSub.innerText.includes('consultation')) bookingFormSub.innerText = dict.sec_booking_sub;
+    if (bookingFormSub && (bookingFormSub.innerText || bookingFormSub.textContent || '').includes('consultation')) bookingFormSub.innerText = dict.sec_booking_sub;
 
     const labelName = document.querySelector('label[for="name"]') || document.querySelectorAll('#bookingForm label')[0];
     if (labelName) labelName.innerHTML = `<i class="fas fa-user-circle"></i> ` + dict.lbl_name;
@@ -1584,7 +1628,7 @@ function applyLanguage(lang) {
     const featuresTitle = document.querySelector('#features h2');
     if (featuresTitle) featuresTitle.innerText = dict.sec_services_title;
     const featuresSub = document.querySelector('#features p');
-    if (featuresSub && featuresSub.innerText.includes('procedures')) featuresSub.innerText = dict.sec_services_sub;
+    if (featuresSub && (featuresSub.innerText || featuresSub.textContent || '').includes('procedures')) featuresSub.innerText = dict.sec_services_sub;
 
     const statBoxes = document.querySelectorAll('#features .stat-box');
     if (statBoxes.length >= 6) {
@@ -2155,6 +2199,11 @@ async function renderScheduleCalendar(targetDate) {
                             <span><i class="fas fa-phone-alt" style="font-size: 0.7rem;"></i> ${a.mobile || 'No Mobile'}</span>
                             ${a.place ? `<span>· <i class="fas fa-map-marker-alt" style="font-size: 0.7rem;"></i> ${a.place}</span>` : ''}
                         </div>
+                        ${a.medicalAlerts && a.medicalAlerts.length > 0 ? `
+                            <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
+                                ${a.medicalAlerts.map(al => `<span class="medical-alert-tag alert-tag-danger" style="font-size: 0.68rem; padding: 1px 6px;"><i class="fas fa-exclamation-triangle"></i> ${al}</span>`).join('')}
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
 
@@ -2198,4 +2247,1078 @@ async function updateAppointmentStatusFromCalendar(id, newStatus) {
     }
     renderScheduleCalendar(currentScheduleDate);
     refreshDashboard();
+}
+
+
+
+function getActivePatient() {
+    if (typeof currentPatient !== 'undefined' && currentPatient) return currentPatient;
+    if (typeof window !== 'undefined' && window.currentPatient) return window.currentPatient;
+    return null;
+}
+
+/* ==========================================================================
+   CLINICAL MODULE: PRE-VISIT MEDICAL HISTORY & CLINICAL ALERTS
+   ========================================================================== */
+
+function toggleMedicalIntake() {
+    const body = document.getElementById('medicalIntakeBody') || document.getElementById('medicalIntakeSection');
+    const chevron = document.getElementById('medicalIntakeChevron') || document.getElementById('intakeToggleIcon');
+    if (!body) return;
+    const isHidden = body.style.display === 'none';
+    body.style.display = isHidden ? 'block' : 'none';
+    if (chevron) {
+        chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+}
+
+async function renderPatientMedicalAlerts(mobile) {
+    const badgesContainer = document.getElementById('profileAlertsBadges');
+    if (!badgesContainer) return;
+
+    let alertData = { alerts: [], notes: '' };
+    try {
+        if (window.dbAPI && typeof window.dbAPI.getPatientMedicalAlerts === 'function') {
+            alertData = await window.dbAPI.getPatientMedicalAlerts(mobile);
+        }
+    } catch (e) {
+        console.warn('Error fetching medical alerts:', e);
+    }
+
+    // Fallback: check if currentPatient has alerts in appointment history
+    if ((!alertData.alerts || alertData.alerts.length === 0) && currentPatient && currentPatient.history) {
+        const histAppt = currentPatient.history.find(h => h.medicalAlerts && h.medicalAlerts.length > 0);
+        if (histAppt) {
+            alertData.alerts = histAppt.medicalAlerts || [];
+            alertData.notes = histAppt.medicalNotes || alertData.notes || '';
+        }
+    }
+
+    if (currentPatient) {
+        currentPatient.medicalAlerts = alertData.alerts || [];
+        currentPatient.medicalNotes = alertData.notes || '';
+    }
+
+    if (!alertData.alerts || alertData.alerts.length === 0) {
+        badgesContainer.innerHTML = `
+            <span style="font-size: 0.75rem; font-weight: 900; color: #16A34A;"><i class="fas fa-heartbeat"></i> HEALTH STATUS:</span>
+            <span style="font-size: 0.75rem; color: #64748B;">No medical alerts recorded (Fit for routine procedures)</span>
+            ${alertData.notes ? `<span class="medical-alert-tag alert-tag-warning" style="font-size: 0.72rem;"><i class="fas fa-sticky-note"></i> ${escapeHtml(alertData.notes)}</span>` : ''}
+        `;
+    } else {
+        badgesContainer.innerHTML = `
+            <span style="font-size: 0.75rem; font-weight: 900; color: #DC2626;"><i class="fas fa-exclamation-triangle"></i> CLINICAL WARNINGS:</span>
+            ${alertData.alerts.map(al => `<span class="medical-alert-tag alert-tag-danger"><i class="fas fa-heart"></i> ${escapeHtml(al)}</span>`).join('')}
+            ${alertData.notes ? `<span class="medical-alert-tag alert-tag-warning" style="font-size: 0.72rem;"><i class="fas fa-sticky-note"></i> Note: ${escapeHtml(alertData.notes)}</span>` : ''}
+        `;
+    }
+}
+
+function openEditMedicalAlertsModal() {
+    const activePatient = getActivePatient();
+    if (!activePatient) {
+        alert('Please select a patient first.');
+        return;
+    }
+    const modal = document.getElementById('editMedicalAlertsModal');
+    if (!modal) return;
+
+    const alerts = currentPatient.medicalAlerts || [];
+    const notes = currentPatient.medicalNotes || '';
+
+    const checkMap = {
+        'Penicillin / Drug Allergy': 'editAlertPenicillin',
+        'Diabetes': 'editAlertDiabetes',
+        'Hypertension (BP)': 'editAlertHypertension',
+        'Cardiac / Heart Condition': 'editAlertHeart',
+        'Bleeding Disorder / Blood Thinners': 'editAlertBleeding',
+        'Latex / Local Anesthetic Allergy': 'editAlertLatex',
+        'Pregnancy': 'editAlertPregnancy'
+    };
+
+    Object.entries(checkMap).forEach(([text, id]) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = alerts.some(a => a.toLowerCase().includes(text.toLowerCase().substring(0, 8)));
+    });
+
+    const notesEl = document.getElementById('editAlertCustomNotes');
+    if (notesEl) notesEl.value = notes;
+
+    modal.style.display = 'flex';
+}
+
+function closeEditMedicalAlertsModal() {
+    const modal = document.getElementById('editMedicalAlertsModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function saveMedicalAlertsFromModal() {
+    if (!currentPatient) return;
+
+    const checkMap = {
+        'editAlertPenicillin': 'Penicillin / Drug Allergy',
+        'editAlertDiabetes': 'Diabetes',
+        'editAlertHypertension': 'Hypertension (BP)',
+        'editAlertHeart': 'Cardiac / Heart Condition',
+        'editAlertBleeding': 'Bleeding Disorder / Blood Thinners',
+        'editAlertLatex': 'Latex / Local Anesthetic Allergy',
+        'editAlertPregnancy': 'Pregnancy'
+    };
+
+    const selected = [];
+    Object.entries(checkMap).forEach(([id, val]) => {
+        const el = document.getElementById(id);
+        if (el && el.checked) selected.push(val);
+    });
+
+    const notes = document.getElementById('editAlertCustomNotes')?.value?.trim() || '';
+
+    try {
+        if (window.dbAPI && typeof window.dbAPI.savePatientMedicalAlerts === 'function') {
+            await window.dbAPI.savePatientMedicalAlerts(activePatient.mobile, selected, notes);
+        }
+        currentPatient.medicalAlerts = selected;
+        currentPatient.medicalNotes = notes;
+        await renderPatientMedicalAlerts(activePatient.mobile);
+        closeEditMedicalAlertsModal();
+        if (typeof refreshDashboard === 'function') refreshDashboard();
+        alert('Patient medical alerts updated successfully!');
+    } catch (e) {
+        console.error('Failed to save patient medical alerts:', e);
+        alert('Error updating medical alerts. Please try again.');
+    }
+}
+
+
+/* ==========================================================================
+   CLINICAL MODULE: DIGITAL DENTAL PRESCRIPTION (Rx) GENERATOR
+   ========================================================================== */
+
+let currentRxMedicines = [];
+window.currentRxMedicines = currentRxMedicines;
+
+function addRxTemplate(name, freq, dur, inst) {
+    currentRxMedicines.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: name,
+        frequency: freq,
+        duration: dur,
+        instructions: inst
+    });
+    renderRxMedicinesTable();
+}
+
+function addCustomRxMedicine() {
+    const nameEl = document.getElementById('rxDrugName');
+    const freqEl = document.getElementById('rxDrugFrequency');
+    const durEl = document.getElementById('rxDrugDuration');
+    const instEl = document.getElementById('rxDrugInstructions');
+
+    const name = nameEl?.value?.trim();
+    const freq = freqEl?.value?.trim() || '1-0-1';
+    const dur = durEl?.value?.trim() || '5 Days';
+    const inst = instEl?.value?.trim() || 'After food';
+
+    if (!name) {
+        alert('Please enter medicine name.');
+        nameEl?.focus();
+        return;
+    }
+
+    currentRxMedicines.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: name,
+        frequency: freq,
+        duration: dur,
+        instructions: inst
+    });
+
+    nameEl.value = '';
+    freqEl.value = '';
+    durEl.value = '';
+    instEl.value = '';
+
+    renderRxMedicinesTable();
+}
+
+function deleteRxMedicine(idx) {
+    currentRxMedicines.splice(idx, 1);
+    renderRxMedicinesTable();
+}
+
+function renderRxMedicinesTable() {
+    const tbody = document.getElementById('rxMedicinesTableBody');
+    if (!tbody) return;
+
+    if (currentRxMedicines.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No medicines added to Rx yet. Tap templates above to add.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = currentRxMedicines.map((m, idx) => `
+        <tr style="border-bottom: 1px solid #E2E8F0;">
+            <td style="padding: 8px; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+            <td style="padding: 8px; font-weight: 800; color: var(--secondary);">${escapeHtml(m.name)}</td>
+            <td style="padding: 8px; font-weight: 700; color: var(--primary);">${escapeHtml(m.frequency)}</td>
+            <td style="padding: 8px;">${escapeHtml(m.duration)}</td>
+            <td style="padding: 8px; font-size: 0.8rem; color: #475569;">${escapeHtml(m.instructions)}</td>
+            <td style="padding: 8px; text-align: center;">
+                <button type="button" onclick="deleteRxMedicine(${idx})" style="background: none; border: none; color: #EF4444; cursor: pointer; padding: 4px 8px; border-radius: 4px;" title="Remove medicine">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function clearRxForm() {
+    currentRxMedicines = [];
+    renderRxMedicinesTable();
+    const notesEl = document.getElementById('rxAdditionalNotes');
+    if (notesEl) notesEl.value = '';
+}
+
+async function saveAndGenerateRxPDF() {
+    const activePatient = getActivePatient();
+    if (!activePatient) {
+        alert('Please select a patient first.');
+        return;
+    }
+    if (currentRxMedicines.length === 0) {
+        alert('Please add at least one medicine to the prescription.');
+        return;
+    }
+
+    // Collect advice checkboxes
+    const adviceElements = document.querySelectorAll('input[name="rxAdvice"]:checked');
+    const adviceList = Array.from(adviceElements).map(el => el.value);
+    const additionalNotes = document.getElementById('rxAdditionalNotes')?.value?.trim() || '';
+
+    const rxRecord = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        patientName: activePatient.name,
+        patientMobile: activePatient.mobile,
+        patientPlace: activePatient.place || 'Local',
+        medicines: [...currentRxMedicines],
+        advice: adviceList,
+        additionalNotes: additionalNotes,
+        createdAt: new Date().toISOString()
+    };
+
+    // Save to Firestore / localStorage
+    try {
+        if (window.dbAPI && typeof window.dbAPI.savePrescription === 'function') {
+            await window.dbAPI.savePrescription(rxRecord);
+        }
+    } catch (e) {
+        console.warn('Error persisting prescription:', e);
+    }
+
+    // Generate Branded PDF using jsPDF
+    try {
+        generateRxPDFDocument(rxRecord);
+    } catch (pdfErr) {
+        console.error('PDF generation error:', pdfErr);
+        alert('Prescription saved! Note: PDF download encountered an issue.');
+    }
+
+    // Refresh history
+    await loadPatientPrescriptions(activePatient.mobile);
+    alert('Digital Prescription saved and PDF generated!');
+}
+
+function generateRxPDFDocument(rxRecord) {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert('jsPDF library not available.');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // 1. Top Decorative Brand Bar (Teal Accent)
+    doc.setFillColor(13, 148, 136); // #0D9488
+    doc.rect(0, 0, 210, 6, 'F');
+
+    // 2. Clinic Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(15, 23, 42);
+    doc.text('MY DENTAL CLINIC', 20, 22);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(13, 148, 136);
+    doc.text('Dental & Implant Centre | Comprehensive Oral Care', 20, 28);
+
+    // 3. Document Title (Right Aligned)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(15, 23, 42);
+    doc.text('PRESCRIPTION (Rx)', 190, 22, { align: 'right' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Rx No: RX-${rxRecord.id}`, 190, 28, { align: 'right' });
+    doc.text(`Date: ${rxRecord.date}`, 190, 32, { align: 'right' });
+
+    // Divider
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(20, 36, 190, 36);
+
+    // 4. Patient Information Box
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(20, 40, 170, 22, 2, 2, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text('PATIENT DETAILS:', 25, 46);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text(rxRecord.patientName.toUpperCase(), 25, 52);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+    doc.text(`Mobile: ${rxRecord.patientMobile} | Location: ${rxRecord.patientPlace}`, 25, 57);
+
+    // Medical Alert Warning if present
+    let currentY = 68;
+    const alerts = currentPatient?.medicalAlerts || [];
+    if (alerts.length > 0) {
+        doc.setFillColor(254, 226, 226);
+        doc.roundedRect(20, currentY, 170, 9, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(220, 38, 38);
+        doc.text(`WARNING - MEDICAL ALERTS: ${alerts.join(', ')}`, 25, currentY + 6);
+        currentY += 14;
+    }
+
+    // 5. Prescribed Medicines Section
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(13, 148, 136);
+    doc.text('Rx - PRESCRIBED MEDICINES', 20, currentY);
+    currentY += 6;
+
+    // Table Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(20, currentY, 170, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text('#', 23, currentY + 5.5);
+    doc.text('MEDICINE NAME', 32, currentY + 5.5);
+    doc.text('FREQUENCY', 95, currentY + 5.5);
+    doc.text('DURATION', 125, currentY + 5.5);
+    doc.text('INSTRUCTIONS', 150, currentY + 5.5);
+    currentY += 8;
+
+    // Table Rows
+    rxRecord.medicines.forEach((med, idx) => {
+        const rowBg = idx % 2 === 0 ? 255 : 248;
+        doc.setFillColor(rowBg, rowBg, rowBg);
+        doc.rect(20, currentY, 170, 9, 'F');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text(String(idx + 1), 23, currentY + 6);
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(med.name.substring(0, 32), 32, currentY + 6);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(13, 148, 136);
+        doc.text(med.frequency || '1-0-1', 95, currentY + 6);
+
+        doc.setTextColor(51, 65, 85);
+        doc.text(med.duration || '5 Days', 125, currentY + 6);
+        doc.text((med.instructions || 'After food').substring(0, 22), 150, currentY + 6);
+
+        // Row bottom line
+        doc.setDrawColor(241, 245, 249);
+        doc.line(20, currentY + 9, 190, currentY + 9);
+        currentY += 9;
+    });
+
+    currentY += 6;
+
+    // 6. Clinical Advice & Instructions
+    if (rxRecord.advice && rxRecord.advice.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(15, 23, 42);
+        doc.text('CLINICAL ADVICE & POST-OP INSTRUCTIONS:', 20, currentY);
+        currentY += 6;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(51, 65, 85);
+        rxRecord.advice.forEach(adv => {
+            doc.text(`•  ${adv}`, 24, currentY);
+            currentY += 5;
+        });
+    }
+
+    if (rxRecord.additionalNotes) {
+        currentY += 2;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Doctor Notes:', 20, currentY);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(51, 65, 85);
+        doc.text(rxRecord.additionalNotes.substring(0, 90), 45, currentY);
+        currentY += 6;
+    }
+
+    // 7. Signature & Clinic Stamp Block
+    doc.setDrawColor(203, 213, 225);
+    doc.line(135, 255, 190, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(15, 23, 42);
+    doc.text('DOCTOR SIGNATURE / STAMP', 135, 260);
+
+    // 8. Global Clinic & Developer Attribution Footer
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, 275, 190, 275);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('MY DENTAL CLINIC | For emergency care contact clinic helpline', 20, 281);
+    doc.text('Developed by proconixsoftware.vercel.app', 190, 281, { align: 'right' });
+
+    // Save PDF
+    const cleanName = (rxRecord.patientName || 'Patient').replace(/[^a-zA-Z0-9]/g, '_');
+    doc.save(`Rx_${cleanName}_${rxRecord.id}.pdf`);
+}
+
+function shareRxWhatsApp() {
+    const activePatient = getActivePatient();
+    if (!activePatient) {
+        alert('Please select a patient first.');
+        return;
+    }
+    if (currentRxMedicines.length === 0) {
+        alert('Please add at least one medicine to the prescription.');
+        return;
+    }
+
+    const adviceList = Array.from(document.querySelectorAll('input[name="rxAdvice"]:checked')).map(el => el.value);
+    const notes = document.getElementById('rxAdditionalNotes')?.value?.trim();
+
+    let msg = `💊 *DENTAL PRESCRIPTION (Rx)*\n`;
+    msg += `🏥 *MY DENTAL CLINIC*\n`;
+    msg += `👤 *Patient:* ${activePatient.name}\n`;
+    msg += `📅 *Date:* ${new Date().toLocaleDateString()}\n`;
+    msg += `---------------------------\n`;
+    msg += `*PRESCRIBED MEDICINES:*\n`;
+    currentRxMedicines.forEach((m, i) => {
+        msg += `${i + 1}. * ${m.name}*\n   Dosage: ${m.frequency} | Dur: ${m.duration}\n   Note: ${m.instructions}\n`;
+    });
+
+    if (adviceList.length > 0) {
+        msg += `---------------------------\n`;
+        msg += `*ADVICE & INSTRUCTIONS:*\n`;
+        adviceList.forEach(adv => {
+            msg += `• ${adv}\n`;
+        });
+    }
+
+    if (notes) {
+        msg += `📝 *Note:* ${notes}\n`;
+    }
+
+    msg += `---------------------------\n`;
+    msg += `✨ *Developed by proconixsoftware.vercel.app*`;
+
+    const cleanMobile = (activePatient.mobile || '').replace(/[^0-9]/g, '');
+    const url = `https://wa.me/${cleanMobile}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+}
+
+async function loadPatientPrescriptions(mobile) {
+    const container = document.getElementById('patientPrescriptionsHistoryList');
+    if (!container) return;
+
+    container.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading prescriptions...</div>';
+
+    let list = [];
+    try {
+        if (window.dbAPI && typeof window.dbAPI.getPrescriptions === 'function') {
+            list = await window.dbAPI.getPrescriptions(mobile);
+        }
+    } catch (e) {
+        console.warn('Failed to load prescriptions:', e);
+    }
+
+    if (!list || list.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">No past digital prescriptions recorded for this patient.</div>';
+        return;
+    }
+
+    container.innerHTML = list.map(rx => {
+        const safeRxJson = encodeURIComponent(JSON.stringify(rx));
+        const medNames = (rx.medicines || []).map(m => m.name).join(', ');
+        return `
+            <div style="background: var(--bg-soft); border-radius: 10px; padding: 1rem 1.25rem; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <span style="font-weight: 800; color: var(--secondary); font-size: 0.95rem;">Rx #${rx.id}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">${rx.date || 'N/A'}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #475569; max-width: 480px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${medNames}">
+                        ${medNames || 'No medicines listed'}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="reprintRxPDF('${safeRxJson}')" class="btn-primary" style="height: 32px; font-size: 0.75rem; padding: 0 0.85rem; background: var(--primary);" title="Download PDF">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button onclick="reprintRxWhatsApp('${safeRxJson}')" class="btn-primary" style="height: 32px; font-size: 0.75rem; padding: 0 0.85rem; background: #25D366;" title="Share WhatsApp">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function reprintRxPDF(rxJson) {
+    try {
+        const rx = JSON.parse(decodeURIComponent(rxJson));
+        generateRxPDFDocument(rx);
+    } catch (e) {
+        console.error('Error reprinting Rx PDF:', e);
+    }
+}
+
+function reprintRxWhatsApp(rxJson) {
+    try {
+        const rx = JSON.parse(decodeURIComponent(rxJson));
+        let msg = `💊 *DENTAL PRESCRIPTION (Rx)*\n`;
+        msg += `🏥 *MY DENTAL CLINIC*\n`;
+        msg += `👤 *Patient:* ${rx.patientName}\n`;
+        msg += `📅 *Date:* ${rx.date}\n`;
+        msg += `---------------------------\n`;
+        msg += `*PRESCRIBED MEDICINES:*\n`;
+        (rx.medicines || []).forEach((m, i) => {
+            msg += `${i + 1}. * ${m.name}*\n   Dosage: ${m.frequency} | Dur: ${m.duration}\n   Note: ${m.instructions}\n`;
+        });
+        if (rx.advice && rx.advice.length > 0) {
+            msg += `---------------------------\n*ADVICE:*\n`;
+            rx.advice.forEach(a => msg += `• ${a}\n`);
+        }
+        msg += `---------------------------\n✨ *Developed by proconixsoftware.vercel.app*`;
+        const cleanMobile = (rx.patientMobile || '').replace(/[^0-9]/g, '');
+        window.open(`https://wa.me/${cleanMobile}?text=${encodeURIComponent(msg)}`, '_blank');
+    } catch (e) {
+        console.error('Error reprinting Rx WhatsApp:', e);
+    }
+}
+
+
+/* ==========================================================================
+   CLINICAL MODULE: TREATMENT PLAN & COST QUOTATION BUILDER
+   ========================================================================== */
+
+let currentPlanItems = [];
+window.currentPlanItems = currentPlanItems;
+
+function addPlanTemplate(name, tooth, cost, sittings) {
+    currentPlanItems.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: name,
+        tooth: tooth || 'General',
+        sittings: Number(sittings) || 1,
+        cost: Number(cost) || 0
+    });
+    renderPlanItemsTable();
+    calculatePlanTotal();
+}
+
+function addCustomPlanItem() {
+    const nameEl = document.getElementById('planItemName');
+    const toothEl = document.getElementById('planItemTooth');
+    const sittingsEl = document.getElementById('planItemSittings');
+    const costEl = document.getElementById('planItemCost');
+
+    const name = nameEl?.value?.trim();
+    const tooth = toothEl?.value?.trim() || 'General';
+    const sittings = Number(sittingsEl?.value) || 1;
+    const cost = Number(costEl?.value) || 0;
+
+    if (!name) {
+        alert('Please enter procedure name.');
+        nameEl?.focus();
+        return;
+    }
+    if (cost < 0) {
+        alert('Cost cannot be negative.');
+        return;
+    }
+
+    currentPlanItems.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        name: name,
+        tooth: tooth,
+        sittings: sittings,
+        cost: cost
+    });
+
+    nameEl.value = '';
+    toothEl.value = '';
+    costEl.value = '';
+    if (sittingsEl) sittingsEl.value = '1';
+
+    renderPlanItemsTable();
+    calculatePlanTotal();
+}
+
+function deletePlanItem(idx) {
+    currentPlanItems.splice(idx, 1);
+    renderPlanItemsTable();
+    calculatePlanTotal();
+}
+
+function renderPlanItemsTable() {
+    const tbody = document.getElementById('planItemsTableBody');
+    if (!tbody) return;
+
+    if (currentPlanItems.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No procedures added yet. Select from templates above.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = currentPlanItems.map((item, idx) => `
+        <tr style="border-bottom: 1px solid #E2E8F0;">
+            <td style="padding: 8px; font-weight: 700; color: var(--text-muted);">${idx + 1}</td>
+            <td style="padding: 8px; font-weight: 800; color: var(--secondary);">${escapeHtml(item.name)}</td>
+            <td style="padding: 8px;"><span style="background: var(--bg-soft); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.8rem;">${escapeHtml(item.tooth)}</span></td>
+            <td style="padding: 8px; text-align: center; font-weight: 700;">${item.sittings}</td>
+            <td style="padding: 8px; font-weight: 800; color: var(--primary);">₹${item.cost.toLocaleString('en-IN')}</td>
+            <td style="padding: 8px; text-align: center;">
+                <button type="button" onclick="deletePlanItem(${idx})" style="background: none; border: none; color: #EF4444; cursor: pointer; padding: 4px 8px; border-radius: 4px;" title="Remove procedure">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function calculatePlanTotal() {
+    const subtotal = currentPlanItems.reduce((acc, item) => acc + (Number(item.cost) || 0), 0);
+    const discountEl = document.getElementById('planDiscount');
+    const discount = Number(discountEl?.value) || 0;
+    const grandTotal = Math.max(0, subtotal - discount);
+
+    const totalEl = document.getElementById('planGrandTotal');
+    if (totalEl) {
+        totalEl.innerText = `₹${grandTotal.toLocaleString('en-IN')}`;
+    }
+    return { subtotal, discount, grandTotal };
+}
+
+function clearPlanForm() {
+    currentPlanItems = [];
+    renderPlanItemsTable();
+    const discountEl = document.getElementById('planDiscount');
+    if (discountEl) discountEl.value = '0';
+    calculatePlanTotal();
+}
+
+async function saveAndGenerateTreatmentPlanPDF() {
+    const activePatient = getActivePatient();
+    if (!activePatient) {
+        alert('Please select a patient first.');
+        return;
+    }
+    if (currentPlanItems.length === 0) {
+        alert('Please add at least one procedure to the treatment plan.');
+        return;
+    }
+
+    const { subtotal, discount, grandTotal } = calculatePlanTotal();
+    const status = document.getElementById('planStatus')?.value || 'Presented';
+
+    const planRecord = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString(),
+        patientName: activePatient.name,
+        patientMobile: activePatient.mobile,
+        patientPlace: activePatient.place || 'Local',
+        items: [...currentPlanItems],
+        subtotal: subtotal,
+        discount: discount,
+        grandTotal: grandTotal,
+        status: status,
+        createdAt: new Date().toISOString()
+    };
+
+    // Save to Firestore / localStorage
+    try {
+        if (window.dbAPI && typeof window.dbAPI.saveTreatmentPlan === 'function') {
+            await window.dbAPI.saveTreatmentPlan(planRecord);
+        }
+    } catch (e) {
+        console.warn('Error persisting treatment plan:', e);
+    }
+
+    // Generate Quotation PDF
+    try {
+        generateTreatmentPlanPDFDocument(planRecord);
+    } catch (pdfErr) {
+        console.error('Plan PDF generation error:', pdfErr);
+        alert('Treatment plan saved! PDF generation had an issue.');
+    }
+
+    // Refresh history
+    await loadPatientTreatmentPlans(activePatient.mobile);
+    alert('Treatment Plan & Quotation saved and PDF generated!');
+}
+
+function generateTreatmentPlanPDFDocument(planRecord) {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        alert('jsPDF library not available.');
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // 1. Top Decorative Brand Bar (Teal Accent)
+    doc.setFillColor(13, 148, 136); // #0D9488
+    doc.rect(0, 0, 210, 6, 'F');
+
+    // 2. Clinic Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(15, 23, 42);
+    doc.text('MY DENTAL CLINIC', 20, 22);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(13, 148, 136);
+    doc.text('Dental & Implant Centre | Case Presentation & Cost Estimate', 20, 28);
+
+    // 3. Document Title (Right Aligned)
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(15, 23, 42);
+    doc.text('TREATMENT QUOTATION', 190, 22, { align: 'right' });
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text(`Estimate No: EST-${planRecord.id}`, 190, 28, { align: 'right' });
+    doc.text(`Date: ${planRecord.date}`, 190, 32, { align: 'right' });
+
+    // Divider
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.5);
+    doc.line(20, 36, 190, 36);
+
+    // 4. Patient Information Box
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(20, 40, 170, 22, 2, 2, 'F');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 116, 139);
+    doc.text('PROPOSED FOR PATIENT:', 25, 46);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(15, 23, 42);
+    doc.text(planRecord.patientName.toUpperCase(), 25, 52);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(51, 65, 85);
+    doc.text(`Mobile: ${planRecord.patientMobile} | Location: ${planRecord.patientPlace} | Status: ${planRecord.status}`, 25, 57);
+
+    // 5. Proposed Treatment Procedures Table
+    let currentY = 70;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.setTextColor(13, 148, 136);
+    doc.text('PROPOSED CLINICAL PROCEDURES & FEES', 20, currentY);
+    currentY += 6;
+
+    // Table Header
+    doc.setFillColor(15, 23, 42);
+    doc.rect(20, currentY, 170, 8, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(255, 255, 255);
+    doc.text('#', 23, currentY + 5.5);
+    doc.text('PROCEDURE / DESCRIPTION', 32, currentY + 5.5);
+    doc.text('TOOTH', 115, currentY + 5.5);
+    doc.text('SITTINGS', 140, currentY + 5.5);
+    doc.text('EST. COST', 168, currentY + 5.5);
+    currentY += 8;
+
+    // Table Rows
+    planRecord.items.forEach((item, idx) => {
+        const rowBg = idx % 2 === 0 ? 255 : 248;
+        doc.setFillColor(rowBg, rowBg, rowBg);
+        doc.rect(20, currentY, 170, 9, 'F');
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text(String(idx + 1), 23, currentY + 6);
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(item.name.substring(0, 38), 32, currentY + 6);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(51, 65, 85);
+        doc.text(String(item.tooth || 'All'), 115, currentY + 6);
+        doc.text(String(item.sittings || 1), 145, currentY + 6);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(15, 23, 42);
+        doc.text(`INR ${(item.cost || 0).toLocaleString('en-IN')}`, 168, currentY + 6);
+
+        doc.setDrawColor(241, 245, 249);
+        doc.line(20, currentY + 9, 190, currentY + 9);
+        currentY += 9;
+    });
+
+    currentY += 6;
+
+    // 6. Cost Summary Box (Right aligned)
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(110, currentY, 80, 26, 2, 2, 'F');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Subtotal:', 115, currentY + 6);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`INR ${planRecord.subtotal.toLocaleString('en-IN')}`, 185, currentY + 6, { align: 'right' });
+
+    doc.setTextColor(100, 116, 139);
+    doc.text('Courtesy / Discount:', 115, currentY + 12);
+    doc.setTextColor(220, 38, 38);
+    doc.text(`- INR ${planRecord.discount.toLocaleString('en-IN')}`, 185, currentY + 12, { align: 'right' });
+
+    doc.setDrawColor(203, 213, 225);
+    doc.line(115, currentY + 15, 185, currentY + 15);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(13, 148, 136);
+    doc.text('TOTAL ESTIMATE:', 115, currentY + 22);
+    doc.text(`INR ${planRecord.grandTotal.toLocaleString('en-IN')}`, 185, currentY + 22, { align: 'right' });
+
+    currentY += 34;
+
+    // 7. Clinical Notes & Terms
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(15, 23, 42);
+    doc.text('TERMS & CLINICAL NOTES:', 20, currentY);
+    currentY += 5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('1. Treatment quotation is valid for 30 calendar days from the date of issue.', 24, currentY);
+    doc.text('2. Fees cover scheduled sittings. Unforeseen complications may require clinical adjustments.', 24, currentY + 4.5);
+    doc.text('3. Flexible multi-sitting milestone payments and zero-cost EMI options are available.', 24, currentY + 9);
+
+    // 8. Doctor Signature Block
+    doc.setDrawColor(203, 213, 225);
+    doc.line(135, 255, 190, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(15, 23, 42);
+    doc.text('CONSULTING DENTIST', 135, 260);
+
+    // 9. Attribution Footer
+    doc.setDrawColor(226, 232, 240);
+    doc.line(20, 275, 190, 275);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text('MY DENTAL CLINIC | Empowering Healthy Smiles Every Day', 20, 281);
+    doc.text('Developed by proconixsoftware.vercel.app', 190, 281, { align: 'right' });
+
+    // Save PDF
+    const cleanName = (planRecord.patientName || 'Patient').replace(/[^a-zA-Z0-9]/g, '_');
+    doc.save(`Estimate_${cleanName}_${planRecord.id}.pdf`);
+}
+
+function shareTreatmentPlanWhatsApp() {
+    const activePatient = getActivePatient();
+    if (!activePatient) {
+        alert('Please select a patient first.');
+        return;
+    }
+    if (currentPlanItems.length === 0) {
+        alert('Please add at least one procedure to the treatment plan.');
+        return;
+    }
+
+    const { subtotal, discount, grandTotal } = calculatePlanTotal();
+
+    let msg = `📋 *TREATMENT PLAN & ESTIMATE*\n`;
+    msg += `🏥 *MY DENTAL CLINIC*\n`;
+    msg += `👤 *Patient:* ${activePatient.name}\n`;
+    msg += `📅 *Date:* ${new Date().toLocaleDateString()}\n`;
+    msg += `---------------------------\n`;
+    msg += `*PROPOSED PROCEDURES:*\n`;
+    currentPlanItems.forEach((item, i) => {
+        msg += `${i + 1}. * ${item.name}*\n   Tooth: ${item.tooth} | Sittings: ${item.sittings}\n   Cost: ₹${item.cost.toLocaleString('en-IN')}\n`;
+    });
+    msg += `---------------------------\n`;
+    msg += `*Subtotal:* ₹${subtotal.toLocaleString('en-IN')}\n`;
+    if (discount > 0) {
+        msg += `*Discount:* -₹${discount.toLocaleString('en-IN')}\n`;
+    }
+    msg += `*GRAND TOTAL ESTIMATE:* ₹${grandTotal.toLocaleString('en-IN')}\n`;
+    msg += `---------------------------\n`;
+    msg += `_Note: Flexible milestone payments available._\n`;
+    msg += `✨ *Developed by proconixsoftware.vercel.app*`;
+
+    const cleanMobile = (activePatient.mobile || '').replace(/[^0-9]/g, '');
+    const url = `https://wa.me/${cleanMobile}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+}
+
+async function loadPatientTreatmentPlans(mobile) {
+    const container = document.getElementById('patientTreatmentPlansHistoryList');
+    if (!container) return;
+
+    container.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading treatment plans...</div>';
+
+    let list = [];
+    try {
+        if (window.dbAPI && typeof window.dbAPI.getTreatmentPlans === 'function') {
+            list = await window.dbAPI.getTreatmentPlans(mobile);
+        }
+    } catch (e) {
+        console.warn('Failed to load treatment plans:', e);
+    }
+
+    if (!list || list.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">No past treatment plans recorded for this patient.</div>';
+        return;
+    }
+
+    container.innerHTML = list.map(plan => {
+        const safePlanJson = encodeURIComponent(JSON.stringify(plan));
+        const itemNames = (plan.items || []).map(i => i.name).join(', ');
+        return `
+            <div style="background: var(--bg-soft); border-radius: 10px; padding: 1rem 1.25rem; border: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <span style="font-weight: 800; color: var(--secondary); font-size: 0.95rem;">Plan #${plan.id}</span>
+                        <span style="background: var(--primary); color: white; padding: 2px 8px; border-radius: 99px; font-size: 0.7rem; font-weight: 800;">${plan.status || 'Presented'}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">${plan.date || 'N/A'}</span>
+                    </div>
+                    <div style="font-size: 0.8rem; color: #475569; max-width: 450px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${itemNames}">
+                        ${itemNames || 'No items listed'}
+                    </div>
+                    <div style="font-size: 0.85rem; font-weight: 800; color: var(--primary); margin-top: 2px;">
+                        Total: ₹${(plan.grandTotal || 0).toLocaleString('en-IN')}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button onclick="reprintTreatmentPlanPDF('${safePlanJson}')" class="btn-primary" style="height: 32px; font-size: 0.75rem; padding: 0 0.85rem; background: var(--primary);" title="Download Quotation PDF">
+                        <i class="fas fa-file-pdf"></i> PDF
+                    </button>
+                    <button onclick="reprintTreatmentPlanWhatsApp('${safePlanJson}')" class="btn-primary" style="height: 32px; font-size: 0.75rem; padding: 0 0.85rem; background: #25D366;" title="Share WhatsApp">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function reprintTreatmentPlanPDF(planJson) {
+    try {
+        const plan = JSON.parse(decodeURIComponent(planJson));
+        generateTreatmentPlanPDFDocument(plan);
+    } catch (e) {
+        console.error('Error reprinting treatment plan PDF:', e);
+    }
+}
+
+function reprintTreatmentPlanWhatsApp(planJson) {
+    try {
+        const plan = JSON.parse(decodeURIComponent(planJson));
+        let msg = `📋 *TREATMENT PLAN & ESTIMATE*\n`;
+        msg += `🏥 *MY DENTAL CLINIC*\n`;
+        msg += `👤 *Patient:* ${plan.patientName}\n`;
+        msg += `📅 *Date:* ${plan.date}\n`;
+        msg += `---------------------------\n`;
+        msg += `*PROPOSED PROCEDURES:*\n`;
+        (plan.items || []).forEach((item, i) => {
+            msg += `${i + 1}. * ${item.name}*\n   Tooth: ${item.tooth} | Sittings: ${item.sittings}\n   Cost: ₹${(item.cost || 0).toLocaleString('en-IN')}\n`;
+        });
+        msg += `---------------------------\n`;
+        msg += `*Subtotal:* ₹${(plan.subtotal || 0).toLocaleString('en-IN')}\n`;
+        if (plan.discount > 0) {
+            msg += `*Discount:* -₹${(plan.discount || 0).toLocaleString('en-IN')}\n`;
+        }
+        msg += `*GRAND TOTAL ESTIMATE:* ₹${(plan.grandTotal || 0).toLocaleString('en-IN')}\n`;
+        msg += `---------------------------\n`;
+        msg += `✨ *Developed by proconixsoftware.vercel.app*`;
+        const cleanMobile = (plan.patientMobile || '').replace(/[^0-9]/g, '');
+        window.open(`https://wa.me/${cleanMobile}?text=${encodeURIComponent(msg)}`, '_blank');
+    } catch (e) {
+        console.error('Error reprinting treatment plan WhatsApp:', e);
+    }
+}
+
+/* Mobile-First Bottom Navigation Handler */
+function handleMobileNav(target) {
+    document.querySelectorAll('.mobile-nav-item').forEach(item => item.classList.remove('active'));
+    
+    if (target === 'home') {
+        const item = document.getElementById('mobNavHome');
+        if (item) item.classList.add('active');
+        showSection('home');
+        scrollToBooking();
+    } else if (target === 'schedule') {
+        const item = document.getElementById('mobNavSchedule');
+        if (item) item.classList.add('active');
+        const role = sessionStorage.getItem('dentalRole');
+        if (role) {
+            showSection('dashboard');
+            showDashboardTab('schedule');
+        } else {
+            openLoginModal();
+        }
+    } else if (target === 'patients') {
+        const item = document.getElementById('mobNavPatients');
+        if (item) item.classList.add('active');
+        const role = sessionStorage.getItem('dentalRole');
+        if (role) {
+            showSection('dashboard');
+            showDashboardTab('patients');
+        } else {
+            openLoginModal();
+        }
+    } else if (target === 'portal') {
+        const item = document.getElementById('mobNavPortal');
+        if (item) item.classList.add('active');
+        const role = sessionStorage.getItem('dentalRole');
+        if (role) {
+            showSection('dashboard');
+        } else {
+            openLoginModal();
+        }
+    }
 }

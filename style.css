@@ -1340,3 +1340,249 @@ input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback { display:
     font-size: 0.7rem !important;
   }
 }
+
+
+/* Quick Rx and Treatment Plan Pill Buttons */
+.rx-pill-btn {
+  background: white;
+  color: var(--secondary);
+  border: 1px solid #CBD5E1;
+  border-radius: 99px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.rx-pill-btn:hover {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+.medical-alert-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.alert-tag-danger {
+  background: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #FCA5A5;
+}
+.alert-tag-warning {
+  background: #FEF3C7;
+  color: #D97706;
+  border: 1px solid #FCD34D;
+}
+.alert-tag-purple {
+  background: #F3E8FF;
+  color: #7E22CE;
+  border: 1px solid #D8B4FE;
+}
+
+
+/* ==========================================================================
+   MOBILE-FIRST USER EXPERIENCE & CLINICAL TOUCH OPTIMIZATIONS
+   ========================================================================== */
+
+/* 1. Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+    display: none;
+}
+
+@media (max-width: 767px) {
+    .mobile-bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.97);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-top: 1px solid #E2E8F0;
+        box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.08);
+        height: 64px;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0 0.5rem;
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+    }
+    body {
+        padding-bottom: 76px !important;
+    }
+    .mobile-nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        color: #64748B;
+        text-decoration: none;
+        font-size: 0.68rem;
+        font-weight: 700;
+        padding: 6px 14px;
+        border-radius: 12px;
+        transition: all 0.2s ease;
+        -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-nav-item i {
+        font-size: 1.25rem;
+        transition: transform 0.2s ease;
+    }
+    .mobile-nav-item.active {
+        color: var(--primary);
+    }
+    .mobile-nav-item.active i {
+        transform: scale(1.12);
+        color: var(--primary);
+    }
+    .mobile-nav-item:active {
+        transform: scale(0.92);
+    }
+}
+
+/* 2. Interactive Medical Intake Touch Cards */
+.medical-intake-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1.5px solid #E2E8F0;
+    background: #F8FAFC;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--secondary);
+    margin: 0;
+}
+.medical-intake-card:hover {
+    border-color: #CBD5E1;
+    background: #F1F5F9;
+}
+.medical-intake-card:active {
+    transform: scale(0.98);
+}
+.medical-intake-card input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    cursor: pointer;
+    flex-shrink: 0;
+    accent-color: var(--danger);
+}
+.medical-intake-card:has(input[type="checkbox"]:checked) {
+    background: #FEF2F2;
+    border-color: #EF4444;
+    color: #DC2626;
+    box-shadow: 0 2px 10px rgba(239, 68, 68, 0.12);
+}
+
+/* 3. Mobile Modal Bottom-Sheet Styling */
+@media (max-width: 767px) {
+    .modal {
+        align-items: flex-end !important;
+        padding: 0 !important;
+    }
+    .modal-content {
+        border-radius: 24px 24px 0 0 !important;
+        max-height: 92vh !important;
+        padding: 1.5rem 1rem !important;
+        width: 100% !important;
+        margin: 0 !important;
+        animation: mobileModalSheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    @keyframes mobileModalSheet {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+    }
+    .tab-container {
+        display: flex !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        padding-bottom: 6px !important;
+        scrollbar-width: none !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    .tab-container::-webkit-scrollbar {
+        display: none !important;
+    }
+    .profile-tab-btn {
+        flex-shrink: 0 !important;
+        font-size: 0.8rem !important;
+        padding: 0.6rem 0.9rem !important;
+        min-height: 40px !important;
+    }
+}
+
+/* 4. Responsive Rx and Treatment Plan Table to Cards on Small Phones */
+@media (max-width: 640px) {
+    #rxMedicinesTableContainer table,
+    #planItemsTableContainer table {
+        display: block;
+        width: 100%;
+    }
+    #rxMedicinesTableContainer thead,
+    #planItemsTableContainer thead {
+        display: none;
+    }
+    #rxMedicinesTableContainer tbody,
+    #planItemsTableContainer tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    #rxMedicinesTableContainer tr,
+    #planItemsTableContainer tr {
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-soft);
+        border-radius: 10px;
+        padding: 10px 12px;
+        border: 1px solid #E2E8F0;
+    }
+    #rxMedicinesTableContainer td,
+    #planItemsTableContainer td {
+        padding: 2px 0 !important;
+        border: none !important;
+    }
+}
+
+/* 5. Mobile Smooth Horizontal Scrolling Bar for Templates */
+.template-pills-bar {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.template-pills-bar::-webkit-scrollbar {
+    display: none;
+}
+
+/* 6. Form input comfort on mobile (prevents iOS Safari auto-zoom) */
+@media (max-width: 767px) {
+    input, select, textarea {
+        font-size: 16px !important;
+    }
+    .form-row {
+        grid-template-columns: 1fr !important;
+        gap: 0.85rem !important;
+    }
+    .stats-row {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.75rem !important;
+    }
+}

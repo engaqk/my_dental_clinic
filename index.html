@@ -2,7 +2,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Dental Clinic | Premium Care</title>
-    <link rel="stylesheet" href="style.css?v=35">
+    <link rel="stylesheet" href="style.css?v=36">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -43,7 +43,7 @@
                     <li><a href="#" onclick="scrollToTour()" id="tour-nav">Portal Tour</a></li>
                     <li><a href="#" onclick="scrollToBooking()">Book Appointment</a></li>
                     <li id="portal-nav-item"><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Clinical Portal (Admin/Staff)</a></li>
-                    <li id="pwa-install-item"><a href="#" id="pwaInstallBtn" style="color: var(--primary);"><i class="fas fa-download"></i> Install App</a></li>
+                    <li id="pwa-install-item"><a href="javascript:void(0)" id="pwaInstallBtn" onclick="triggerPWAInstall(); return false;" style="color: var(--primary); font-weight: 800;"><i class="fas fa-download"></i> Install App</a></li>
                     <li id="logout-nav-item" style="display: none;"><a href="#" onclick="logout()" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
@@ -104,6 +104,52 @@
                             <label><i class="fas fa-notes-medical"></i> Clinical Concern</label>
                             <textarea id="reason" rows="3" required="" minlength="10" maxlength="500" placeholder="Briefly describe your treatment requirement..."></textarea>
                             <span class="invalid-feedback">Minimum 10 characters required.</span>
+                        </div>
+
+                        <!-- Medical & Health Safety Questionnaire -->
+                        <div class="form-group" style="margin-top: 1.25rem; margin-bottom: 1.5rem;">
+                            <div id="btnToggleMedicalIntake" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; cursor: pointer; background: var(--bg-soft); padding: 0.85rem 1.1rem; border-radius: 14px; border: 1.5px solid #E2E8F0; transition: all 0.2s;" onclick="toggleMedicalIntake()">
+                                <label style="margin: 0; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; font-weight: 800; color: var(--secondary); font-size: 0.92rem;">
+                                    <i class="fas fa-heartbeat" style="color: var(--primary);"></i> Health &amp; Allergy Questionnaire <span style="font-size: 0.72rem; color: var(--primary); font-weight: 800; background: var(--primary-light); padding: 2px 8px; border-radius: 99px;">Safe Care</span>
+                                </label>
+                                <span id="intakeToggleIcon" style="font-size: 0.95rem; color: var(--primary); transition: transform 0.25s ease;"><i class="fas fa-chevron-down" id="medicalIntakeChevron"></i></span>
+                            </div>
+                            <div id="medicalIntakeBody" style="background: white; border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 1.1rem 1.25rem; display: none; margin-top: 0.5rem;">
+                                <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.85rem;">
+                                    Tap any applicable conditions to notify our dental team for safe anesthesia and treatment:
+                                </p>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.65rem; margin-bottom: 0.85rem;">
+                                    <label class="medical-intake-card">
+                                        <input type="checkbox" name="medicalAlert" value="Penicillin / Drug Allergy">
+                                        <span>⚠️ Penicillin / Drug Allergy</span>
+                                    </label>
+                                    <label class="medical-intake-card">
+                                        <input type="checkbox" name="medicalAlert" value="Diabetes">
+                                        <span>🩸 Diabetes</span>
+                                    </label>
+                                    <label class="medical-intake-card">
+                                        <input type="checkbox" name="medicalAlert" value="Hypertension (High BP)">
+                                        <span>💓 High BP (Hypertension)</span>
+                                    </label>
+                                    <label class="medical-intake-card">
+                                        <input type="checkbox" name="medicalAlert" value="Heart Condition">
+                                        <span>❤️ Heart Condition</span>
+                                    </label>
+                                    <label class="medical-intake-card">
+                                        <input type="checkbox" name="medicalAlert" value="Bleeding Disorder">
+                                        <span>🩸 Bleeding / Blood Thinners</span>
+                                    </label>
+                                    <label class="medical-intake-card">
+                                        <input type="checkbox" name="medicalAlert" value="Latex Allergy">
+                                        <span>🧤 Latex Allergy</span>
+                                    </label>
+                                    <label class="medical-intake-card">
+                                        <input type="checkbox" name="medicalAlert" value="Pregnancy">
+                                        <span>🤰 Pregnancy</span>
+                                    </label>
+                                </div>
+                                <input type="text" id="medicalNotes" placeholder="Other medical conditions or current medications (optional)..." style="width: 100%; height: 42px; padding: 0 0.85rem; font-size: 0.85rem; border-radius: 10px; border: 1.5px solid #CBD5E1; background: var(--bg-soft);">
+                            </div>
                         </div>
 
                         <button type="submit" class="btn-primary" style="width: 100%; padding: 1.5rem; justify-content: center; font-size: 1.1rem; border-radius: 16px;">
@@ -570,6 +616,25 @@
         </section>
     </main>
 
+    <!-- Clinic Global Footer with Developer Attribution -->
+    <footer class="clinic-global-footer" style="background: var(--secondary); color: white; padding: 3rem 1.5rem 2.5rem; margin-top: 5rem; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+        <div class="container" style="max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1.25rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <img src="logo.png" alt="Logo" style="height: 36px; filter: brightness(0) invert(1);" onerror="this.style.display='none'">
+                <span style="font-weight: 800; font-size: 1.25rem; letter-spacing: 0.5px;" id="footerClinicName">MY DENTAL CLINIC</span>
+            </div>
+            <p style="color: #94A3B8; font-size: 0.88rem; max-width: 580px; margin: 0; line-height: 1.6;">
+                Advanced digital dental management, automated priority scheduling, digital diagnostic charting, itemized treatment planning, and smart prescriptions.
+            </p>
+            <div style="width: 100%; height: 1px; background: rgba(255, 255, 255, 0.1); margin: 0.5rem 0;"></div>
+            <div style="font-size: 0.85rem; color: #94A3B8; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; align-items: center;">
+                <span>&copy; <span id="footerYear">2026</span> All rights reserved.</span>
+                <span>•</span>
+                <span>Developed by <a href="https://proconixsoftware.vercel.app" target="_blank" rel="noopener noreferrer" style="color: #38BDF8; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; transition: color 0.2s;" onmouseover="this.style.color='#7DD3FC'" onmouseout="this.style.color='#38BDF8'">proconixsoftware.vercel.app</a></span>
+            </div>
+        </div>
+    </footer>
+
     <!-- Patient Profile Modal -->
     <div id="patientProfileModal" class="modal">
         <div class="modal-content profile-modal">
@@ -577,6 +642,16 @@
             <div class="profile-header">
                 <h2 id="profileName">Loading...</h2>
                 <p id="profileMeta">Mobile: Loading...</p>
+                <!-- Medical Alerts Warning Banner -->
+                <div id="profileMedicalAlertsBar" style="margin-top: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 0.6rem 0.9rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;" id="profileAlertsBadges">
+                        <span style="font-size: 0.75rem; font-weight: 900; color: #DC2626;"><i class="fas fa-heartbeat"></i> CLINICAL ALERTS:</span>
+                        <span style="font-size: 0.75rem; color: #64748B;">None recorded</span>
+                    </div>
+                    <button onclick="openEditMedicalAlertsModal()" class="btn-primary" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; height: 30px; padding: 0 0.75rem; font-size: 0.75rem; font-weight: 700; border-radius: 8px;">
+                        <i class="fas fa-edit"></i> Edit Health
+                    </button>
+                </div>
                 <div class="action-grid" style="margin-top: 1.5rem;">
                     <button onclick="quickWhatsApp()" class="btn-chat">
                         <i class="fab fa-whatsapp"></i> Chat
@@ -589,9 +664,11 @@
                     </button>
                 </div>
             </div>
-            <div class="tab-container">
+            <div class="tab-container" style="overflow-x: auto; white-space: nowrap; padding-bottom: 4px;">
                 <button class="profile-tab-btn active" onclick="switchProfileTab('timeline')"><i class="fas fa-history"></i> History</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')"><i class="fas fa-calendar-check"></i> Next Visit</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('prescriptions')"><i class="fas fa-prescription"></i> Digital Rx</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('treatment-plans')"><i class="fas fa-clipboard-list"></i> Treatment Plan</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('diagnoses')"><i class="fas fa-stethoscope"></i> Diagnostic</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('finances')"><i class="fas fa-rupee-sign"></i> Finance</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> Charting</button>
@@ -602,7 +679,257 @@
                 </div>
 
                 <!-- New Diagnosis Section -->
-                <div id="profileDiagnosisSection" style="display: none;">
+                
+                <!-- Digital Prescription (Rx) Section -->
+                <div id="profilePrescriptionsSection" style="display: none;">
+                    <div class="seating-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0; margin-bottom: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <h3 style="margin: 0; color: var(--primary); font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-prescription"></i> Write Digital Prescription (Rx)
+                            </h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">1-Click Template Adder</span>
+                        </div>
+
+                        <!-- 1-Click Dental Medicine Templates -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+                                Common Dental Medicine Templates (Tap to Add):
+                            </label>
+                            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                <button type="button" onclick="addRxTemplate('Amoxicillin 500mg', '1-0-1', '5 Days', 'After Food (Antibiotic)')" class="rx-pill-btn">+ Amoxicillin 500mg</button>
+                                <button type="button" onclick="addRxTemplate('Augmentin 625mg', '1-0-1', '5 Days', 'After Food (Broad Spectrum)')" class="rx-pill-btn">+ Augmentin 625mg</button>
+                                <button type="button" onclick="addRxTemplate('Metronidazole 400mg', '1-0-1', '5 Days', 'After Food (Anaerobic)')" class="rx-pill-btn">+ Metrogyl 400mg</button>
+                                <button type="button" onclick="addRxTemplate('Ibuprofen + Paracetamol', '1-0-1', '3 Days', 'After Food (Pain relief)')" class="rx-pill-btn">+ Combiflam (Pain)</button>
+                                <button type="button" onclick="addRxTemplate('Ketorolac-DT 10mg', 'SOS', '2 Days', 'Dispersible in water (Acute pain)')" class="rx-pill-btn">+ Ketorol-DT</button>
+                                <button type="button" onclick="addRxTemplate('Pantoprazole 40mg', '1-0-0', '5 Days', 'Before Breakfast (Antacid)')" class="rx-pill-btn">+ Pan-40 (Antacid)</button>
+                                <button type="button" onclick="addRxTemplate('Chlorhexidine 0.2% Mouthwash', '10ml Twice Daily', '7 Days', 'Swish for 60s, do not swallow')" class="rx-pill-btn">+ Chlorhexidine Mouthwash</button>
+                            </div>
+                        </div>
+
+                        <!-- Custom Medicine Input Row -->
+                        <div style="background: var(--bg-soft); padding: 1rem; border-radius: 12px; margin-bottom: 1.25rem; border: 1px solid #E2E8F0;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">MEDICINE NAME</label>
+                                    <input type="text" id="rxDrugName" placeholder="e.g. Cefixime 200mg" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">FREQUENCY</label>
+                                    <input type="text" id="rxDrugFrequency" placeholder="e.g. 1-0-1 or 1-1-1" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">DURATION</label>
+                                    <input type="text" id="rxDrugDuration" placeholder="e.g. 5 Days" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">INSTRUCTION</label>
+                                    <input type="text" id="rxDrugInstructions" placeholder="e.g. After food" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                            </div>
+                            <button type="button" onclick="addCustomRxMedicine()" class="btn-primary" style="background: var(--secondary); height: 36px; font-size: 0.8rem; padding: 0 1rem;">
+                                <i class="fas fa-plus"></i> Add Medicine
+                            </button>
+                        </div>
+
+                        <!-- Prescribed Medicines Table -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+                                Prescribed Medicines Table:
+                            </label>
+                            <div id="rxMedicinesTableContainer" style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                    <thead>
+                                        <tr style="background: var(--bg-soft); text-align: left; border-bottom: 2px solid #CBD5E1;">
+                                            <th style="padding: 8px;">#</th>
+                                            <th style="padding: 8px;">Medicine</th>
+                                            <th style="padding: 8px;">Frequency</th>
+                                            <th style="padding: 8px;">Duration</th>
+                                            <th style="padding: 8px;">Instructions</th>
+                                            <th style="padding: 8px; text-align: center;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rxMedicinesTableBody">
+                                        <tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No medicines added to Rx yet. Tap templates above to add.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Clinical Advice Checkboxes -->
+                        <div style="margin-bottom: 1.5rem;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+                                Clinical Advice &amp; Post-Op Instructions:
+                            </label>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                                    <input type="checkbox" name="rxAdvice" value="Warm saline rinses 3-4 times a day after 24 hrs" checked style="width: 15px; height: 15px;">
+                                    <span>Warm saline gargle after 24h</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                                    <input type="checkbox" name="rxAdvice" value="Maintain soft, non-spicy diet for 48 hours" checked style="width: 15px; height: 15px;">
+                                    <span>Soft, non-spicy diet</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                                    <input type="checkbox" name="rxAdvice" value="Do not spit or use straw for 24 hours" checked style="width: 15px; height: 15px;">
+                                    <span>Do not spit or use straw</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; font-weight: 600; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                                    <input type="checkbox" name="rxAdvice" value="Avoid smoking or alcohol consumption during medication" style="width: 15px; height: 15px;">
+                                    <span>Avoid alcohol / smoking</span>
+                                </label>
+                            </div>
+                            <textarea id="rxAdditionalNotes" rows="2" placeholder="Additional doctor notes or tooth-specific advice..." style="width: 100%; border-radius: 8px; border: 1px solid #CBD5E1; padding: 0.6rem; font-size: 0.82rem;"></textarea>
+                        </div>
+
+                        <!-- Rx Action Buttons -->
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                            <button onclick="saveAndGenerateRxPDF()" class="btn-primary" style="background: var(--primary); font-weight: 800; font-size: 0.88rem; padding: 0.7rem 1.4rem;">
+                                <i class="fas fa-file-pdf"></i> Save &amp; Print Rx PDF
+                            </button>
+                            <button onclick="shareRxWhatsApp()" class="btn-primary" style="background: #25D366; font-weight: 800; font-size: 0.88rem; padding: 0.7rem 1.4rem;">
+                                <i class="fab fa-whatsapp"></i> Send Rx to WhatsApp
+                            </button>
+                            <button onclick="clearRxForm()" class="btn-primary" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; font-weight: 700; font-size: 0.88rem; padding: 0.7rem 1.2rem;">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Past Prescriptions History -->
+                    <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0;">
+                        <h4 style="margin: 0 0 1.25rem; font-weight: 800; color: var(--secondary); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-history" style="color: var(--primary);"></i> Past Prescriptions History
+                        </h4>
+                        <div id="patientPrescriptionsHistoryList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">Loading prescriptions...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Treatment Plan & Cost Quotation Section -->
+                <div id="profileTreatmentPlansSection" style="display: none;">
+                    <div class="seating-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0; margin-bottom: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <h3 style="margin: 0; color: var(--primary); font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-clipboard-list"></i> Create Treatment Plan &amp; Quotation
+                            </h3>
+                            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">Case presentation &amp; cost estimate</span>
+                        </div>
+
+                        <!-- 1-Click Procedure Templates -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem;">
+                                Common Procedure Templates (Tap to Add):
+                            </label>
+                            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                                <button type="button" onclick="addPlanTemplate('Ultrasonic Scaling & Polishing', 'All', 1500, 1)" class="rx-pill-btn">+ Scaling (₹1,500)</button>
+                                <button type="button" onclick="addPlanTemplate('Rotary Root Canal Treatment (RCT)', 'Specific', 4000, 2)" class="rx-pill-btn">+ Rotary RCT (₹4,000)</button>
+                                <button type="button" onclick="addPlanTemplate('Posterior Laser Composite Filling', 'Specific', 1800, 1)" class="rx-pill-btn">+ Composite Filling (₹1,800)</button>
+                                <button type="button" onclick="addPlanTemplate('Fiber Post & Core Buildup', 'Specific', 2500, 1)" class="rx-pill-btn">+ Post &amp; Core (₹2,500)</button>
+                                <button type="button" onclick="addPlanTemplate('Premium Full Zirconia Crown', 'Specific', 8500, 2)" class="rx-pill-btn">+ Zirconia Crown (₹8,500)</button>
+                                <button type="button" onclick="addPlanTemplate('Metal Ceramic Crown (PFM)', 'Specific', 4500, 2)" class="rx-pill-btn">+ PFM Crown (₹4,500)</button>
+                                <button type="button" onclick="addPlanTemplate('Surgical Tooth Extraction', 'Specific', 2500, 1)" class="rx-pill-btn">+ Extraction (₹2,500)</button>
+                                <button type="button" onclick="addPlanTemplate('Titanium Implant & Crown', 'Specific', 30000, 3)" class="rx-pill-btn">+ Dental Implant (₹30,000)</button>
+                                <button type="button" onclick="addPlanTemplate('Laser Teeth Whitening', 'Full Arch', 8000, 1)" class="rx-pill-btn">+ Whitening (₹8,000)</button>
+                            </div>
+                        </div>
+
+                        <!-- Add Procedure Form Row -->
+                        <div style="background: var(--bg-soft); padding: 1rem; border-radius: 12px; margin-bottom: 1.25rem; border: 1px solid #E2E8F0;">
+                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">PROCEDURE / TREATMENT</label>
+                                    <input type="text" id="planItemName" placeholder="e.g. Zirconia Crown" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">TOOTH #</label>
+                                    <input type="text" id="planItemTooth" placeholder="e.g. #16 or Upper" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">SITTINGS</label>
+                                    <input type="number" id="planItemSittings" value="1" min="1" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">EST. COST (₹)</label>
+                                    <input type="number" id="planItemCost" placeholder="0" min="0" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                </div>
+                            </div>
+                            <button type="button" onclick="addCustomPlanItem()" class="btn-primary" style="background: var(--secondary); height: 36px; font-size: 0.8rem; padding: 0 1rem;">
+                                <i class="fas fa-plus"></i> Add Procedure
+                            </button>
+                        </div>
+
+                        <!-- Planned Procedures Table -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <div id="planItemsTableContainer" style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                    <thead>
+                                        <tr style="background: var(--bg-soft); text-align: left; border-bottom: 2px solid #CBD5E1;">
+                                            <th style="padding: 8px;">#</th>
+                                            <th style="padding: 8px;">Procedure Name</th>
+                                            <th style="padding: 8px;">Tooth #</th>
+                                            <th style="padding: 8px;">Sittings</th>
+                                            <th style="padding: 8px;">Cost (₹)</th>
+                                            <th style="padding: 8px; text-align: center;">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="planItemsTableBody">
+                                        <tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">No procedures added yet. Select from templates above.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Plan Calculation & Status Bar -->
+                        <div style="background: var(--bg-soft); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">DISCOUNT / COURTESY (₹)</label>
+                                    <input type="number" id="planDiscount" value="0" min="0" oninput="calculatePlanTotal()" style="height: 36px; width: 130px; padding: 0 0.5rem; font-size: 0.85rem;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">PLAN STATUS</label>
+                                    <select id="planStatus" style="height: 36px; padding: 0 0.75rem; font-size: 0.85rem; font-weight: 700; border-radius: 8px;">
+                                        <option value="Draft">📝 Draft Estimate</option>
+                                        <option value="Presented" selected>📋 Presented to Patient</option>
+                                        <option value="Accepted">✅ Accepted by Patient</option>
+                                        <option value="In Progress">⏳ In Progress</option>
+                                        <option value="Completed">🎉 Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">TOTAL ESTIMATED COST:</div>
+                                <div id="planGrandTotal" style="font-size: 1.6rem; font-weight: 900; color: var(--primary);">₹0</div>
+                            </div>
+                        </div>
+
+                        <!-- Plan Action Buttons -->
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                            <button onclick="saveAndGenerateTreatmentPlanPDF()" class="btn-primary" style="background: var(--primary); font-weight: 800; font-size: 0.88rem; padding: 0.7rem 1.4rem;">
+                                <i class="fas fa-file-pdf"></i> Save &amp; Print Quotation PDF
+                            </button>
+                            <button onclick="shareTreatmentPlanWhatsApp()" class="btn-primary" style="background: #25D366; font-weight: 800; font-size: 0.88rem; padding: 0.7rem 1.4rem;">
+                                <i class="fab fa-whatsapp"></i> Share Quote via WhatsApp
+                            </button>
+                            <button onclick="clearPlanForm()" class="btn-primary" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; font-weight: 700; font-size: 0.88rem; padding: 0.7rem 1.2rem;">
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Past Treatment Plans History -->
+                    <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0;">
+                        <h4 style="margin: 0 0 1.25rem; font-weight: 800; color: var(--secondary); display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-history" style="color: var(--primary);"></i> Past Estimates &amp; Quotations
+                        </h4>
+                        <div id="patientTreatmentPlansHistoryList" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                            <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">Loading treatment plans...</div>
+                        </div>
+                    </div>
+                </div>
+
+<div id="profileDiagnosisSection" style="display: none;">
                     <div class="seating-card">
                         <h3 style="margin-bottom: 1.5rem; color: var(--primary-dark);">Add New Diagnosis</h3>
                         <div class="form-group" style="margin-bottom: 1.5rem;">
@@ -858,9 +1185,9 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=35"></script>
+    <script src="db-api.js?v=36"></script>
     <script src="auth.js?v=35"></script>
-    <script src="script.js?v=35"></script>
+    <script src="script.js?v=36"></script>
     <script src="premium-features.js?v=35"></script>
     <script>
         function showSection(id) {
@@ -1124,4 +1451,78 @@
         </div>
     </div>
 
+
+    <!-- Edit Medical Alerts Modal -->
+    <div id="editMedicalAlertsModal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 520px; padding: 2rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+                <h3 style="margin: 0; color: var(--secondary); font-size: 1.2rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-heartbeat" style="color: var(--danger);"></i> Edit Medical &amp; Allergy History
+                </h3>
+                <span onclick="closeEditMedicalAlertsModal()" style="font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</span>
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Toggle any active medical conditions or allergies for this patient:
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 1.25rem;">
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 700; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                    <input type="checkbox" id="editAlertPenicillin" value="Penicillin / Drug Allergy" style="width: 16px; height: 16px; accent-color: var(--danger);">
+                    <span>⚠️ Penicillin Allergy</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 700; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                    <input type="checkbox" id="editAlertDiabetes" value="Diabetes" style="width: 16px; height: 16px; accent-color: var(--warning);">
+                    <span>🩸 Diabetes</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 700; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                    <input type="checkbox" id="editAlertHypertension" value="Hypertension (High BP)" style="width: 16px; height: 16px; accent-color: var(--warning);">
+                    <span>💓 High BP</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 700; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                    <input type="checkbox" id="editAlertHeart" value="Heart Condition" style="width: 16px; height: 16px; accent-color: var(--danger);">
+                    <span>❤️ Heart Condition</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 700; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                    <input type="checkbox" id="editAlertBleeding" value="Bleeding Disorder" style="width: 16px; height: 16px; accent-color: var(--danger);">
+                    <span>🩸 Blood Thinners</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 700; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                    <input type="checkbox" id="editAlertLatex" value="Latex Allergy" style="width: 16px; height: 16px; accent-color: var(--danger);">
+                    <span>🧤 Latex Allergy</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; font-weight: 700; color: var(--secondary); cursor: pointer; text-transform: none; margin: 0;">
+                    <input type="checkbox" id="editAlertPregnancy" value="Pregnancy" style="width: 16px; height: 16px; accent-color: #8B5CF6;">
+                    <span>🤰 Pregnant</span>
+                </label>
+            </div>
+            <div style="margin-bottom: 1.5rem;">
+                <label style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">ADDITIONAL MEDICAL NOTES</label>
+                <input type="text" id="editAlertCustomNotes" placeholder="e.g. Asthmatic, Allergic to Sulfa drugs..." style="width: 100%; height: 40px; padding: 0 0.85rem; font-size: 0.85rem; border-radius: 8px; border: 1px solid #CBD5E1;">
+            </div>
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button onclick="closeEditMedicalAlertsModal()" class="btn-primary" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; height: 42px; font-weight: 700;">Cancel</button>
+                <button onclick="saveMedicalAlertsFromModal()" class="btn-primary" style="background: var(--primary); height: 42px; font-weight: 800;">Save Health Status</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Mobile-First Bottom Navigation Bar (Visible only on mobile devices <= 767px) -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile Navigation">
+        <a href="javascript:void(0)" onclick="handleMobileNav('home')" class="mobile-nav-item active" id="mobNavHome">
+            <i class="fas fa-calendar-plus"></i>
+            <span>Book</span>
+        </a>
+        <a href="javascript:void(0)" onclick="handleMobileNav('schedule')" class="mobile-nav-item" id="mobNavSchedule">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Schedule</span>
+        </a>
+        <a href="javascript:void(0)" onclick="handleMobileNav('patients')" class="mobile-nav-item" id="mobNavPatients">
+            <i class="fas fa-users"></i>
+            <span>Patients</span>
+        </a>
+        <a href="javascript:void(0)" onclick="handleMobileNav('portal')" class="mobile-nav-item" id="mobNavPortal">
+            <i class="fas fa-user-md"></i>
+            <span>Staff Portal</span>
+        </a>
+    </nav>
 </body></html>

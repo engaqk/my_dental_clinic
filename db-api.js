@@ -110,6 +110,8 @@ class DatabaseAPI {
                     reason: data.reason || data.service || 'General',
                     fee: parseFloat(data.fee) || 0,
                     status: data.status || 'Pending',
+                    medicalAlerts: data.medicalAlerts || [],
+                    medicalNotes: data.medicalNotes || '',
                     createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().getTime() : data.createdAt) : numericId
                 });
             });
@@ -164,6 +166,8 @@ class DatabaseAPI {
                 reason: appointment.reason || '',
                 fee: parseFloat(appointment.fee) || 0,
                 status: appointment.status || 'Pending',
+                medicalAlerts: appointment.medicalAlerts || [],
+                medicalNotes: appointment.medicalNotes || '',
                 date: appointment.date || new Date().toLocaleDateString(),
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -1004,6 +1008,136 @@ class DatabaseAPI {
         } catch(e) {
             return null;
         }
+    }
+    // --- DIGITAL PRESCRIPTIONS (Rx) ---
+    async savePrescription(rxData) {
+        const payload = {
+            ...rxData,
+            createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+        };
+        try {
+            let local = JSON.parse(localStorage.getItem('dentalPrescriptions') || '[]');
+            local.unshift({ ...rxData, id: Date.now(), createdAt: Date.now() });
+            localStorage.setItem('dentalPrescriptions', JSON.stringify(local));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const docRef = await this.getCollection('prescriptions').add(payload);
+                return { id: docRef.id, ...rxData };
+            } catch (err) {
+                console.warn('Failed to save prescription to Firebase (saved to local cache):', err);
+            }
+        }
+        return { id: Date.now(), ...rxData };
+    }
+
+    async getPrescriptions(mobile) {
+        const normMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(mobile) : mobile;
+        let results = [];
+        try {
+            const local = JSON.parse(localStorage.getItem('dentalPrescriptions') || '[]');
+            results = local.filter(r => r.mobile === mobile || r.patientMobile === mobile || (normMobile && (r.mobile === normMobile || r.patientMobile === normMobile)));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const snap = await this.getCollection('prescriptions').where('mobile', '==', mobile).get();
+                const fbResults = [];
+                snap.forEach(doc => fbResults.push({ id: doc.id, ...doc.data() }));
+                if (fbResults.length > 0) return fbResults;
+            } catch (err) {
+                console.warn('Failed to fetch prescriptions from Firebase:', err);
+            }
+        }
+        return results;
+    }
+
+    // --- TREATMENT PLANS & COST ESTIMATES ---
+    async saveTreatmentPlan(planData) {
+        const payload = {
+            ...planData,
+            createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+        };
+        try {
+            let local = JSON.parse(localStorage.getItem('dentalTreatmentPlans') || '[]');
+            local.unshift({ ...planData, id: Date.now(), createdAt: Date.now() });
+            localStorage.setItem('dentalTreatmentPlans', JSON.stringify(local));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const docRef = await this.getCollection('treatment_plans').add(payload);
+                return { id: docRef.id, ...planData };
+            } catch (err) {
+                console.warn('Failed to save treatment plan to Firebase (saved to local cache):', err);
+            }
+        }
+        return { id: Date.now(), ...planData };
+    }
+
+    async getTreatmentPlans(mobile) {
+        const normMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(mobile) : mobile;
+        let results = [];
+        try {
+            const local = JSON.parse(localStorage.getItem('dentalTreatmentPlans') || '[]');
+            results = local.filter(r => r.mobile === mobile || r.patientMobile === mobile || (normMobile && (r.mobile === normMobile || r.patientMobile === normMobile)));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const snap = await this.getCollection('treatment_plans').where('mobile', '==', mobile).get();
+                const fbResults = [];
+                snap.forEach(doc => fbResults.push({ id: doc.id, ...doc.data() }));
+                if (fbResults.length > 0) return fbResults;
+            } catch (err) {
+                console.warn('Failed to fetch treatment plans from Firebase:', err);
+            }
+        }
+        return results;
+    }
+
+    // --- PATIENT MEDICAL ALERTS & HEALTH PROFILE ---
+    async savePatientMedicalAlerts(mobile, alerts, notes) {
+        const payload = {
+            mobile,
+            alerts: alerts || [],
+            notes: notes || '',
+            updatedAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+        };
+        try {
+            let local = JSON.parse(localStorage.getItem('dentalMedicalAlerts') || '{}');
+            local[mobile] = { alerts, notes };
+            localStorage.setItem('dentalMedicalAlerts', JSON.stringify(local));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection('patient_medical_alerts').doc(mobile).set(payload, { merge: true });
+                return true;
+            } catch (err) {
+                console.warn('Failed to save medical alerts to Firebase:', err);
+            }
+        }
+        return true;
+    }
+
+    async getPatientMedicalAlerts(mobile) {
+        let localAlerts = { alerts: [], notes: '' };
+        try {
+            const local = JSON.parse(localStorage.getItem('dentalMedicalAlerts') || '{}');
+            if (local[mobile]) localAlerts = local[mobile];
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const doc = await this.getCollection('patient_medical_alerts').doc(mobile).get();
+                if (doc.exists) return doc.data();
+            } catch (err) {
+                console.warn('Failed to fetch medical alerts from Firebase:', err);
+            }
+        }
+        return localAlerts;
     }
 }
 

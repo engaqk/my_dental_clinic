@@ -38,6 +38,19 @@ service cloud.firestore {
       match /login_history/{historyId} {
         allow read, write: if true;
       }
+
+      match /prescriptions/{rxId} {
+        allow read, write: if true;
+      }
+
+      match /treatment_plans/{planId} {
+        allow read, write: if true;
+      }
+
+      match /patient_medical_alerts/{alertId} {
+        allow read, write: if true;
+      }
+
     }
 
     // Keep legacy root paths accessible for migration
