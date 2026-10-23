@@ -104,6 +104,7 @@ async function refreshDashboard() {
     if (document.getElementById('pendingVisits')) document.getElementById('pendingVisits').innerText = pendingVisits;
     
     renderDashboardOverview(patients);
+    if (typeof renderScheduleCalendar === 'function') renderScheduleCalendar(currentScheduleDate);
     console.log(`📊 Sync Complete: ${patients.length} Patients | ₹${revenue} Revenue`);
 }
 
@@ -506,9 +507,11 @@ async function generateTimeSlots() {
         const opt = document.createElement('option');
         opt.value = display;
         opt.textContent = isBooked ? `${display} (Booked)` : display;
+        opt.style.color = isBooked ? '#94A3B8' : '#0F172A';
+        opt.style.backgroundColor = '#FFFFFF';
+        opt.style.fontWeight = isBooked ? 'normal' : '600';
         if (isBooked) {
             opt.disabled = true;
-            opt.style.color = '#94A3B8';
         }
         timeSelect.appendChild(opt);
     };
@@ -526,6 +529,11 @@ async function generateTimeSlots() {
             timeSelect.value = "";
         }
     }
+    timeSelect.style.color = timeSelect.value ? '#0F172A' : '#64748B';
+    timeSelect.onchange = function() {
+        this.style.color = this.value ? '#0F172A' : '#64748B';
+        this.style.fontWeight = '600';
+    };
 }
 
 async function generateProfileTimeSlots() {
@@ -1799,43 +1807,36 @@ function switchTenant(tenantId) {
     }
 }
 
-// Add SuperAdmin check on load
+// Add SuperAdmin check on load (Only superadmin/admin53 gets super admin privileges)
 function checkSuperAdminUI() {
-    let isSuper = sessionStorage.getItem('isSuperAdmin') === 'true';
+    let isSuper = false;
     try {
+        const isSuperFlag = sessionStorage.getItem('isSuperAdmin');
         const userStr = sessionStorage.getItem('staffUser');
         if (userStr) {
             const user = JSON.parse(userStr);
-            const email = user && user.email ? user.email.toLowerCase() : '';
-            if (email === 'abdulqadir.galaxy53@gmail.com' || email === 'ablqadir16@gmail.com' || email === 'admin') {
+            if (user && user.role === 'super_admin') {
                 isSuper = true;
-                sessionStorage.setItem('isSuperAdmin', 'true');
             }
+        }
+        if (isSuperFlag === 'true') {
+            isSuper = true;
         }
     } catch (e) {
         console.error('Error checking super admin:', e);
     }
 
-    // Always show if on default tenant and is admin for fallback
-    if (!isSuper && window.dbAPI && window.dbAPI.tenantId === 'default' && sessionStorage.getItem('staffLoggedIn') === 'true') {
-        isSuper = true;
-    }
+    const btn = document.getElementById('manageClinicsBtn');
+    const switcher = document.getElementById('tenantSwitcher');
 
     if (isSuper) {
-        const btn = document.getElementById('manageClinicsBtn');
-        if (btn) btn.style.display = 'block';
-        
-        const switcher = document.getElementById('tenantSwitcher');
+        if (btn) btn.style.display = 'inline-flex';
         if (switcher) switcher.style.display = 'inline-block';
-        
         if (window.dbAPI && window.dbAPI.db) {
             loadTenantsList().catch(console.error);
         }
     } else {
-        const btn = document.getElementById('manageClinicsBtn');
         if (btn) btn.style.display = 'none';
-        
-        const switcher = document.getElementById('tenantSwitcher');
         if (switcher) switcher.style.display = 'none';
     }
 }
@@ -1970,4 +1971,231 @@ async function deleteClinic(slug) {
         console.error(e);
         alert('Error deleting clinic: ' + e.message);
     }
+}
+
+
+// --- APPOINTMENT BOOKED HISTORY & CALENDAR MODULE ---
+let currentScheduleDate = new Date().toISOString().split('T')[0];
+
+function setScheduleDay(dayType) {
+    const today = new Date();
+    if (dayType === 'today') {
+        currentScheduleDate = today.toISOString().split('T')[0];
+    } else if (dayType === 'yesterday') {
+        const y = new Date();
+        y.setDate(today.getDate() - 1);
+        currentScheduleDate = y.toISOString().split('T')[0];
+    } else if (dayType === 'tomorrow') {
+        const t = new Date();
+        t.setDate(today.getDate() + 1);
+        currentScheduleDate = t.toISOString().split('T')[0];
+    } else if (typeof dayType === 'string' && dayType.trim()) {
+        currentScheduleDate = dayType.trim();
+    }
+    renderScheduleCalendar(currentScheduleDate);
+}
+
+function changeScheduleDay(delta) {
+    if (!currentScheduleDate) {
+        currentScheduleDate = new Date().toISOString().split('T')[0];
+    }
+    const d = new Date(currentScheduleDate + 'T00:00:00');
+    d.setDate(d.getDate() + delta);
+    currentScheduleDate = d.toISOString().split('T')[0];
+    renderScheduleCalendar(currentScheduleDate);
+}
+
+function isDateMatching(rawDate, targetDateStr) {
+    if (!rawDate || !targetDateStr) return false;
+    const s = rawDate.toString().trim();
+    if (s === targetDateStr) return true;
+    try {
+        const parts = targetDateStr.split('-');
+        if (parts.length === 3) {
+            const y = parts[0];
+            const pm = parts[1].padStart(2, '0');
+            const m = parseInt(parts[1]).toString();
+            const pd = parts[2].padStart(2, '0');
+            const d = parseInt(parts[2]).toString();
+            const vars = [
+                targetDateStr,
+                `${d}/${pm}/${y}`,
+                `${pd}/${pm}/${y}`,
+                `${m}/${d}/${y}`,
+                `${pm}/${pd}/${y}`,
+                `${d}-${pm}-${y}`,
+                `${pd}-${pm}-${y}`
+            ];
+            if (vars.includes(s)) return true;
+        }
+        const d1 = new Date(s);
+        const d2 = new Date(targetDateStr);
+        if (!isNaN(d1.getTime()) && !isNaN(d2.getTime())) {
+            return d1.getFullYear() === d2.getFullYear() &&
+                   d1.getMonth() === d2.getMonth() &&
+                   d1.getDate() === d2.getDate();
+        }
+    } catch (e) {}
+    return false;
+}
+
+async function renderScheduleCalendar(targetDate) {
+    const list = document.getElementById('scheduleAppointmentsList');
+    const datePicker = document.getElementById('calendarScheduleDate');
+    const titleEl = document.getElementById('scheduleDayTitle');
+    const subtitleEl = document.getElementById('scheduleDaySubtitle');
+    const countEl = document.getElementById('scheduleCount');
+    const pendingEl = document.getElementById('schedulePendingCount');
+    const confirmedEl = document.getElementById('scheduleConfirmedCount');
+
+    if (!list) return;
+
+    if (!targetDate) {
+        targetDate = currentScheduleDate || new Date().toISOString().split('T')[0];
+    }
+    currentScheduleDate = targetDate;
+    if (datePicker) datePicker.value = targetDate;
+
+    // Determine Day Label
+    const todayStr = new Date().toISOString().split('T')[0];
+    const yDate = new Date(); yDate.setDate(new Date().getDate() - 1);
+    const yStr = yDate.toISOString().split('T')[0];
+    const tDate = new Date(); tDate.setDate(new Date().getDate() + 1);
+    const tStr = tDate.toISOString().split('T')[0];
+
+    const dObj = new Date(targetDate + 'T00:00:00');
+    const formattedDate = dObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
+
+    let relativeBadge = '';
+    if (targetDate === todayStr) relativeBadge = '<span style="background:var(--primary); color:white; padding:2px 8px; border-radius:99px; font-size:0.75rem; margin-right:6px;">TODAY</span>';
+    else if (targetDate === yStr) relativeBadge = '<span style="background:#64748B; color:white; padding:2px 8px; border-radius:99px; font-size:0.75rem; margin-right:6px;">YESTERDAY</span>';
+    else if (targetDate === tStr) relativeBadge = '<span style="background:#0284C7; color:white; padding:2px 8px; border-radius:99px; font-size:0.75rem; margin-right:6px;">TOMORROW</span>';
+
+    if (titleEl) {
+        titleEl.innerHTML = relativeBadge + formattedDate;
+    }
+    if (subtitleEl) {
+        subtitleEl.innerText = `Clinical appointments for ${targetDate}`;
+    }
+
+    list.innerHTML = '<div style="text-align: center; padding: 2rem; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading schedule...</div>';
+
+    let appointments = [];
+    try {
+        if (window.dbAPI && typeof window.dbAPI.getAppointments === 'function') {
+            appointments = await window.dbAPI.getAppointments();
+        }
+    } catch(err) {
+        console.error('Error fetching appointments for schedule calendar:', err);
+    }
+
+    // Filter appointments for the target date using isDateMatching
+    const dayAppointments = appointments.filter(a => {
+        const appDate = a.appointmentDate || a.date || '';
+        return isDateMatching(appDate, targetDate);
+    });
+
+    // Sort by appointment time slot
+    dayAppointments.sort((a, b) => {
+        const minA = parseTimeToMinutes(a.appointmentTime) || 9999;
+        const minB = parseTimeToMinutes(b.appointmentTime) || 9999;
+        return minA - minB;
+    });
+
+    // Update summary counters
+    const totalCount = dayAppointments.length;
+    const pendingCount = dayAppointments.filter(a => (a.status || 'Pending').toLowerCase() === 'pending').length;
+    const confirmedCount = totalCount - pendingCount;
+
+    if (countEl) countEl.innerText = totalCount;
+    if (pendingEl) pendingEl.innerText = pendingCount;
+    if (confirmedEl) confirmedEl.innerText = confirmedCount;
+
+    if (dayAppointments.length === 0) {
+        list.innerHTML = `
+            <div style="background: white; border-radius: 14px; padding: 3rem 1.5rem; text-align: center; border: 1px dashed #CBD5E1;">
+                <div style="font-size: 2.5rem; color: #94A3B8; margin-bottom: 0.75rem;"><i class="fas fa-calendar-times"></i></div>
+                <h4 style="font-weight: 800; color: var(--secondary); margin-bottom: 0.25rem;">No Appointments Booked</h4>
+                <p style="color: var(--text-muted); font-size: 0.85rem; max-width: 400px; margin: 0 auto 1.25rem;">There are no clinical appointments recorded for ${formattedDate}.</p>
+                <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="setScheduleDay('today')" class="btn-primary" style="font-size: 0.85rem; padding: 0.5rem 1rem;"><i class="fas fa-calendar-day"></i> View Today</button>
+                    <button onclick="showSection('home')" class="btn-primary" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; font-size: 0.85rem; padding: 0.5rem 1rem;"><i class="fas fa-plus-circle"></i> New Appointment</button>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    list.innerHTML = dayAppointments.map(a => {
+        const initials = (a.name || 'P').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+        const timeDisplay = a.appointmentTime || 'Time TBD';
+        const status = a.status || 'Pending';
+        const isPending = status === 'Pending';
+        const isCompleted = status === 'Completed';
+        const isCancelled = status === 'Cancelled';
+        const isConfirmed = status === 'Confirmed';
+
+        let badgeBg = '#FEF9C3';
+        let badgeColor = '#CA8A04';
+        if (isCompleted) { badgeBg = '#E0E7FF'; badgeColor = '#4338CA'; }
+        else if (isConfirmed) { badgeBg = '#DCFCE7'; badgeColor = '#16A34A'; }
+        else if (isCancelled) { badgeBg = '#FEE2E2'; badgeColor = '#DC2626'; }
+
+        const safeAppJson = encodeURIComponent(JSON.stringify(a));
+
+        return `
+            <div style="background: white; border-radius: 14px; padding: 1.25rem 1.5rem; border: 1px solid #E2E8F0; box-shadow: var(--shadow-sm); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; min-width: 250px;">
+                    <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #0D9488, #0891B2); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 0.95rem; flex-shrink: 0;">${initials}</div>
+                    <div>
+                        <div style="font-size: 1.05rem; font-weight: 800; color: var(--secondary); cursor: pointer;" onclick="document.getElementById('searchInput').value='${a.mobile}'; showDashboardTab('patients'); filterPatients();">
+                            ${a.name} <i class="fas fa-external-link-alt" style="font-size: 0.75rem; color: var(--primary); margin-left: 4px;"></i>
+                        </div>
+                        <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; margin-top: 2px;">
+                            <span><i class="fas fa-phone-alt" style="font-size: 0.7rem;"></i> ${a.mobile || 'No Mobile'}</span>
+                            ${a.place ? `<span>· <i class="fas fa-map-marker-alt" style="font-size: 0.7rem;"></i> ${a.place}</span>` : ''}
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                    <!-- Time Slot Badge -->
+                    <div style="background: var(--bg-soft); border: 1px solid #E2E8F0; padding: 0.4rem 0.85rem; border-radius: 99px; font-weight: 800; font-size: 0.85rem; color: var(--secondary); display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fas fa-clock" style="color: var(--primary);"></i> ${timeDisplay}
+                    </div>
+
+                    <!-- Clinical Reason -->
+                    <div style="background: #F1F5F9; padding: 0.4rem 0.85rem; border-radius: 99px; font-size: 0.8rem; color: #475569; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${a.reason || 'Consultation'}">
+                        <i class="fas fa-notes-medical" style="color: #64748B;"></i> ${a.reason || 'Consultation'}
+                    </div>
+
+                    <!-- Status Selector -->
+                    <select onchange="updateAppointmentStatusFromCalendar(${a.id}, this.value)" style="height: 36px; padding: 0 0.75rem; border-radius: 99px; font-size: 0.8rem; font-weight: 800; background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeColor}; cursor: pointer;">
+                        <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>🟡 Pending</option>
+                        <option value="Confirmed" ${status === 'Confirmed' ? 'selected' : ''}>🟢 Confirmed</option>
+                        <option value="Completed" ${status === 'Completed' ? 'selected' : ''}>🔵 Completed</option>
+                        <option value="Cancelled" ${status === 'Cancelled' ? 'selected' : ''}>🔴 Cancelled</option>
+                    </select>
+
+                    <!-- Quick Action Buttons -->
+                    <div style="display: flex; gap: 0.35rem;">
+                        <button onclick="sendQuickUpdate('${a.mobile}', 'Hello ${a.name}, reminder for your appointment at MY DENTAL CLINIC on ${targetDate} at ${timeDisplay}.')" class="btn-primary" style="background: #25D366; width: 34px; height: 34px; padding: 0; justify-content: center; border-radius: 8px;" title="WhatsApp Reminder">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                        <button onclick="generateBill('${safeAppJson}')" class="btn-primary" style="background: #0284C7; width: 34px; height: 34px; padding: 0; justify-content: center; border-radius: 8px;" title="Print / Download Invoice">
+                            <i class="fas fa-file-invoice"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function updateAppointmentStatusFromCalendar(id, newStatus) {
+    if (window.dbAPI && typeof window.dbAPI.updateAppointment === 'function') {
+        await window.dbAPI.updateAppointment(id, { status: newStatus });
+    }
+    renderScheduleCalendar(currentScheduleDate);
+    refreshDashboard();
 }

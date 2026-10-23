@@ -2,7 +2,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Dental Clinic | Premium Care</title>
-    <link rel="stylesheet" href="style.css?v=10">
+    <link rel="stylesheet" href="style.css?v=35">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -11,7 +11,7 @@
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#10B981">
     <link rel="apple-touch-icon" href="app-icon.png">
-    <script src="translations.js?v=8"></script>
+    <script src="translations.js?v=35"></script>
 </head>
 <body>
     <header>
@@ -93,7 +93,7 @@
                             </div>
                             <div class="form-group">
                                 <label><i class="fas fa-clock"></i> Clinical Slot</label>
-                                <select id="appointmentTime" required="">
+                                <select id="appointmentTime" required="" style="width: 100%; height: 48px; padding: 0 1rem; color: var(--secondary); background: var(--bg-soft); border-radius: var(--radius-md); font-weight: 600; font-size: 0.95rem; cursor: pointer;">
                                     <option value="">Checking availability...</option>
                                 </select>
                                 <span class="invalid-feedback">Please select a time.</span>
@@ -237,6 +237,7 @@
                     <div style="display:flex; gap:0.75rem; flex-wrap: wrap;">
                         <button id="manageClinicsBtn" onclick="showDashboardTab('superadmin')" class="btn-primary" style="background: #8B5CF6; display: none;" title="Manage Clinics"><i class="fas fa-building"></i> Super Admin</button>
                         <button onclick="showDashboardTab('patients')" class="btn-primary" title="Patient Database"><i class="fas fa-users"></i> Records</button>
+                        <button onclick="showDashboardTab('schedule')" class="btn-primary" style="background: #0284C7;" title="Appointment History & Calendar"><i class="fas fa-calendar-alt"></i> Calendar &amp; Schedule</button>
                         <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent);" title="Get Booking QR"><i class="fas fa-qrcode"></i> QR</button>
                         <button id="securityLogsBtn" onclick="openSecurityLogsModal()" class="btn-primary" style="background: rgb(71, 85, 105); display: none;" title="Admin Login History"><i class="fas fa-shield-alt"></i> Logs</button>
                         <button id="settingsBtn" onclick="showDashboardTab('settings')" class="btn-primary" style="background: var(--primary-dark); display: none;" title="Clinic Configuration"><i class="fas fa-sliders-h"></i> Settings</button>
@@ -286,6 +287,9 @@
                             <div id="todayScheduleList" style="display: flex; flex-direction: column; gap: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
                                 <i>Schedule will load dynamically...</i>
                             </div>
+                            <div style="text-align: right; margin-top: 0.25rem;">
+                                <a href="javascript:void(0)" onclick="showDashboardTab('schedule')" style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-decoration: none;"><i class="fas fa-calendar-alt"></i> View Full Calendar &amp; History &rarr;</a>
+                            </div>
                         </div>
                         <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 1rem;">
                             <h4 style="font-size: 1.1rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-users" style="color: var(--primary); margin-right: 8px;"></i> Recent Patients</h4>
@@ -296,7 +300,63 @@
                     </div>
                 </div>
 
-                <div id="qrTab" class="dashboard-tab" style="display: none;">
+                
+                <!-- APPOINTMENT CALENDAR & HISTORY TAB -->
+                <div id="scheduleTab" class="dashboard-tab" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--secondary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                                <i class="fas fa-calendar-check" style="color: var(--primary);"></i> Appointment Bookings &amp; History
+                            </h3>
+                            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">View and manage daily clinical appointments across today, yesterday, tomorrow, or any custom calendar date.</p>
+                        </div>
+                        <!-- Quick Day Filter Buttons & Custom Date Picker -->
+                        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <button onclick="changeScheduleDay(-1)" class="btn-primary" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 700;">
+                                <i class="fas fa-chevron-left"></i> Yesterday
+                            </button>
+                            <button onclick="setScheduleDay('today')" class="btn-primary" style="background: var(--primary); padding: 0.45rem 1rem; font-size: 0.85rem; font-weight: 800;">
+                                <i class="fas fa-calendar-day"></i> Today
+                            </button>
+                            <button onclick="changeScheduleDay(1)" class="btn-primary" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; padding: 0.45rem 0.9rem; font-size: 0.85rem; font-weight: 700;">
+                                Tomorrow <i class="fas fa-chevron-right"></i>
+                            </button>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; background: white; padding: 0.35rem 0.75rem; border-radius: var(--radius-md); border: 1px solid #CBD5E1;">
+                                <label for="calendarScheduleDate" style="font-size: 0.75rem; font-weight: 800; color: var(--text-muted); margin: 0; text-transform: uppercase;">Pick Date:</label>
+                                <input type="date" id="calendarScheduleDate" onchange="renderScheduleCalendar(this.value)" style="border: none; background: transparent; padding: 0.15rem; font-weight: 700; color: var(--secondary); font-size: 0.85rem; width: auto; height: auto;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Day Overview Metrics Bar -->
+                    <div style="background: white; border-radius: 14px; padding: 1.25rem 1.5rem; border: 1px solid #E2E8F0; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <div>
+                            <span id="scheduleDayTitle" style="font-weight: 800; font-size: 1.15rem; color: var(--secondary);">Loading day...</span>
+                            <div id="scheduleDaySubtitle" style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Schedule timeline</div>
+                        </div>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <div style="text-align: center; background: var(--bg-soft); padding: 0.5rem 1rem; border-radius: 10px; min-width: 90px;">
+                                <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Bookings</div>
+                                <div id="scheduleCount" style="font-size: 1.2rem; font-weight: 800; color: var(--primary);">0</div>
+                            </div>
+                            <div style="text-align: center; background: #FEF9C3; padding: 0.5rem 1rem; border-radius: 10px; min-width: 90px;">
+                                <div style="font-size: 0.7rem; font-weight: 700; color: #CA8A04; text-transform: uppercase;">Pending</div>
+                                <div id="schedulePendingCount" style="font-size: 1.2rem; font-weight: 800; color: #CA8A04;">0</div>
+                            </div>
+                            <div style="text-align: center; background: #DCFCE7; padding: 0.5rem 1rem; border-radius: 10px; min-width: 90px;">
+                                <div style="font-size: 0.7rem; font-weight: 700; color: #16A34A; text-transform: uppercase;">Confirmed</div>
+                                <div id="scheduleConfirmedCount" style="font-size: 1.2rem; font-weight: 800; color: #16A34A;">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Appointment Cards for Selected Day -->
+                    <div id="scheduleAppointmentsList" style="display: flex; flex-direction: column; gap: 1rem;">
+                        <!-- Dynamically filled by renderScheduleCalendar -->
+                    </div>
+                </div>
+
+<div id="qrTab" class="dashboard-tab" style="display: none;">
                     <div class="dashboard-card" style="text-align: center; padding: 3rem;">
                         <h3>Clinic Booking QR</h3>
                         <div id="qrcode" style="display: flex; justify-content: center; margin: 2rem 0;"></div>
@@ -693,8 +753,11 @@
 
     <!-- Welcome Features Popup Modal -->
     <div id="welcomeFeaturesModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 500px; text-align: center; padding: 2.5rem 2rem;">
-            <button onclick="closeWelcomeModal(); setTimeout(() => { const t = document.getElementById('portal-tour'); if(t) t.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);" class="btn-primary" style="width: 100%; height: 48px; font-weight: 800; border-radius: 12px; justify-content: center; margin-bottom: 2rem;">🔍 EXPLORE PORTAL</button>
+        <div class="modal-content" style="max-width: 500px; text-align: center; padding: 2rem 1.75rem; position: relative;">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
+                <span onclick="closeWelcomeModal()" style="font-size: 1.75rem; line-height: 1; cursor: pointer; color: var(--text-muted); font-weight: bold;" title="Dismiss">&times;</span>
+            </div>
+            <button onclick="closeWelcomeModal(); setTimeout(() => { const t = document.getElementById('portal-tour'); if(t) t.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);" class="btn-primary" style="width: 100%; height: 48px; font-weight: 800; border-radius: 12px; justify-content: center; margin-bottom: 1.5rem;">🔍 EXPLORE PORTAL TOUR</button>
             
             <div style="margin-bottom: 1.5rem;">
                 <span class="hero-label">WELCOME PORTAL</span>
@@ -734,12 +797,15 @@
             </div>
 
             <!-- Install app prompt inside welcome modal -->
-            <div id="pwaWelcomeInstallBox" style="display: none; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 1rem; margin-bottom: 1.5rem;">
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Would you like to install the app on your device?</p>
-                <button id="pwaWelcomeInstallBtn" class="btn-primary" style="background: var(--primary); height: 40px; font-size: 0.85rem; padding: 0 1.5rem; width: auto; margin: 0 auto; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
+            <div id="pwaWelcomeInstallBox" style="display: block; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 1rem; margin-bottom: 1rem;">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Install the clinic app for fast offline access:</p>
+                <button onclick="triggerPWAInstall()" class="btn-primary" style="background: var(--primary); height: 40px; font-size: 0.85rem; padding: 0 1.5rem; width: auto; margin: 0 auto 0.75rem; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
                     <i class="fas fa-download"></i> INSTALL APP NOW
                 </button>
             </div>
+            <button onclick="closeWelcomeModal()" class="btn-primary" style="background: transparent; color: var(--text-muted); border: 1px solid #CBD5E1; width: 100%; height: 40px; font-size: 0.85rem; font-weight: 700; border-radius: 12px; justify-content: center;">
+                Dismiss &amp; Continue
+            </button>
         </div>
     </div>
 
@@ -792,10 +858,10 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=33"></script>
-    <script src="auth.js?v=33"></script>
-    <script src="script.js?v=33"></script>
-    <script src="premium-features.js?v=33"></script>
+    <script src="db-api.js?v=35"></script>
+    <script src="auth.js?v=35"></script>
+    <script src="script.js?v=35"></script>
+    <script src="premium-features.js?v=35"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {
@@ -910,50 +976,76 @@
             checkWelcomePopup();
         }
 
-        // Welcome popup modal logic
+        // Welcome popup modal logic - ONLY shown on very first visit
         function checkWelcomePopup() {
-            if (!localStorage.getItem('clinic_welcome_popup_shown')) {
-                setTimeout(() => {
-                    const modal = document.getElementById('welcomeFeaturesModal');
-                    if (modal) modal.style.display = 'flex';
-                }, 1500);
+            const hasSeen = localStorage.getItem('clinic_welcome_popup_shown') || localStorage.getItem('clinic_tour_completed');
+            if (hasSeen === 'true') {
+                return; // Do NOT show again
             }
+            // Mark immediately so subsequent refreshes never pop up
+            localStorage.setItem('clinic_welcome_popup_shown', 'true');
+            localStorage.setItem('clinic_tour_completed', 'true');
+            setTimeout(() => {
+                const modal = document.getElementById('welcomeFeaturesModal');
+                if (modal) modal.style.display = 'flex';
+            }, 800);
         }
         
         function closeWelcomeModal() {
             const modal = document.getElementById('welcomeFeaturesModal');
             if (modal) modal.style.display = 'none';
             localStorage.setItem('clinic_welcome_popup_shown', 'true');
+            localStorage.setItem('clinic_tour_completed', 'true');
         }
 
-        // PWA Install Prompt Logic
-        let deferredPrompt;
+        // PWA Startup & Install Logic
+        let deferredPrompt = null;
         
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            
-            const welcomeInstallBox = document.getElementById('pwaWelcomeInstallBox');
-            if (welcomeInstallBox) welcomeInstallBox.style.display = 'block';
+            showStartupPWABanner();
         });
+
+        function showStartupPWABanner() {
+            // If running in standalone mode (already installed), hide banner
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            if (isStandalone) return;
+
+            // If user dismissed in this session, don't show
+            if (sessionStorage.getItem('pwa_banner_dismissed') === 'true') return;
+
+            const banner = document.getElementById('pwaStartupBanner');
+            if (banner) banner.style.display = 'block';
+        }
+
+        function dismissPWABanner() {
+            const banner = document.getElementById('pwaStartupBanner');
+            if (banner) banner.style.display = 'none';
+            sessionStorage.setItem('pwa_banner_dismissed', 'true');
+        }
+        
+        function triggerPWAInstall() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        dismissPWABanner();
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIOS) {
+                    alert("To install on iOS Safari:\n\n1. Tap the Share button at the bottom of Safari.\n2. Tap 'Add to Home Screen'.");
+                } else {
+                    alert("To install this app:\n\n1. Tap your browser's menu (three dots ⋮ at the top right).\n2. Select 'Install app' or 'Add to Home screen'.");
+                }
+            }
+        }
         
         function handlePWAInstall(btnId) {
-            if (!deferredPrompt) {
-                alert("To install this app on your device:\n\n1. Open your browser's menu (three dots or share button).\n2. Tap 'Add to Home Screen' or 'Install App'.");
-                return;
-            }
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('User accepted the PWA install prompt');
-                } else {
-                    console.log('User dismissed the PWA install prompt');
-                }
-                deferredPrompt = null;
-                
-                const welcomeInstallBox = document.getElementById('pwaWelcomeInstallBox');
-                if (welcomeInstallBox) welcomeInstallBox.style.display = 'none';
-            });
+            triggerPWAInstall();
         }
         
         function scrollToBooking() {
@@ -1011,5 +1103,25 @@
             if (welcomeInstallBox) welcomeInstallBox.style.display = 'none';
         });
     </script>
+
+
+    <!-- Floating PWA Startup Banner -->
+    <div id="pwaStartupBanner" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 440px; background: #0F172A; color: white; padding: 0.85rem 1.15rem; border-radius: 16px; box-shadow: 0 12px 30px -5px rgba(0,0,0,0.35); z-index: 99999; animation: fadeInUp 0.4s ease-out; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <img src="app-icon.png" alt="App Icon" style="width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0;">
+                <div>
+                    <div style="font-weight: 800; font-size: 0.85rem; line-height: 1.2;">Install Dental Clinic App</div>
+                    <div style="font-size: 0.72rem; color: #94A3B8; margin-top: 2px;">Instant booking &amp; offline access</div>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <button onclick="triggerPWAInstall()" class="btn-primary" style="background: var(--primary); font-size: 0.8rem; font-weight: 800; padding: 0.4rem 0.85rem; height: 34px; border-radius: 8px; white-space: nowrap;">
+                    <i class="fas fa-download"></i> Install
+                </button>
+                <button onclick="dismissPWABanner()" style="background: transparent; border: none; color: #94A3B8; font-size: 1.2rem; cursor: pointer; padding: 0.2rem 0.4rem; line-height: 1;">&times;</button>
+            </div>
+        </div>
+    </div>
 
 </body></html>

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dental-clinic-v33'; // Force reload for dashboard card sizes and SCHEDULE text
+const CACHE_NAME = 'dental-clinic-v35'; // Force reload for dashboard card sizes and SCHEDULE text
 const ASSETS = [
     './',
     'index.html',

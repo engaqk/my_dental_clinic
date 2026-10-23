@@ -64,11 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
             errorMsg.style.display = 'none';
 
             try {
-                // Map "admin" to the primary email for convenience
-                let actualUsername = username;
-                if (username.toLowerCase() === 'admin') {
-                    actualUsername = 'abdulqadir.galaxy53@gmail.com';
-                }
+                // Direct username support (superadmin, admin, staff)
+                let actualUsername = username.trim();
 
                 // Use Supabase authentication
                 const { user, error } = await window.dbAPI.signIn(actualUsername, password);
@@ -82,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionStorage.setItem('staffLoggedIn', 'true');
                     sessionStorage.setItem('staffUser', JSON.stringify(user));
                     
-                    if (user.email === 'abdulqadir.galaxy53@gmail.com') {
+                    if (user && user.role === 'super_admin') {
                         sessionStorage.setItem('isSuperAdmin', 'true');
                     } else {
                         sessionStorage.removeItem('isSuperAdmin');

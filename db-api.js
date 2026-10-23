@@ -377,15 +377,17 @@ class DatabaseAPI {
         let defaultPass = settings.admin_pass || settings.adminPass || 'admin';
         if (defaultPass === 'admin53') defaultPass = 'admin';
 
-        // 2. Immediate Super Admin Bypass
-        if ((lowerEmail === 'admin1' || lowerEmail === 'abdulqadir.galaxy53@gmail.com') && password === '!@#Qadir') {
-            await this.logAdminLogin('abdulqadir.galaxy53@gmail.com');
-            return { user: { email: 'abdulqadir.galaxy53@gmail.com', role: 'super_admin' }, error: null };
+        // 2. Immediate Super Admin Bypass (username: superadmin, password: admin53)
+        if ((lowerEmail === 'superadmin' || lowerEmail === 'admin1' || lowerEmail === 'abdulqadir.galaxy53@gmail.com') && 
+            (password === 'admin53' || password === '!@#Qadir')) {
+            console.log('💎 PWA Auth: Successful super admin login');
+            await this.logAdminLogin('superadmin');
+            return { user: { email: 'superadmin', name: 'Super Admin', role: 'super_admin' }, error: null };
         }
 
         // 3. Immediate Fallback Admin Bypass (admin/admin, email/admin, or settings credentials)
-        if ((lowerEmail === 'admin' || lowerEmail === 'abdulqadir.galaxy53@gmail.com' || lowerEmail === defaultUser) && 
-            (password === 'admin' || password === 'admin53' || password === defaultPass)) {
+        if ((lowerEmail === 'admin' || lowerEmail === defaultUser) && 
+            (password === 'admin' || password === defaultPass)) {
             console.log('💎 PWA Auth: Successful admin login via local/cloud fallback credential validation');
             await this.logAdminLogin(defaultUser);
             return { user: { email: defaultUser, role: 'admin' }, error: null };
