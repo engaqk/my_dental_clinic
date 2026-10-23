@@ -253,6 +253,7 @@ async function openPatientProfile(patient) {
         await renderFinances(patient);
         if (window.resetChartingFeatures) await window.resetChartingFeatures();
         if (typeof renderPatientMedicalAlerts === 'function') await renderPatientMedicalAlerts(patient.mobile);
+        document.body.classList.add('profile-modal-open');
         modal.style.display = 'flex';
     }
 }
@@ -285,9 +286,12 @@ function switchProfileTab(tab) {
         if (tab === 'treatment-plans') btn.classList.toggle('active', text.includes('treatment plan') || text.includes('plan'));
     });
 
-    if (tab === 'diagnoses' && currentPatient) renderDiagnoses(activePatient.mobile);
-    if (tab === 'prescriptions' && currentPatient) loadPatientPrescriptions(activePatient.mobile);
-    if (tab === 'treatment-plans' && currentPatient) loadPatientTreatmentPlans(activePatient.mobile);
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
+    if (pat && pat.mobile) {
+        if (tab === 'diagnoses' && typeof renderDiagnoses === 'function') renderDiagnoses(pat.mobile);
+        if (tab === 'prescriptions' && typeof loadPatientPrescriptions === 'function') loadPatientPrescriptions(pat.mobile);
+        if (tab === 'treatment-plans' && typeof loadPatientTreatmentPlans === 'function') loadPatientTreatmentPlans(pat.mobile);
+    }
 }
 
 let currentTxnType = 'payment';
@@ -1039,7 +1043,7 @@ function initQRCode() {
 }
 
 function logout() { sessionStorage.clear(); window.location.reload(); }
-function closeProfileModal() { document.getElementById('patientProfileModal').style.display = 'none'; refreshDashboard(); }
+function closeProfileModal() { document.body.classList.remove('profile-modal-open'); document.getElementById('patientProfileModal').style.display = 'none'; refreshDashboard(); }
 function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
 function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
 
@@ -3283,6 +3287,16 @@ function reprintTreatmentPlanWhatsApp(planJson) {
 }
 
 /* Mobile-First Bottom Navigation Handler */
+function openLoginModal() {
+    if (typeof showLoginModal === 'function') {
+        showLoginModal();
+    } else {
+        const modal = document.getElementById('loginModal');
+        if (modal) modal.style.display = 'flex';
+    }
+}
+window.openLoginModal = openLoginModal;
+
 function handleMobileNav(target) {
     document.querySelectorAll('.mobile-nav-item').forEach(item => item.classList.remove('active'));
     
@@ -3290,32 +3304,29 @@ function handleMobileNav(target) {
         const item = document.getElementById('mobNavHome');
         if (item) item.classList.add('active');
         showSection('home');
-        scrollToBooking();
+        if (typeof scrollToBooking === 'function') scrollToBooking();
     } else if (target === 'schedule') {
         const item = document.getElementById('mobNavSchedule');
         if (item) item.classList.add('active');
-        const role = sessionStorage.getItem('dentalRole');
-        if (role) {
+        if (sessionStorage.getItem('staffUser')) {
             showSection('dashboard');
-            showDashboardTab('schedule');
+            if (typeof showDashboardTab === 'function') showDashboardTab('schedule');
         } else {
             openLoginModal();
         }
     } else if (target === 'patients') {
         const item = document.getElementById('mobNavPatients');
         if (item) item.classList.add('active');
-        const role = sessionStorage.getItem('dentalRole');
-        if (role) {
+        if (sessionStorage.getItem('staffUser')) {
             showSection('dashboard');
-            showDashboardTab('patients');
+            if (typeof showDashboardTab === 'function') showDashboardTab('patients');
         } else {
             openLoginModal();
         }
     } else if (target === 'portal') {
         const item = document.getElementById('mobNavPortal');
         if (item) item.classList.add('active');
-        const role = sessionStorage.getItem('dentalRole');
-        if (role) {
+        if (sessionStorage.getItem('staffUser')) {
             showSection('dashboard');
         } else {
             openLoginModal();

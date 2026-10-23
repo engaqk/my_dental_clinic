@@ -2,7 +2,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Dental Clinic | Premium Care</title>
-    <link rel="stylesheet" href="style.css?v=36">
+    <link rel="stylesheet" href="style.css?v=37">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -280,15 +280,14 @@
                             <option value="default">Default Clinic</option>
                         </select>
                     </h2>
-                    <div style="display:flex; gap:0.75rem; flex-wrap: wrap;">
-                        <button id="manageClinicsBtn" onclick="showDashboardTab('superadmin')" class="btn-primary" style="background: #8B5CF6; display: none;" title="Manage Clinics"><i class="fas fa-building"></i> Super Admin</button>
-                        <button onclick="showDashboardTab('patients')" class="btn-primary" title="Patient Database"><i class="fas fa-users"></i> Records</button>
-                        <button onclick="showDashboardTab('schedule')" class="btn-primary" style="background: #0284C7;" title="Appointment History & Calendar"><i class="fas fa-calendar-alt"></i> Calendar &amp; Schedule</button>
-                        <button onclick="showDashboardTab('qr')" class="btn-primary" style="background:var(--accent);" title="Get Booking QR"><i class="fas fa-qrcode"></i> QR</button>
-                        <button id="securityLogsBtn" onclick="openSecurityLogsModal()" class="btn-primary" style="background: rgb(71, 85, 105); display: none;" title="Admin Login History"><i class="fas fa-shield-alt"></i> Logs</button>
-                        <button id="settingsBtn" onclick="showDashboardTab('settings')" class="btn-primary" style="background: var(--primary-dark); display: none;" title="Clinic Configuration"><i class="fas fa-sliders-h"></i> Settings</button>
-                        <button onclick="showSection('premium-features')" class="btn-primary" style="background: linear-gradient(135deg, #FFD700, #FDB931); color: #333;" title="Premium Features Showcase"><i class="fas fa-star"></i> Premium Features</button>
-                        <button onclick="logout()" class="btn-primary" style="background:var(--danger);" title="Secure Exit"><i class="fas fa-power-off"></i> Exit</button>
+                    <div style="display:flex; gap:0.5rem; flex-wrap: wrap; align-items: center;">
+                        <button onclick="showDashboardTab('patients')" class="btn-primary" style="height: 38px; padding: 0 1rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Patient Database"><i class="fas fa-users"></i> Patients</button>
+                        <button onclick="showDashboardTab('schedule')" class="btn-primary" style="background: #0284C7; height: 38px; padding: 0 1rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Appointment Calendar"><i class="fas fa-calendar-alt"></i> Schedule</button>
+                        <button onclick="showDashboardTab('qr')" class="btn-primary" style="background: var(--accent); height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Get Booking QR"><i class="fas fa-qrcode"></i> QR</button>
+                        <button id="settingsBtn" onclick="showDashboardTab('settings')" class="btn-primary" style="background: var(--primary-dark); height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Settings"><i class="fas fa-sliders-h"></i> Settings</button>
+                        <button id="securityLogsBtn" onclick="openSecurityLogsModal()" class="btn-primary" style="background: #475569; height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Logs"><i class="fas fa-shield-alt"></i> Logs</button>
+                        <button id="manageClinicsBtn" onclick="showDashboardTab('superadmin')" class="btn-primary" style="background: #8B5CF6; height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Super Admin"><i class="fas fa-building"></i> Super Admin</button>
+                        <button onclick="logout()" class="btn-primary" style="background: var(--danger); height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Logout"><i class="fas fa-power-off"></i> Exit</button>
                     </div>
                 </div>
 
@@ -317,32 +316,41 @@
                 </div>
 
                 <div id="patientsTab" class="dashboard-tab">
-                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--secondary); margin-bottom: 1rem;">Patient Database</h3>
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="searchInput" placeholder="Search by name, phone or city..." onkeyup="filterPatients()">
-                    </div>
-                    <div id="patientExplorer" class="dashboard-grid"></div>
-                    <div id="noDataMessage" style="text-align: center; padding: 4rem; display: none;">
-                        <p style="color: var(--text-muted);">No records found.</p>
+                    <!-- Quick Clinical Highlights (Schedule & Recent) -->
+                    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+                        <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.25rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h4 style="font-size: 1rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-calendar-day" style="color: var(--primary); margin-right: 6px;"></i> Today's Schedule</h4>
+                                <a href="javascript:void(0)" onclick="showDashboardTab('schedule')" style="font-size: 0.75rem; font-weight: 800; color: var(--primary); text-decoration: none;">View Calendar &rarr;</a>
+                            </div>
+                            <div id="todayScheduleList" style="display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
+                                <i>Loading today's appointments...</i>
+                            </div>
+                        </div>
+                        <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.25rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: var(--shadow-sm);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h4 style="font-size: 1rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-user-clock" style="color: var(--primary); margin-right: 6px;"></i> Recent Patients</h4>
+                                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Live Feed</span>
+                            </div>
+                            <div id="recentPatientsList" style="display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
+                                <i>Loading recent patients...</i>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 2rem; margin-bottom: 2rem;">
-                        <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 1rem;">
-                            <h4 style="font-size: 1.1rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-calendar-day" style="color: var(--primary); margin-right: 8px;"></i> Today's Schedule</h4>
-                            <div id="todayScheduleList" style="display: flex; flex-direction: column; gap: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
-                                <i>Schedule will load dynamically...</i>
-                            </div>
-                            <div style="text-align: right; margin-top: 0.25rem;">
-                                <a href="javascript:void(0)" onclick="showDashboardTab('schedule')" style="font-size: 0.8rem; font-weight: 800; color: var(--primary); text-decoration: none;"><i class="fas fa-calendar-alt"></i> View Full Calendar &amp; History &rarr;</a>
-                            </div>
-                        </div>
-                        <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 1rem;">
-                            <h4 style="font-size: 1.1rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-users" style="color: var(--primary); margin-right: 8px;"></i> Recent Patients</h4>
-                            <div id="recentPatientsList" style="display: flex; flex-direction: column; gap: 0.75rem; color: var(--text-muted); font-size: 0.9rem;">
-                                <i>Recent patients will load dynamically...</i>
-                            </div>
-                        </div>
+                    <!-- Full Patient Explorer Database -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--secondary); margin: 0;"><i class="fas fa-folder-open" style="color: var(--primary); margin-right: 6px;"></i> Patient Directory</h3>
+                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Tap any card to view full records &amp; clinical tools</span>
+                    </div>
+
+                    <div class="search-box" style="margin-bottom: 1.25rem;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search by patient name, phone number or place..." onkeyup="filterPatients()">
+                    </div>
+                    <div id="patientExplorer" class="dashboard-grid"></div>
+                    <div id="noDataMessage" style="text-align: center; padding: 3rem; display: none;">
+                        <p style="color: var(--text-muted); font-weight: 600;">No matching patient records found.</p>
                     </div>
                 </div>
 
@@ -520,29 +528,7 @@
         </div></div></div>
         </section>
 
-        <!-- Premium Features Showcase Section -->
-        <section id="premium-features" class="section dashboard-view" style="display:none;">
-            <div class="container" style="max-width: 1000px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                    <h2 style="font-weight: 800; color: var(--secondary); margin:0;"><i class="fas fa-crown" style="color:#FFD700;"></i> Premium Features Showcase</h2>
-                    <button onclick="showSection('dashboard')" class="btn-primary"><i class="fas fa-arrow-left"></i> Back to Dashboard</button>
-                </div>
-                <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 1.1rem;">These next-generation features are designed to impress your patients and optimize your clinical workflow.</p>
-
-                <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 2rem;">
-                    <!-- Smart Analytics Dashboard -->
-                    <div class="dashboard-card" style="padding: 1.5rem;">
-                        <h3 style="margin-bottom: 1rem; color: var(--primary);"><i class="fas fa-chart-line"></i> Smart Analytics &amp; Revenue Trends</h3>
-                        <div style="position: relative; height: 300px; width: 100%;">
-                            <canvas id="revenueChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-
-
-            </div>
-        </section>
+        <!-- Premium Features Showcase Section Removed -->
 
         <!-- Patient Portal Section -->
         <section id="patient-portal" class="section" style="display:none; padding-top: 100px;">
@@ -1185,9 +1171,9 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=36"></script>
+    <script src="db-api.js?v=37"></script>
     <script src="auth.js?v=35"></script>
-    <script src="script.js?v=36"></script>
+    <script src="script.js?v=37"></script>
     <script src="premium-features.js?v=35"></script>
     <script>
         function showSection(id) {
