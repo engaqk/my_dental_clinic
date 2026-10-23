@@ -149,7 +149,10 @@ function renderDashboardOverview(patients) {
                     <div style="font-size: 0.95rem; font-weight: 700; color: #0F172A;">${a.patientName}</div>
                     <div style="font-size: 0.8rem; color: #64748B;">${a.appointmentTime || 'Time TBD'} · ${a.reason || 'Consultation'}</div>
                 </div>
-                <span style="font-size: 0.7rem; padding: 4px 8px; border-radius: 99px; font-weight: 800; ${a.status==='Pending' ? 'background: #FEF9C3; color: #CA8A04;' : 'background: #DCFCE7; color: #16A34A;'}">${a.status || 'Confirmed'}</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 0.7rem; padding: 4px 8px; border-radius: 99px; font-weight: 800; ${a.status==='Pending' ? 'background: #FEF9C3; color: #CA8A04;' : (a.status==='Cancelled' ? 'background: #FEE2E2; color: #DC2626;' : 'background: #DCFCE7; color: #16A34A;')}">${a.status || 'Confirmed'}</span>
+                    ${a.status !== 'Cancelled' ? `<button type="button" onclick="event.stopPropagation(); staffCancelAppointment('${a.id}')" style="background: none; border: none; color: #DC2626; cursor: pointer; padding: 4px; font-size: 0.85rem;" title="Cancel Appointment"><i class="fas fa-times-circle"></i></button>` : ''}
+                </div>
             </div>
         `).join('');
     }
@@ -385,11 +388,18 @@ function renderTimeline(history) {
                 <span>${appt.appointmentDate || appt.date} | ${appt.appointmentTime || ''}</span>
             </div>
             <div class="seating-card">
-                <select class="status-select" onchange="updateStatus('${appt.id}', this.value)">
-                    <option value="Pending" ${appt.status === 'Pending' ? 'selected' : ''}>Pending</option>
-                    <option value="Completed" ${appt.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                    <option value="Cancelled" ${appt.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                </select>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; gap: 0.5rem; flex-wrap: wrap;">
+                    <select class="status-select" onchange="updateStatus('${appt.id}', this.value)" style="margin: 0;">
+                        <option value="Pending" ${appt.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="Completed" ${appt.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        <option value="Cancelled" ${appt.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                    </select>
+                    ${appt.status !== 'Cancelled' ? `
+                        <button type="button" onclick="staffCancelAppointment('${appt.id}')" class="btn-cancel-appt" style="padding: 4px 8px; height: 30px;" title="Cancel this appointment">
+                            <i class="fas fa-times-circle"></i> Cancel
+                        </button>
+                    ` : '<span style="color: #DC2626; font-size: 0.75rem; font-weight: 800;"><i class="fas fa-ban"></i> Cancelled</span>'}
+                </div>
                 <h4>${appt.reason || 'General Consultation'}</h4>
                 
                 <div class="seating-fee-input">
@@ -694,7 +704,7 @@ bookingForm?.addEventListener('submit', async (e) => {
     await generateTimeSlots();
     if (typeof refreshDashboard === 'function') refreshDashboard();
 
-    showBookingModal(appt);
+    showBookingModal(savedAppt || appt);
 });
 
 // --- UTILITIES ---
@@ -1106,6 +1116,21 @@ function checkSuperAdmin() {
 window.checkSuperAdmin = checkSuperAdmin;
 
 function showBookingModal(appt) {
+    const detailsEl = document.getElementById('bookingModalDetails');
+    if (detailsEl && appt) {
+        detailsEl.innerHTML = `Appointment for <b>${escapeHtml(appt.name || 'Patient')}</b> on <b>${appt.appointmentDate || appt.date}</b> at <b>${appt.appointmentTime || ''}</b> has been recorded.`;
+    }
+
+    const cancelBtn = document.getElementById('btnCancelBookedAppt');
+    if (cancelBtn && appt && appt.id) {
+        cancelBtn.style.display = 'inline-flex';
+        cancelBtn.style.justifyContent = 'center';
+        cancelBtn.style.alignItems = 'center';
+        cancelBtn.onclick = () => cancelAppointmentByUser(appt.id);
+    } else if (cancelBtn) {
+        cancelBtn.style.display = 'none';
+    }
+
     const btn = document.getElementById('btnAddToCalendar');
     if (appt && btn) {
         try {
@@ -2238,6 +2263,11 @@ async function renderScheduleCalendar(targetDate) {
                         <button onclick="generateBill('${safeAppJson}')" class="btn-primary" style="background: #0284C7; width: 34px; height: 34px; padding: 0; justify-content: center; border-radius: 8px;" title="Print / Download Invoice">
                             <i class="fas fa-file-invoice"></i>
                         </button>
+                        ${status !== 'Cancelled' ? `
+                            <button onclick="staffCancelAppointment('${a.id}')" class="btn-primary" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; width: 34px; height: 34px; padding: 0; justify-content: center; border-radius: 8px;" title="Cancel Appointment">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -2252,6 +2282,160 @@ async function updateAppointmentStatusFromCalendar(id, newStatus) {
     renderScheduleCalendar(currentScheduleDate);
     refreshDashboard();
 }
+
+// --- APPOINTMENT CANCELLATION (BY STAFF & BY USER) ---
+
+async function staffCancelAppointment(id) {
+    if (!confirm('Are you sure you want to cancel this appointment? The clinical time slot will be reopened.')) {
+        return;
+    }
+    try {
+        if (window.dbAPI && typeof window.dbAPI.updateAppointment === 'function') {
+            await window.dbAPI.updateAppointment(id, { status: 'Cancelled' });
+        }
+        // Update local active patient history if applicable
+        if (typeof currentPatient !== 'undefined' && currentPatient && currentPatient.history) {
+            const histItem = currentPatient.history.find(h => String(h.id) === String(id));
+            if (histItem) histItem.status = 'Cancelled';
+            renderTimeline(currentPatient.history);
+        }
+        if (typeof currentScheduleDate !== 'undefined' && typeof renderScheduleCalendar === 'function') {
+            renderScheduleCalendar(currentScheduleDate);
+        }
+        if (typeof refreshDashboard === 'function') {
+            refreshDashboard();
+        }
+        if (typeof generateTimeSlots === 'function') {
+            await generateTimeSlots();
+        }
+        alert('Appointment successfully cancelled.');
+    } catch (e) {
+        console.error('Failed to cancel appointment:', e);
+        alert('Failed to cancel appointment. Please try again.');
+    }
+}
+window.staffCancelAppointment = staffCancelAppointment;
+
+async function cancelAppointmentByUser(id) {
+    if (!confirm('Are you sure you want to cancel your appointment?')) {
+        return;
+    }
+    try {
+        if (window.dbAPI && typeof window.dbAPI.updateAppointment === 'function') {
+            await window.dbAPI.updateAppointment(id, { status: 'Cancelled' });
+        }
+        if (typeof generateTimeSlots === 'function') {
+            await generateTimeSlots();
+        }
+        if (typeof refreshDashboard === 'function') {
+            refreshDashboard();
+        }
+        alert('Your appointment has been cancelled successfully.');
+        const bModal = document.getElementById('bookingModal');
+        if (bModal) bModal.style.display = 'none';
+        
+        // Refresh lookup results if lookup modal is open
+        const lModal = document.getElementById('patientLookupModal');
+        if (lModal && lModal.style.display !== 'none') {
+            lookupUserAppointments();
+        }
+    } catch (e) {
+        console.error('Failed to cancel appointment:', e);
+        alert('Failed to cancel appointment. Please contact the clinic.');
+    }
+}
+window.cancelAppointmentByUser = cancelAppointmentByUser;
+
+function openPatientLookupModal() {
+    const modal = document.getElementById('patientLookupModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        const input = document.getElementById('userLookupPhone');
+        if (input) {
+            input.value = '';
+            if (window.innerWidth > 768) {
+                setTimeout(() => input.focus(), 150);
+            }
+        }
+        const res = document.getElementById('userLookupResults');
+        if (res) res.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">Enter your 10-digit mobile number above to see your appointments.</div>`;
+    }
+}
+window.openPatientLookupModal = openPatientLookupModal;
+
+function closePatientLookupModal() {
+    const modal = document.getElementById('patientLookupModal');
+    if (modal) modal.style.display = 'none';
+}
+window.closePatientLookupModal = closePatientLookupModal;
+
+async function lookupUserAppointments() {
+    const phoneInput = document.getElementById('userLookupPhone');
+    const res = document.getElementById('userLookupResults');
+    if (!phoneInput || !res) return;
+    const phone = phoneInput.value.trim().replace(/\D/g, '');
+    if (phone.length < 10) {
+        alert('Please enter a valid 10-digit mobile number.');
+        return;
+    }
+    res.innerHTML = '<div style="text-align: center; padding: 1.5rem; color: var(--primary); font-weight: 700;"><i class="fas fa-spinner fa-spin"></i> Searching bookings...</div>';
+    
+    try {
+        let appts = [];
+        if (window.dbAPI && typeof window.dbAPI.getPatientHistory === 'function') {
+            appts = await window.dbAPI.getPatientHistory(phone);
+        }
+        if (!appts || appts.length === 0) {
+            if (window.dbAPI && typeof window.dbAPI.getAppointments === 'function') {
+                const all = await window.dbAPI.getAppointments();
+                appts = (all || []).filter(a => (a.mobile || '').replace(/\D/g, '').endsWith(phone.slice(-10)));
+            }
+        }
+        
+        if (!appts || appts.length === 0) {
+            res.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: #64748B; background: #F8FAFC; border-radius: 10px; border: 1px solid #E2E8F0;">
+                <i class="fas fa-calendar-times" style="font-size: 2rem; color: #94A3B8; margin-bottom: 0.5rem; display: block;"></i>
+                No appointments found for mobile number <b>${phone}</b>.
+            </div>`;
+            return;
+        }
+
+        // Sort descending by date
+        appts.sort((a,b) => (b.appointmentDate||b.date||'').localeCompare(a.appointmentDate||a.date||''));
+
+        res.innerHTML = appts.map(a => {
+            const isCancelled = a.status === 'Cancelled';
+            const isCompleted = a.status === 'Completed';
+            const dateStr = a.appointmentDate || a.date;
+            const timeStr = a.appointmentTime || 'Time TBD';
+            return `
+                <div style="background: white; border: 1.5px solid ${isCancelled ? '#FCA5A5' : '#E2E8F0'}; border-radius: 12px; padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.04);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <div style="font-weight: 800; color: #0F172A; font-size: 0.95rem;">
+                            <i class="fas fa-calendar-day" style="color: var(--primary);"></i> ${dateStr} at ${timeStr}
+                        </div>
+                        <span style="font-size: 0.72rem; font-weight: 800; padding: 3px 8px; border-radius: 99px; ${isCancelled ? 'background: #FEE2E2; color: #DC2626;' : (isCompleted ? 'background: #E0E7FF; color: #4338CA;' : 'background: #DCFCE7; color: #16A34A;')}">
+                            ${a.status || 'Confirmed'}
+                        </span>
+                    </div>
+                    <div style="font-size: 0.82rem; color: #64748B;">
+                        <b>Concern:</b> ${escapeHtml(a.reason || 'General Consultation')}
+                    </div>
+                    ${!isCancelled && !isCompleted ? `
+                        <button type="button" onclick="cancelAppointmentByUser('${a.id}')" style="align-self: flex-start; height: 32px; padding: 0 12px; background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; border-radius: 8px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; margin-top: 4px;">
+                            <i class="fas fa-times-circle"></i> Cancel Appointment
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+    } catch (err) {
+        console.error('Error fetching appointments:', err);
+        res.innerHTML = '<div style="color: #DC2626; text-align: center; padding: 1rem;">Failed to fetch appointments. Please try again.</div>';
+    }
+}
+window.lookupUserAppointments = lookupUserAppointments;
+
 
 
 

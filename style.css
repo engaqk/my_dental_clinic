@@ -1177,32 +1177,59 @@ input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback { display:
   .profile-modal .profile-header h2 {
     font-size: 1.4rem !important;
   }
-  .profile-modal .tab-container {
+  .profile-modal .tab-container,
+  #patientProfileModal .tab-container {
     display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 0.5rem !important;
-    padding: 0.5rem !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    gap: 6px !important;
+    padding: 6px 4px !important;
     background: var(--bg-soft) !important;
     border-radius: 12px !important;
     margin-bottom: 0.75rem !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
   }
-  .profile-modal .profile-tab-btn {
-    flex: 1 1 30% !important;
-    text-align: center !important;
-    padding: 0.6rem 0.5rem !important;
-    font-size: 0.75rem !important;
-    border-radius: 8px !important;
-    display: flex !important;
-    flex-direction: column !important;
+  .profile-modal .tab-container::-webkit-scrollbar,
+  #patientProfileModal .tab-container::-webkit-scrollbar {
+    display: none !important;
+  }
+  .profile-modal .profile-tab-btn,
+  #patientProfileModal .profile-tab-btn {
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
+    flex-direction: row !important;
     align-items: center !important;
-    gap: 4px !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    padding: 7px 14px !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    border-radius: 99px !important;
+    background: white !important;
+    color: #475569 !important;
+    border: 1px solid #CBD5E1 !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
   }
-  .profile-modal .profile-tab-btn i {
-    font-size: 1.1rem;
+  .profile-modal .profile-tab-btn i,
+  #patientProfileModal .profile-tab-btn i {
+    font-size: 0.9rem !important;
     margin-right: 0 !important;
   }
+  .profile-modal .profile-tab-btn.active,
+  #patientProfileModal .profile-tab-btn.active {
+    background: var(--primary) !important;
+    color: white !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25) !important;
+  }
   .profile-modal .profile-content {
-    padding: 1.25rem !important;
+    padding: 1rem 0.5rem !important;
   }
 }
 
@@ -1619,45 +1646,166 @@ body.modal-open .mobile-bottom-nav,
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 1.25rem 1rem 140px 1rem !important; /* 140px bottom padding so ALL tabs & buttons are 100% reachable */
+        padding: 1rem 0.85rem 100px 0.85rem !important;
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
         box-sizing: border-box !important;
     }
 
-    #patientProfileModal .profile-content {
-        padding: 0.75rem 0 140px 0 !important;
-        min-height: auto !important;
+    #patientProfileModal .profile-header {
+        padding: 0 0 0.4rem 0 !important;
+    }
+    #patientProfileModal .profile-header h2 {
+        font-size: 1.25rem !important;
+        margin: 0 0 2px 0 !important;
+    }
+    #patientProfileModal .profile-header p {
+        font-size: 0.8rem !important;
+        margin: 0 0 6px 0 !important;
+        color: #64748B !important;
+    }
+
+    .profile-alerts-bar {
+        margin: 4px 0 8px 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 6px !important;
+        background: rgba(239, 68, 68, 0.06) !important;
+        border: 1px solid rgba(239, 68, 68, 0.2) !important;
+        border-radius: 8px !important;
+        padding: 4px 8px !important;
+        min-height: 32px !important;
     }
 
     /* Action buttons in profile header */
     #patientProfileModal .action-grid {
         grid-template-columns: repeat(3, 1fr) !important;
-        gap: 0.5rem !important;
-        margin-top: 1rem !important;
+        gap: 6px !important;
+        margin: 6px 0 8px 0 !important;
     }
 
     #patientProfileModal .action-grid button {
-        padding: 0.6rem 0.25rem !important;
-        font-size: 0.72rem !important;
-        min-height: 42px !important;
+        padding: 6px 4px !important;
+        font-size: 0.78rem !important;
+        min-height: 36px !important;
+        height: 36px !important;
+        border-radius: 8px !important;
+        font-weight: 800 !important;
+    }
+
+    #patientProfileModal .profile-content {
+        padding: 0.5rem 0 100px 0 !important;
+        min-height: auto !important;
     }
 
     /* Scrollable Profile Tabs on mobile */
     .tab-container {
         display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
         overflow-x: auto !important;
         white-space: nowrap !important;
         gap: 6px !important;
-        padding: 6px 0 10px 0 !important;
+        padding: 4px 2px !important;
+        margin-bottom: 8px !important;
         scrollbar-width: none !important;
         -webkit-overflow-scrolling: touch !important;
     }
 
     .profile-tab-btn {
-        flex-shrink: 0 !important;
-        padding: 0.55rem 0.85rem !important;
+        flex: 0 0 auto !important;
+        display: inline-flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        padding: 6px 12px !important;
         font-size: 0.78rem !important;
+        font-weight: 700 !important;
         border-radius: 99px !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        border: 1px solid #CBD5E1 !important;
+    }
+
+    /* --- MOBILE LOGIN MODAL CENTERING & KEYBOARD ADAPTATION --- */
+    #loginModal {
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 0.75rem !important;
+        overflow-y: auto !important;
+        backdrop-filter: blur(8px) !important;
+    }
+
+    #loginModal .modal-content {
+        border-radius: 20px !important;
+        max-height: calc(100dvh - 30px) !important;
+        margin: auto !important;
+        padding: 1.25rem 1.1rem 1.4rem 1.1rem !important;
+        width: 100% !important;
+        max-width: 380px !important;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+        animation: modalSlide 0.3s ease !important;
+        overflow-y: auto !important;
+    }
+
+    #loginModal .modal-header-block {
+        text-align: center !important;
+        margin-bottom: 1rem !important;
+    }
+
+    #loginModal .hero-label {
+        margin-bottom: 0.25rem !important;
+        font-size: 0.72rem !important;
+    }
+
+    #loginModal h2 {
+        font-size: 1.3rem !important;
+        margin: 0 !important;
+    }
+
+    #loginModal .form-group {
+        margin-bottom: 0.75rem !important;
+    }
+
+    #loginModal .form-group label {
+        font-size: 0.75rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    #loginModal input {
+        height: 42px !important;
+        font-size: 16px !important;
+        border-radius: 10px !important;
+    }
+
+    #loginModal button[type="submit"] {
+        margin-top: 0.9rem !important;
+        height: 44px !important;
+        font-size: 0.92rem !important;
+        font-weight: 800 !important;
+        border-radius: 12px !important;
     }
 }
+
+/* User & Staff Cancellation Buttons */
+.btn-cancel-appt {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #FEF2F2;
+    color: #DC2626;
+    border: 1px solid #FCA5A5;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-cancel-appt:hover {
+    background: #FEE2E2;
+    border-color: #EF4444;
+}
+

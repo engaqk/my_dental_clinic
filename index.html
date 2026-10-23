@@ -2,7 +2,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Dental Clinic | Premium Care</title>
-    <link rel="stylesheet" href="style.css?v=37">
+    <link rel="stylesheet" href="style.css?v=38">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -55,10 +55,15 @@
             <!-- Booking Form Section (Now at the absolute top) -->
             <div class="container booking-form-wrapper" style="margin-top: 20px;">
                 <div class="appointment-form">
-                    <div style="text-align: center; margin-bottom: 3.5rem;">
-                        <span class="hero-label" style="margin-bottom: 1rem; text-transform: none;">Book Appointment</span>
+                    <div style="text-align: center; margin-bottom: 2.5rem;">
+                        <span class="hero-label" style="margin-bottom: 0.75rem; text-transform: none;">Book Appointment</span>
                         <h2 class="section-title" style="margin-bottom: 0;">Secure Your Slot</h2>
-                        <p style="color: var(--text-muted); margin-top: 1rem;">Fill out the form below for a priority consultation.</p>
+                        <p style="color: var(--text-muted); margin-top: 0.75rem; margin-bottom: 0.5rem;">Fill out the form below for a priority consultation.</p>
+                        <div style="margin-top: 0.5rem;">
+                            <a href="javascript:void(0)" onclick="openPatientLookupModal()" style="font-size: 0.85rem; font-weight: 800; color: var(--primary); text-decoration: underline; display: inline-flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <i class="fas fa-calendar-check"></i> Already booked? View or Cancel Appointment
+                            </a>
+                        </div>
                     </div>
                     <form id="bookingForm">
                         <div class="form-group">
@@ -626,19 +631,19 @@
         <div class="modal-content profile-modal">
             <span class="close-modal" onclick="closeProfileModal()">×</span>
             <div class="profile-header">
-                <h2 id="profileName">Loading...</h2>
-                <p id="profileMeta">Mobile: Loading...</p>
+                <h2 id="profileName" style="font-size: 1.35rem; font-weight: 800; margin: 0 0 2px 0;">Loading...</h2>
+                <p id="profileMeta" style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 6px 0;">Mobile: Loading...</p>
                 <!-- Medical Alerts Warning Banner -->
-                <div id="profileMedicalAlertsBar" style="margin-top: 0.85rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 10px; padding: 0.6rem 0.9rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;" id="profileAlertsBadges">
+                <div id="profileMedicalAlertsBar" class="profile-alerts-bar" style="margin-top: 4px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 4px 10px;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;" id="profileAlertsBadges">
                         <span style="font-size: 0.75rem; font-weight: 900; color: #DC2626;"><i class="fas fa-heartbeat"></i> CLINICAL ALERTS:</span>
                         <span style="font-size: 0.75rem; color: #64748B;">None recorded</span>
                     </div>
-                    <button onclick="openEditMedicalAlertsModal()" class="btn-primary" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; height: 30px; padding: 0 0.75rem; font-size: 0.75rem; font-weight: 700; border-radius: 8px;">
+                    <button onclick="openEditMedicalAlertsModal()" class="btn-edit-health" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; height: 26px; padding: 0 0.65rem; font-size: 0.72rem; font-weight: 700; border-radius: 6px; cursor: pointer;">
                         <i class="fas fa-edit"></i> Edit Health
                     </button>
                 </div>
-                <div class="action-grid" style="margin-top: 1.5rem;">
+                <div class="action-grid" style="margin-top: 6px; margin-bottom: 8px;">
                     <button onclick="quickWhatsApp()" class="btn-chat">
                         <i class="fab fa-whatsapp"></i> Chat
                     </button>
@@ -659,7 +664,7 @@
                 <button class="profile-tab-btn" onclick="switchProfileTab('finances')"><i class="fas fa-rupee-sign"></i> Finance</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> Charting</button>
             </div>
-            <div class="profile-content" style="padding: 2rem;">
+            <div class="profile-content">
                 <div id="profileTimelineSection">
                     <div id="patientTimeline" class="timeline" style="margin-left: 1rem;"></div>
                 </div>
@@ -915,22 +920,26 @@
                     </div>
                 </div>
 
-<div id="profileDiagnosisSection" style="display: none;">
-                    <div class="seating-card">
-                        <h3 style="margin-bottom: 1.5rem; color: var(--primary-dark);">Add New Diagnosis</h3>
-                        <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label style="display:block; margin-bottom:0.5rem; font-weight:800;">CONDITION / DIAGNOSIS</label>
-                            <input type="text" id="diagTitle" placeholder="e.g. Chronic Periodontitis, Impacted Molar" class="form-control" style="width:100%; height:48px; border-radius:12px; border:2px solid var(--primary-light); padding:0 1rem;">
+                <div id="profileDiagnosisSection" style="display: none;">
+                    <div class="seating-card" style="padding: 1.1rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid #E2E8F0; background: white;">
+                        <h3 style="margin-bottom: 0.75rem; color: var(--primary-dark); font-size: 1.15rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="fas fa-stethoscope"></i> Add New Diagnosis
+                        </h3>
+                        <div class="form-group" style="margin-bottom: 0.75rem;">
+                            <label style="display:block; margin-bottom:0.35rem; font-weight:800; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">CONDITION / DIAGNOSIS</label>
+                            <input type="text" id="diagTitle" placeholder="e.g. Chronic Periodontitis, Impacted Molar" class="form-control" style="width:100%; height:40px; border-radius:8px; border:1.5px solid #CBD5E1; padding:0 0.85rem; font-size: 0.9rem;">
                         </div>
-                        <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label style="display:block; margin-bottom:0.5rem; font-weight:800;">CLINICAL NOTES</label>
-                            <textarea id="diagNotes" rows="3" placeholder="Additional observations or severity details..." class="form-control" style="width:100%; border-radius:12px; border:2px solid var(--primary-light); padding:1rem;"></textarea>
+                        <div class="form-group" style="margin-bottom: 0.85rem;">
+                            <label style="display:block; margin-bottom:0.35rem; font-weight:800; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">CLINICAL NOTES</label>
+                            <textarea id="diagNotes" rows="2" placeholder="Additional observations or severity details..." class="form-control" style="width:100%; border-radius:8px; border:1.5px solid #CBD5E1; padding:0.6rem 0.85rem; font-size: 0.88rem;"></textarea>
                         </div>
-                        <button onclick="saveNewDiagnosis()" class="btn-primary" style="width:100%; height:55px; border-radius:15px; font-weight:900; font-size:1rem;">Save Clinical Diagnosis</button>
+                        <button onclick="saveNewDiagnosis()" class="btn-primary" style="width:100%; height:44px; border-radius:10px; font-weight:900; font-size:0.92rem; background: var(--primary);">
+                            <i class="fas fa-save"></i> Save Clinical Diagnosis
+                        </button>
                     </div>
-                    <div class="dashboard-card" style="margin-top: 2rem;">
-                        <h4 style="margin-bottom: 1.5rem;"><i class="fas fa-file-medical" style="color: var(--primary);"></i> Diagnosis History</h4>
-                        <div id="diagnosisList" style="display: flex; flex-direction: column; gap: 1rem;"></div>
+                    <div class="dashboard-card" style="padding: 1rem; border-radius: 12px; border: 1px solid #E2E8F0; background: white;">
+                        <h4 style="margin-bottom: 0.85rem; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-file-medical" style="color: var(--primary);"></i> Diagnosis History</h4>
+                        <div id="diagnosisList" style="display: flex; flex-direction: column; gap: 0.65rem;"></div>
                     </div>
                 </div>
                 <!-- New Charting & Consent Section -->
@@ -982,16 +991,18 @@
 
                 <!-- New Integrated Booking Section -->
                 <div id="profileBookingSection" style="display: none;">
-                    <div class="seating-card">
-                        <h3 style="margin-bottom: 1.5rem; color: var(--primary-dark);">Schedule Next Sitting</h3>
-                        <div class="profile-booking-grid" style="margin-bottom: 1.5rem;">
-                            <div class="form-group">
-                                <label style="display:block; margin-bottom:0.5rem; font-weight:800;">APPOINTMENT DATE</label>
-                                <input type="date" id="profileNextDate" class="form-control" style="width:100%; height:48px; border-radius:12px; border:2px solid var(--primary-light); padding:0 1rem;">
+                    <div class="seating-card" style="padding: 1.1rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid #E2E8F0; background: white;">
+                        <h3 style="margin-bottom: 0.75rem; color: var(--primary-dark); font-size: 1.15rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="fas fa-calendar-plus"></i> Schedule Next Sitting
+                        </h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.75rem;">
+                            <div class="form-group" style="margin: 0;">
+                                <label style="display:block; margin-bottom:0.35rem; font-weight:800; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">APPOINTMENT DATE</label>
+                                <input type="date" id="profileNextDate" class="form-control" style="width:100%; height:40px; border-radius:8px; border:1.5px solid #CBD5E1; padding:0 0.65rem; font-size: 0.88rem;">
                             </div>
-                            <div class="form-group">
-                                <label style="display:block; margin-bottom:0.5rem; font-weight:800;">TIME SLOT</label>
-                                <select id="profileNextTime" class="form-control" style="width:100%; height:48px; border-radius:12px; border:2px solid var(--primary-light); padding:0 1rem;">
+                            <div class="form-group" style="margin: 0;">
+                                <label style="display:block; margin-bottom:0.35rem; font-weight:800; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">TIME SLOT</label>
+                                <select id="profileNextTime" class="form-control" style="width:100%; height:40px; border-radius:8px; border:1.5px solid #CBD5E1; padding:0 0.65rem; font-size: 0.88rem; background: white;">
                                     <option value="10:00 AM">10:00 AM</option>
                                     <option value="11:00 AM">11:00 AM</option>
                                     <option value="12:00 PM">12:00 PM</option>
@@ -1002,11 +1013,13 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="form-group" style="margin-bottom: 2rem;">
-                            <label style="display:block; margin-bottom:0.5rem; font-weight:800;">PROCEDURE / REASON</label>
-                            <input type="text" id="profileNextReason" placeholder="e.g. Scaling, Root Canal, Follow-up" class="form-control" style="width:100%; height:48px; border-radius:12px; border:2px solid var(--primary-light); padding:0 1rem;">
+                        <div class="form-group" style="margin-bottom: 0.85rem;">
+                            <label style="display:block; margin-bottom:0.35rem; font-weight:800; font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">PROCEDURE / REASON</label>
+                            <input type="text" id="profileNextReason" placeholder="e.g. Scaling, Root Canal, Follow-up" class="form-control" style="width:100%; height:40px; border-radius:8px; border:1.5px solid #CBD5E1; padding:0 0.85rem; font-size: 0.88rem;">
                         </div>
-                        <button onclick="saveProfileBooking()" class="btn-primary" style="width:100%; height:55px; border-radius:15px; font-weight:900; font-size:1rem; text-transform:uppercase; letter-spacing:1px;">Confirm &amp; Add Sitting</button>
+                        <button onclick="saveProfileBooking()" class="btn-primary" style="width:100%; height:44px; border-radius:10px; font-weight:900; font-size:0.92rem; background: var(--primary);">
+                            <i class="fas fa-check"></i> Confirm &amp; Add Sitting
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1037,23 +1050,23 @@
 
     <!-- Login Modal -->
     <div id="loginModal" class="modal">
-        <div class="modal-content" style="max-width: 450px;">
+        <div class="modal-content" style="max-width: 400px; padding: 1.5rem 1.25rem;">
             <span class="close-modal" id="closeLogin" onclick="closeLoginModal()">×</span>
-            <div style="text-align: center; margin-bottom: 2.5rem;">
+            <div class="modal-header-block" style="text-align: center; margin-bottom: 1.1rem;">
                 <span class="hero-label">AUTHENTICATION</span>
-                <h2 style="font-family: 'Outfit'; margin:0;">Staff Access</h2>
+                <h2 style="font-family: 'Outfit'; margin: 0.25rem 0 0 0; font-size: 1.4rem;">Staff Access</h2>
             </div>
-            <div id="loginError" style="color: #dc3545; font-size: 0.85rem; text-align: center; display: none; margin-bottom: 1.5rem;">Invalid username or password.</div>
+            <div id="loginError" style="color: #dc3545; font-size: 0.82rem; text-align: center; display: none; margin-bottom: 0.85rem;">Invalid username or password.</div>
             <form id="loginForm">
-                <div class="form-group">
-                    <label>Professional ID</label>
-                    <input type="text" id="username" required="">
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                    <label style="display: block; font-weight: 800; font-size: 0.75rem; margin-bottom: 0.25rem; color: var(--text-muted); text-transform: uppercase;">Professional ID</label>
+                    <input type="text" id="username" required="" autocomplete="username" style="height: 42px; font-size: 16px;">
                 </div>
-                <div class="form-group">
-                    <label>Secure Key</label>
-                    <input type="password" id="password" required="">
+                <div class="form-group" style="margin-bottom: 0.85rem;">
+                    <label style="display: block; font-weight: 800; font-size: 0.75rem; margin-bottom: 0.25rem; color: var(--text-muted); text-transform: uppercase;">Password</label>
+                    <input type="password" id="password" required="" autocomplete="current-password" style="height: 42px; font-size: 16px;">
                 </div>
-                <button type="submit" class="btn-primary" style="margin-top: 1.5rem;">ACCESS DASHBOARD</button>
+                <button type="submit" class="btn-primary" style="margin-top: 0.85rem; width: 100%; height: 44px; font-weight: 800; font-size: 0.95rem;">ACCESS DASHBOARD</button>
             </form>
         </div>
     </div>
@@ -1124,14 +1137,38 @@
 
     <!-- Booking Confirmation Modal -->
     <div id="bookingModal" class="modal">
-        <div class="modal-content" style="text-align: center;">
-            <i class="fas fa-check-circle" style="font-size: 4rem; color: #25D366; margin-bottom: 1rem;"></i>
-            <h2>Booking Confirmed!</h2>
-            <p>Your appointment has been successfully recorded.</p>
-            <button id="btnAddToCalendar" class="btn-primary" style="background: #4285F4; margin-top: 1.5rem; width: 100%; display: none;">
+        <div class="modal-content" style="text-align: center; max-width: 440px; padding: 2rem 1.25rem;">
+            <i class="fas fa-check-circle" style="font-size: 3.5rem; color: #16A34A; margin-bottom: 0.75rem;"></i>
+            <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.35rem;">Booking Confirmed!</h2>
+            <p id="bookingModalDetails" style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem;">Your appointment has been successfully recorded.</p>
+            <button id="btnAddToCalendar" class="btn-primary" style="background: #4285F4; width: 100%; height: 44px; border-radius: 10px; font-weight: 800; margin-bottom: 0.65rem; display: none;">
                 <i class="fab fa-google"></i> ADD TO GOOGLE CALENDAR
             </button>
-            <button onclick="closeBookingModal()" class="btn-primary" style="margin-top: 1rem; width: 100%;">DONE</button>
+            <button id="btnCancelBookedAppt" class="btn-primary" style="background: #FEF2F2; color: #DC2626; border: 1.5px solid #FCA5A5; width: 100%; height: 42px; border-radius: 10px; font-weight: 800; font-size: 0.85rem; margin-bottom: 0.65rem; display: none;">
+                <i class="fas fa-times-circle"></i> Cancel This Appointment
+            </button>
+            <button onclick="closeBookingModal()" class="btn-primary" style="width: 100%; height: 44px; border-radius: 10px; font-weight: 800; background: var(--secondary);">DONE</button>
+        </div>
+    </div>
+
+    <!-- Patient Self-Service Lookup & Cancel Modal -->
+    <div id="patientLookupModal" class="modal">
+        <div class="modal-content" style="max-width: 480px; padding: 1.75rem 1.25rem;">
+            <span class="close-modal" onclick="closePatientLookupModal()">×</span>
+            <div style="text-align: center; margin-bottom: 1.25rem;">
+                <span class="hero-label">PATIENT SELF-SERVICE</span>
+                <h2 style="font-family: 'Outfit'; margin: 0.25rem 0; font-size: 1.4rem;">Manage Appointment</h2>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">Enter your mobile number to view or cancel your booking:</p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem;">
+                <input type="tel" id="userLookupPhone" placeholder="Enter 10-digit mobile number" style="height: 42px; flex: 1; border-radius: 8px; border: 1.5px solid #CBD5E1; padding: 0 0.85rem; font-size: 0.95rem;">
+                <button type="button" onclick="lookupUserAppointments()" class="btn-primary" style="height: 42px; padding: 0 1rem; font-weight: 800; border-radius: 8px; font-size: 0.85rem; background: var(--primary); white-space: nowrap;">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </div>
+            <div id="userLookupResults" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 50vh; overflow-y: auto;">
+                <div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">Enter your mobile number above to see your appointments.</div>
+            </div>
         </div>
     </div>
 
@@ -1171,10 +1208,10 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=37"></script>
-    <script src="auth.js?v=35"></script>
-    <script src="script.js?v=37"></script>
-    <script src="premium-features.js?v=35"></script>
+    <script src="db-api.js?v=38"></script>
+    <script src="auth.js?v=38"></script>
+    <script src="script.js?v=38"></script>
+    <script src="premium-features.js?v=38"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {
@@ -1507,8 +1544,8 @@
             <span>Patients</span>
         </a>
         <a href="javascript:void(0)" onclick="handleMobileNav('portal')" class="mobile-nav-item" id="mobNavPortal">
-            <i class="fas fa-user-md"></i>
-            <span>Staff Portal</span>
+            <i class="fas fa-stethoscope"></i>
+            <span>Clinical Portal</span>
         </a>
     </nav>
 </body></html>

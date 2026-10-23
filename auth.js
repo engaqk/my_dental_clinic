@@ -6,10 +6,12 @@ function showLoginModal() {
     document.getElementById('loginModal').style.display = 'flex';
     document.getElementById('loginError').style.display = 'none';
     document.getElementById('loginForm').reset();
-    setTimeout(() => {
-        const usernameInput = document.getElementById('username');
-        if (usernameInput) usernameInput.focus();
-    }, 100);
+    if (window.innerWidth > 768) {
+        setTimeout(() => {
+            const usernameInput = document.getElementById('username');
+            if (usernameInput) usernameInput.focus();
+        }, 150);
+    }
 }
 
 function closeLoginModal() {
