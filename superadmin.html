@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SuperAdmin Console | Multi-Tenant Clinic Management</title>
+    <link rel="stylesheet" href="style.css?v=40">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#8B5CF6">
+    <style>
+        :root {
+            --superadmin-color: #8B5CF6;
+            --superadmin-dark: #6D28D9;
+            --superadmin-light: #EDE9FE;
+        }
+        body {
+            background: #F8FAFC;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            color: #0F172A;
+        }
+        .sa-header {
+            background: white;
+            border-bottom: 1px solid #E2E8F0;
+            padding: 1rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .sa-header-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .sa-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: inherit;
+        }
+        .sa-badge {
+            background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+        }
+        .sa-title-text h1 {
+            font-size: 1.15rem;
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+        }
+        .sa-title-text span {
+            font-size: 0.78rem;
+            color: #64748B;
+            font-weight: 600;
+        }
+        .sa-nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .btn-portal-back {
+            background: #F1F5F9;
+            color: #334155;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+            border: 1px solid #E2E8F0;
+        }
+        .btn-portal-back:hover {
+            background: #E2E8F0;
+            color: #0F172A;
+        }
+        .btn-sa-logout {
+            background: #FEE2E2;
+            color: #DC2626;
+            border: 1px solid #FCA5A5;
+            padding: 0.5rem 0.9rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .sa-main-content {
+            flex: 1;
+            max-width: 1100px;
+            width: 100%;
+            margin: 2rem auto;
+            padding: 0 1.25rem;
+            box-sizing: border-box;
+        }
+        .sa-login-card {
+            max-width: 440px;
+            margin: 3rem auto;
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #E2E8F0;
+            padding: 2.25rem;
+            box-shadow: 0 10px 30px -5px rgba(0,0,0,0.06);
+        }
+        .sa-login-header {
+            text-align: center;
+            margin-bottom: 1.75rem;
+        }
+        .sa-card {
+            background: white;
+            border: 1px solid #E2E8F0;
+            border-radius: 16px;
+            padding: 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 16px -2px rgba(0,0,0,0.03);
+        }
+        .sa-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .sa-card-header h2 {
+            font-size: 1.25rem;
+            margin: 0;
+            font-weight: 800;
+            color: #0F172A;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .tenant-item {
+            background: #F8FAFC;
+            border: 1.5px solid #E2E8F0;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            transition: all 0.2s;
+        }
+        .tenant-item:hover {
+            border-color: #CBD5E1;
+            background: #FFFFFF;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        }
+        .tenant-badge-pill {
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 99px;
+            background: #EDE9FE;
+            color: #6D28D9;
+        }
+        .btn-launch-tenant {
+            background: #8B5CF6;
+            color: white;
+            padding: 0.45rem 0.95rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s;
+        }
+        .btn-launch-tenant:hover {
+            background: #7C3AED;
+            transform: translateY(-1px);
+        }
+        .btn-del-tenant {
+            background: transparent;
+            color: #EF4444;
+            border: 1px solid #FECACA;
+            border-radius: 8px;
+            padding: 0.45rem 0.75rem;
+            font-size: 0.82rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-del-tenant:hover {
+            background: #FEE2E2;
+        }
+        .hint-box {
+            background: #F8FAFC;
+            border: 1px dashed #CBD5E1;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.82rem;
+            color: #475569;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="sa-header">
+        <div class="sa-header-container">
+            <a href="superadmin.html" class="sa-brand">
+                <div class="sa-badge">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="sa-title-text">
+                    <h1>SuperAdmin Console</h1>
+                    <span>Multi-Tenant Clinic Configuration &amp; Isolation</span>
+                </div>
+            </a>
+            
+            <div class="sa-nav-actions">
+                <a href="index.html" class="btn-portal-back">
+                    <i class="fas fa-arrow-left"></i> Back to Clinic Portal
+                </a>
+                <button id="saHeaderLogoutBtn" onclick="handleSuperAdminLogout()" class="btn-sa-logout" style="display: none;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="sa-main-content">
+
+        <!-- VIEW 1: SUPERADMIN LOGIN FORM -->
+        <div id="saLoginView" class="sa-login-card">
+            <div class="sa-login-header">
+                <div style="width: 56px; height: 56px; margin: 0 auto 1rem; background: #EDE9FE; color: #8B5CF6; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem;">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <h2 style="margin: 0; font-size: 1.45rem; font-weight: 800; color: #0F172A;">SuperAdmin Login</h2>
+                <p style="margin: 0.4rem 0 0; font-size: 0.85rem; color: #64748B;">Enter your master credentials to configure clinic tenants</p>
+            </div>
+
+            <div id="saLoginAlert" style="display: none; background: #FEE2E2; color: #DC2626; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; margin-bottom: 1.25rem; border: 1px solid #FCA5A5; text-align: center; font-weight: 600;">
+            </div>
+
+            <form id="saLoginForm" onsubmit="submitSuperAdminLogin(event)">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                    <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                        SuperAdmin Username
+                    </label>
+                    <input type="text" id="saUsername" value="superadmin" required autocomplete="username" class="form-input" style="height: 44px; width: 100%; box-sizing: border-box; font-size: 0.95rem; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 0 0.85rem;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 1.25rem;">
+                    <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                        Password
+                    </label>
+                    <div style="position: relative;">
+                        <input type="password" id="saPassword" required autocomplete="current-password" placeholder="Enter password (admin53)" class="form-input" style="height: 44px; width: 100%; box-sizing: border-box; font-size: 0.95rem; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 0 2.5rem 0 0.85rem;">
+                        <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #94A3B8; cursor: pointer;">
+                            <i class="fas fa-eye" id="pwdEyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" id="saLoginBtn" class="btn-primary" style="background: #8B5CF6; width: 100%; height: 46px; font-weight: 800; font-size: 0.95rem; border-radius: 10px; justify-content: center; cursor: pointer;">
+                    <i class="fas fa-lock-open"></i> ACCESS SUPERADMIN CONSOLE
+                </button>
+            </form>
+
+            <div class="hint-box">
+                <i class="fas fa-info-circle" style="color: #8B5CF6; margin-right: 4px;"></i>
+                <strong>Configured Credentials:</strong><br>
+                Username: <code style="background: #E2E8F0; padding: 1px 5px; border-radius: 4px;">superadmin</code> &bull; 
+                Password: <code style="background: #E2E8F0; padding: 1px 5px; border-radius: 4px;">admin53</code>
+            </div>
+        </div>
+
+        <!-- VIEW 2: AUTHENTICATED SUPERADMIN DASHBOARD -->
+        <div id="saDashboardView" style="display: none;">
+
+            <!-- Overview Banner -->
+            <div style="background: linear-gradient(135deg, #1E1B4B, #312E81); color: white; padding: 1.75rem 2rem; border-radius: 18px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 10px 25px -5px rgba(30, 27, 75, 0.25);">
+                <div>
+                    <span style="background: rgba(139, 92, 246, 0.35); color: #C4B5FD; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-transform: uppercase;">
+                        SuperAdmin Active Session
+                    </span>
+                    <h2 style="font-size: 1.6rem; margin: 0.5rem 0 0.25rem 0; font-weight: 800;">Tenant Control Console</h2>
+                    <p style="color: #A5B4FC; margin: 0; font-size: 0.88rem;">Manage isolated clinic environments, branding, credentials, and custom color themes.</p>
+                </div>
+                <div style="text-align: right;">
+                    <span style="font-size: 0.8rem; color: #A5B4FC; display: block;">Registered Clinics</span>
+                    <span id="statClinicsCount" style="font-size: 2.2rem; font-weight: 800; color: #FFFFFF; line-height: 1;">--</span>
+                </div>
+            </div>
+
+            <!-- Provision New Clinic Form Card -->
+            <div class="sa-card">
+                <div class="sa-card-header">
+                    <h2><i class="fas fa-plus-circle" style="color: #8B5CF6;"></i> Provision New Clinic Tenant</h2>
+                    <span style="font-size: 0.8rem; color: #64748B;">Creates dedicated collections, settings, and staff logins</span>
+                </div>
+
+                <form id="saAddTenantForm" onsubmit="submitCreateTenant(event)">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group">
+                            <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                                Clinic Slug (Unique URL identifier)
+                            </label>
+                            <input type="text" id="newSlug" required pattern="[a-z0-9-]+" placeholder="e.g. swastik-dental" class="form-input" style="height: 42px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem;" oninput="this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '')">
+                            <span style="font-size: 0.72rem; color: #64748B;">Only lowercase letters, numbers, and hyphens. Link will be: <code>hostname/&lt;slug&gt;</code> (e.g. <code>/swastik-dental</code>)</span>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                                Full Clinic Name
+                            </label>
+                            <input type="text" id="newName" required placeholder="e.g. Swastik Dental Clinic" class="form-input" style="height: 42px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem;">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1.25rem;">
+                        <div class="form-group">
+                            <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                                Doctor Name &amp; Degrees (Subtitle)
+                            </label>
+                            <input type="text" id="newSubtitle" placeholder="e.g. Dr. Chintal Baman (BDS)" class="form-input" style="height: 42px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem;">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                                Clinic Brand Theme Color
+                            </label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="color" id="newColorPicker" value="#0D9488" style="height: 42px; width: 50px; border-radius: 8px; border: 1.5px solid #CBD5E1; cursor: pointer; padding: 2px;" onchange="document.getElementById('newColorHex').value = this.value">
+                                <input type="text" id="newColorHex" value="#0D9488" class="form-input" style="height: 42px; flex: 1; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem;" oninput="document.getElementById('newColorPicker').value = this.value">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btnCreateTenant" class="btn-primary" style="background: #8B5CF6; height: 44px; padding: 0 1.5rem; font-weight: 800; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">
+                        <i class="fas fa-plus"></i> Create &amp; Provision Clinic Tenant
+                    </button>
+                </form>
+            </div>
+
+            <!-- Existing Clinics List Card -->
+            <div class="sa-card">
+                <div class="sa-card-header">
+                    <h2><i class="fas fa-hospital" style="color: #8B5CF6;"></i> Active Clinic Tenants</h2>
+                    <button onclick="loadAllTenants()" class="btn-portal-back" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; cursor: pointer;">
+                        <i class="fas fa-sync-alt"></i> Refresh List
+                    </button>
+                </div>
+
+                <div id="saTenantsContainer">
+                    <div style="text-align: center; padding: 2rem; color: #64748B;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: #8B5CF6; margin-bottom: 0.5rem; display: block;"></i>
+                        Loading clinic tenants...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login History Card -->
+            <div class="sa-card">
+                <div class="sa-card-header">
+                    <h2><i class="fas fa-user-clock" style="color: #8B5CF6;"></i> Recent Admin Login History</h2>
+                    <span style="font-size: 0.8rem; color: #64748B;">Audit trail of logins</span>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #E2E8F0; color: #64748B;">
+                                <th style="padding: 8px 10px;">Date &amp; Time</th>
+                                <th style="padding: 8px 10px;">IP Address</th>
+                                <th style="padding: 8px 10px;">User Account</th>
+                            </tr>
+                        </thead>
+                        <tbody id="saLoginLogsTableBody">
+                            <tr><td colspan="3" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Loading security logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer style="background: white; border-top: 1px solid #E2E8F0; padding: 1.5rem; text-align: center; color: #94A3B8; font-size: 0.82rem; margin-top: auto;">
+        <div>SuperAdmin Tenant Isolation &bull; Multi-Clinic Architecture</div>
+        <div style="margin-top: 0.35rem;">Developed by <a href="https://proconixsoftware.vercel.app" target="_blank" rel="noopener noreferrer" style="color: #8B5CF6; font-weight: 700; text-decoration: underline;">proconixsoftware.vercel.app</a></div>
+    </footer>
+
+    <!-- Firebase Compat Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="phoneUtils.js"></script>
+    <script src="db-api.js?v=42"></script>
+
+    <!-- SuperAdmin Logic Script -->
+    <script>
+        function togglePasswordVisibility() {
+            const pwd = document.getElementById('saPassword');
+            const icon = document.getElementById('pwdEyeIcon');
+            if (pwd.type === 'password') {
+                pwd.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                pwd.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function checkSuperAdminAuth() {
+            const userStr = sessionStorage.getItem('staffUser');
+            let isSuper = sessionStorage.getItem('isSuperAdmin') === 'true';
+            if (userStr) {
+                try {
+                    const u = JSON.parse(userStr);
+                    if (u && (u.role === 'super_admin' || u.email === 'superadmin')) {
+                        isSuper = true;
+                    }
+                } catch(e){}
+            }
+
+            const loginView = document.getElementById('saLoginView');
+            const dashView = document.getElementById('saDashboardView');
+            const logoutBtn = document.getElementById('saHeaderLogoutBtn');
+
+            if (isSuper) {
+                loginView.style.display = 'none';
+                dashView.style.display = 'block';
+                logoutBtn.style.display = 'inline-flex';
+                loadAllTenants();
+                loadSecurityLogs();
+            } else {
+                loginView.style.display = 'block';
+                dashView.style.display = 'none';
+                logoutBtn.style.display = 'none';
+            }
+        }
+
+        async function submitSuperAdminLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('saUsername').value.trim();
+            const password = document.getElementById('saPassword').value;
+            const alertBox = document.getElementById('saLoginAlert');
+            const btn = document.getElementById('saLoginBtn');
+
+            alertBox.style.display = 'none';
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Authenticating...';
+
+            try {
+                const { user, error } = await window.dbAPI.signIn(username, password);
+                if (error || !user || user.role !== 'super_admin') {
+                    throw new Error(error ? error.message : 'Invalid superadmin credentials. Please verify username and password.');
+                }
+
+                sessionStorage.setItem('staffLoggedIn', 'true');
+                sessionStorage.setItem('staffUser', JSON.stringify(user));
+                sessionStorage.setItem('isSuperAdmin', 'true');
+
+                checkSuperAdminAuth();
+            } catch (err) {
+                alertBox.innerText = err.message || 'Login failed. Please check credentials.';
+                alertBox.style.display = 'block';
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-lock-open"></i> ACCESS SUPERADMIN CONSOLE';
+            }
+        }
+
+        function handleSuperAdminLogout() {
+            sessionStorage.removeItem('staffLoggedIn');
+            sessionStorage.removeItem('staffUser');
+            sessionStorage.removeItem('isSuperAdmin');
+            checkSuperAdminAuth();
+        }
+
+        async function loadAllTenants() {
+            const container = document.getElementById('saTenantsContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748B;"><i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: #8B5CF6;"></i> Loading tenants...</div>';
+
+            try {
+                let tenants = [];
+
+                // 1. Fetch from Firestore if available
+                if (window.dbAPI && window.dbAPI.useFirebase && window.dbAPI.db) {
+                    try {
+                        const snap = await window.dbAPI.db.collection('tenants').get();
+                        snap.forEach(doc => {
+                            tenants.push({ id: doc.id, ...doc.data() });
+                        });
+                    } catch (e) {
+                        console.warn('Firestore tenants fetch failed:', e);
+                    }
+                }
+
+                // 2. Ensure default & swastik-dental exist
+                if (!tenants.some(t => t.id === 'default')) {
+                    tenants.unshift({
+                        id: 'default',
+                        name: 'My Dental Clinic (Default)',
+                        subtitle: 'Dental & Cosmetic Clinic',
+                        primary_color: '#10B981',
+                        admin_user: 'admin',
+                        admin_pass: 'admin'
+                    });
+                }
+
+                if (!tenants.some(t => t.id === 'swastik-dental' || t.id === 'swastik')) {
+                    const swastikTenant = {
+                        id: 'swastik-dental',
+                        name: 'Swastik Dental Clinic',
+                        subtitle: 'Dr. Chintal Baman (BDS)',
+                        primary_color: '#0D9488',
+                        admin_user: 'swastikadmin',
+                        admin_pass: 'admin'
+                    };
+                    tenants.push(swastikTenant);
+
+                    // Seed to Firestore
+                    if (window.dbAPI && window.dbAPI.useFirebase && window.dbAPI.db) {
+                        window.dbAPI.db.collection('tenants').doc('swastik-dental').set(swastikTenant, { merge: true }).catch(console.error);
+                    }
+                }
+
+                // Update count stat
+                document.getElementById('statClinicsCount').innerText = tenants.length;
+
+                // Render list
+                container.innerHTML = tenants.map(t => {
+                    const color = t.primary_color || '#0D9488';
+                    const adminUser = t.admin_user || (t.id === 'default' ? 'admin' : (t.id + 'admin'));
+                    const adminPass = t.admin_pass || 'admin';
+                    const isDefault = t.id === 'default';
+                    const tenantPath = isDefault ? '/' : `/${t.id}`;
+                    const launchUrl = (window.location.protocol === 'file:') ? `index.html?c=${t.id}` : (isDefault ? 'index.html' : `${t.id}/`);
+
+                    return `
+                        <div class="tenant-item">
+                            <div style="display: flex; align-items: center; gap: 0.85rem;">
+                                <div style="width: 14px; height: 42px; border-radius: 4px; background: ${color}; flex-shrink: 0;" title="Theme Color: ${color}"></div>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                        <strong style="font-size: 1.05rem; color: #0F172A;">${t.name || t.id}</strong>
+                                        <span class="tenant-badge-pill">Slug: ${t.id}</span>
+                                        ${isDefault ? '<span style="font-size: 0.7rem; font-weight: 800; background: #DCFCE7; color: #16A34A; padding: 2px 7px; border-radius: 99px;">Primary</span>' : ''}
+                                    </div>
+                                    <div style="font-size: 0.82rem; color: #64748B; margin-top: 2px;">
+                                        ${t.subtitle ? `<i class="fas fa-user-md" style="color: ${color};"></i> ${t.subtitle} &bull; ` : ''}
+                                        URL: <a href="${launchUrl}" target="_blank" style="color: #8B5CF6; font-weight: 700; text-decoration: underline;"><code>${tenantPath}</code></a> 
+                                        (<a href="index.html?c=${t.id}" target="_blank" style="color: #64748B; font-size: 0.76rem;">direct link</a>) &bull; 
+                                        Staff ID: <code style="background: #E2E8F0; padding: 1px 4px; border-radius: 3px;">${adminUser}</code> | Pass: <code style="background: #E2E8F0; padding: 1px 4px; border-radius: 3px;">${adminPass}</code>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                                <a href="${launchUrl}" target="_blank" class="btn-launch-tenant" title="Open ${t.name}">
+                                    <i class="fas fa-external-link-alt"></i> Open Clinic (${tenantPath})
+                                </a>
+                                ${!isDefault ? `
+                                    <button onclick="handleDeleteTenant('${t.id}', '${encodeURIComponent(t.name || t.id)}')" class="btn-del-tenant" title="Delete Clinic Tenant">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error('Error loading tenants:', err);
+                container.innerHTML = '<div style="color: #DC2626; text-align: center; padding: 1.5rem;">Failed to load tenants: ' + err.message + '</div>';
+            }
+        }
+
+        async function submitCreateTenant(e) {
+            e.preventDefault();
+            const slug = document.getElementById('newSlug').value.toLowerCase().trim();
+            const name = document.getElementById('newName').value.trim();
+            const subtitle = document.getElementById('newSubtitle').value.trim();
+            const color = document.getElementById('newColorPicker').value || document.getElementById('newColorHex').value || '#0D9488';
+            const btn = document.getElementById('btnCreateTenant');
+
+            if (!slug || !name) {
+                alert('Please provide both clinic slug and clinic name.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Provisioning Tenant...';
+
+            try {
+                if (window.dbAPI && window.dbAPI.db) {
+                    const db = window.dbAPI.db;
+                    
+                    // 1. Create tenant document
+                    await db.collection('tenants').doc(slug).set({
+                        name: name,
+                        subtitle: subtitle,
+                        primary_color: color,
+                        admin_user: slug + 'admin',
+                        admin_pass: 'admin',
+                        createdAt: new Date().toISOString()
+                    }, { merge: true });
+
+                    // 2. Create default staff user for this clinic
+                    await db.collection('tenants').doc(slug).collection('staff').doc(slug + 'admin').set({
+                        name: subtitle || `${name} Admin`,
+                        email: slug + 'admin',
+                        password: 'admin',
+                        role: 'admin'
+                    }, { merge: true });
+
+                    // 3. Set clinic settings
+                    await db.collection('tenants').doc(slug).collection('settings').doc('clinic').set({
+                        clinic_name: name,
+                        subtitle: subtitle,
+                        doctor_name: subtitle,
+                        primary_color: color,
+                        admin_user: slug + 'admin',
+                        admin_pass: 'admin'
+                    }, { merge: true });
+                }
+
+                const finalPath = (slug === 'default') ? '/' : `/${slug}`;
+                const finalLink = (window.location.protocol === 'file:') ? `index.html?c=${slug}` : `${window.location.origin}${finalPath}`;
+                alert(`✅ Tenant "${name}" (${slug}) successfully provisioned!\n\nAccess Link: ${finalLink}\nStaff Login ID: ${slug}admin\nPassword: admin`);
+                document.getElementById('saAddTenantForm').reset();
+                loadAllTenants();
+
+            } catch (err) {
+                console.error('Error creating tenant:', err);
+                alert('Failed to provision tenant: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-plus"></i> Create & Provision Clinic Tenant';
+            }
+        }
+
+        async function handleDeleteTenant(slug, encodedName) {
+            const name = decodeURIComponent(encodedName);
+            if (!confirm(`Are you sure you want to permanently delete the clinic "${name}" (${slug})?\n\nThis will remove its access from the SuperAdmin console.`)) {
+                return;
+            }
+
+            try {
+                if (window.dbAPI && window.dbAPI.db) {
+                    await window.dbAPI.db.collection('tenants').doc(slug).delete();
+                }
+                alert(`Clinic "${name}" deleted successfully.`);
+                loadAllTenants();
+            } catch (err) {
+                alert('Error deleting clinic: ' + err.message);
+            }
+        }
+
+        async function loadSecurityLogs() {
+            const tbody = document.getElementById('saLoginLogsTableBody');
+            if (!tbody) return;
+
+            try {
+                let logs = [];
+                if (window.dbAPI && typeof window.dbAPI.getAdminLoginHistory === 'function') {
+                    logs = await window.dbAPI.getAdminLoginHistory();
+                }
+
+                if (!logs || logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: #94A3B8;">No recent login logs found.</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = logs.slice(0, 15).map(l => {
+                    const dateStr = l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A';
+                    return `
+                        <tr style="border-bottom: 1px solid #F1F5F9;">
+                            <td style="padding: 8px 10px; color: #0F172A; font-weight: 600;">${dateStr}</td>
+                            <td style="padding: 8px 10px; color: #64748B; font-family: monospace;">${l.ipAddress || 'Unknown'}</td>
+                            <td style="padding: 8px 10px;"><span style="background: #EDE9FE; color: #6D28D9; font-weight: 700; padding: 2px 7px; border-radius: 99px; font-size: 0.75rem;">${l.email || 'Admin'}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.warn('Failed to load logs:', err);
+                tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: #94A3B8;">Could not load logs.</td></tr>';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkSuperAdminAuth();
+        });
+    </script>
+</body>
+</html>

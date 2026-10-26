@@ -4,7 +4,9 @@
   "framework": null,
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
-    { "source": "/([a-zA-Z0-9_-]+)", "destination": "/?c=$1" }
+    { "source": "/superadmin", "destination": "/superadmin.html" },
+    { "source": "/superadmin.html", "destination": "/superadmin.html" },
+    { "source": "/([a-zA-Z0-9_-]+)", "destination": "/index.html?c=$1" }
   ],
   "headers": [
     {

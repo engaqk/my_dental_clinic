@@ -6,14 +6,27 @@ class DatabaseAPI {
         this.db = null;
         this.auth = null;
 
-        // 1. Initialize Default Values
+        // 1. Initialize Default Values - Universal multi-mode tenant resolver
         const urlParams = new URLSearchParams(window.location.search);
-        let pathId = window.location.pathname.replace(/^\/+|\/+$/g, '');
-        // Ignore static files and api
-        if (pathId === 'index.html' || pathId.includes('.') || pathId.startsWith('api')) {
-            pathId = '';
+        
+        let rawPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
+        let pathId = '';
+        if (rawPath) {
+            const segments = rawPath.split('/');
+            const lastSegment = segments[segments.length - 1];
+            if (lastSegment && !lastSegment.includes('.') && lastSegment !== 'api' && lastSegment !== 'superadmin' && lastSegment !== 'my_dental_clinic') {
+                pathId = lastSegment;
+            }
         }
-        this.tenantId = urlParams.get('c') || urlParams.get('clinic') || pathId || localStorage.getItem('activeTenantId') || 'default';
+
+        let hashId = window.location.hash.replace(/^#\/?/, '').trim().split('?')[0].split('/')[0];
+        if (['home', 'dashboard', 'tour', 'booking', 'services'].includes(hashId)) {
+            hashId = '';
+        }
+
+        const queryId = urlParams.get('c') || urlParams.get('clinic') || '';
+
+        this.tenantId = queryId || pathId || hashId || 'default';
         this.cacheVersion = '1.0.0';
         localStorage.setItem('activeTenantId', this.tenantId);
 
@@ -390,28 +403,13 @@ class DatabaseAPI {
         }
 
         // 3. Immediate Fallback Admin Bypass (admin/admin, email/admin, or settings credentials)
-        if ((lowerEmail === 'admin' || lowerEmail === defaultUser) && 
+        const isSwastikTenant = this.tenantId && this.tenantId.toLowerCase().includes('swastik');
+        if ((lowerEmail === 'admin' || lowerEmail === defaultUser || (isSwastikTenant && (lowerEmail === 'swastikadmin' || lowerEmail === 'chintal'))) && 
             (password === 'admin' || password === defaultPass)) {
             console.log('💎 PWA Auth: Successful admin login via local/cloud fallback credential validation');
-            await this.logAdminLogin(defaultUser);
-            return { user: { email: defaultUser, role: 'admin' }, error: null };
-        }
-
-        // 3.5. Tenant Staff Login (stored in Firestore)
-        if (this.useFirebase && this.db) {
-            try {
-                const staffDoc = await this.getCollection('staff').doc(lowerEmail).get();
-                if (staffDoc.exists) {
-                    const staffData = staffDoc.data();
-                    if (staffData.password === password) {
-                        console.log('💎 PWA Auth: Successful tenant staff login');
-                        await this.logAdminLogin(lowerEmail);
-                        return { user: { email: lowerEmail, role: staffData.role || 'staff', name: staffData.name }, error: null };
-                    }
-                }
-            } catch(e) {
-                console.error('Error checking staff auth:', e);
-            }
+            const userEmail = isSwastikTenant ? 'swastikadmin' : defaultUser;
+            await this.logAdminLogin(userEmail);
+            return { user: { email: userEmail, role: 'admin', name: isSwastikTenant ? 'Dr. Chintal Baman (BDS)' : 'Clinic Admin' }, error: null };
         }
 
         // 3.5. Tenant Staff Login (stored in Firestore)
@@ -562,46 +560,107 @@ class DatabaseAPI {
         }
     }
 
-    // Get App Settings
-    async getSettings() {
-        if (!this.useFirebase) {
-            return JSON.parse(localStorage.getItem('clinicSettings')) || {};
+    // Pre-configured Tenant Blueprints
+    getTenantBlueprint(tenantId) {
+        const id = (tenantId || this.tenantId || '').toLowerCase();
+        if (id.includes('swastik')) {
+            return {
+                clinic_name: 'Swastik Dental Clinic',
+                subtitle: 'Dr. Chintal Baman (BDS)',
+                primary_color: '#0D9488',
+                admin_user: 'swastikadmin',
+                admin_pass: 'admin',
+                doctor_name: 'Dr. Chintal Baman (BDS)',
+                degrees: 'B.D.S.',
+                address: 'Main Clinic',
+                phone: '+91 98765 43210'
+            };
         }
+        return null;
+    }
+
+    // Get App Settings (Tenant-Scoped)
+    async getSettings() {
+        const tenantKey = 'clinicSettings_' + this.tenantId;
+        const blueprint = this.getTenantBlueprint(this.tenantId);
+
+        if (!this.useFirebase || !this.db) {
+            const cached = JSON.parse(localStorage.getItem(tenantKey) || localStorage.getItem('clinicSettings') || 'null');
+            return cached || blueprint || {};
+        }
+
         try {
             const doc = await this.getCollection('settings').doc('clinic').get();
             if (doc.exists) {
-                return doc.data();
+                const data = doc.data();
+                localStorage.setItem(tenantKey, JSON.stringify(data));
+                this.currentSettings = data;
+                return data;
             }
-            return JSON.parse(localStorage.getItem('clinicSettings')) || {};
+
+            // Auto-seed preconfigured tenant if not exists in Firestore yet
+            if (blueprint) {
+                console.log(`🌱 Auto-seeding new tenant settings for: ${this.tenantId}`);
+                await this.getCollection('settings').doc('clinic').set(blueprint, { merge: true });
+                await this.db.collection('tenants').doc(this.tenantId).set({
+                    name: blueprint.clinic_name,
+                    subtitle: blueprint.subtitle,
+                    createdAt: new Date().toISOString()
+                }, { merge: true });
+                await this.getCollection('staff').doc(blueprint.admin_user).set({
+                    name: blueprint.doctor_name || blueprint.clinic_name,
+                    email: blueprint.admin_user,
+                    password: blueprint.admin_pass,
+                    role: 'admin'
+                }, { merge: true });
+                localStorage.setItem(tenantKey, JSON.stringify(blueprint));
+                this.currentSettings = blueprint;
+                return blueprint;
+            }
+
+            const fallback = JSON.parse(localStorage.getItem(tenantKey) || 'null') || blueprint || {};
+            this.currentSettings = fallback;
+            return fallback;
         } catch (error) {
             console.error('Error fetching settings (using local fallback):', error);
-            return JSON.parse(localStorage.getItem('clinicSettings')) || {};
+            const cached = JSON.parse(localStorage.getItem(tenantKey) || 'null') || blueprint || {};
+            this.currentSettings = cached;
+            return cached;
         }
     }
 
     // Save App Settings
     async saveSettings(settings) {
         if (!settings) return false;
+        const tenantKey = 'clinicSettings_' + this.tenantId;
         
-        // Cache locally
+        // Cache locally per tenant
+        localStorage.setItem(tenantKey, JSON.stringify(settings));
         localStorage.setItem('clinicSettings', JSON.stringify(settings));
+        this.currentSettings = settings;
 
-        if (!this.useFirebase) return true;
+        if (!this.useFirebase || !this.db) return true;
 
         try {
             // Defensive mapping to avoid "undefined" values in Firestore
             const dataToSave = {
                 clinic_name: settings.name || settings.clinic_name || 'My Dental Clinic',
                 subtitle: settings.subtitle || '',
-                primary_color: settings.primaryColor || settings.primary_color || '#26A69A',
-                admin_user: settings.adminUser || settings.admin_user || 'admin',
-                admin_pass: settings.adminPass || settings.admin_pass || '',
+                primary_color: settings.primaryColor || settings.primary_color || '#0D9488',
+                admin_user: settings.adminUser || settings.admin_user || (this.tenantId + 'admin'),
+                admin_pass: settings.adminPass || settings.admin_pass || 'admin',
                 admin_email: settings.adminEmail || settings.admin_email || '', 
-                about_text: settings.aboutText || settings.about_text || ''
+                about_text: settings.aboutText || settings.about_text || '',
+                doctor_name: settings.doctor_name || settings.subtitle || ''
             };
 
             await this.getCollection('settings').doc('clinic').set(dataToSave, { merge: true });
-            console.log('Settings successfully synced to Firestore');
+            await this.db.collection('tenants').doc(this.tenantId).set({
+                name: dataToSave.clinic_name,
+                subtitle: dataToSave.subtitle,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+            console.log('Settings successfully synced to Firestore for tenant:', this.tenantId);
             return true;
         } catch (error) {
             console.error('Error saving settings to Firebase:', error);

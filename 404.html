@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dental Clinic Portal</title>
+    <script>
+        // Universal SPA 404 Fallback Router
+        const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+        const segments = path.split('/');
+        const last = segments[segments.length - 1];
+
+        if (last === 'superadmin' || last === 'superadmin.html') {
+            window.location.replace('superadmin.html');
+        } else if (last && !last.includes('.')) {
+            // Dynamic clinic tenant detected
+            sessionStorage.setItem('activeTenantId', last);
+            localStorage.setItem('activeTenantId', last);
+            window.location.replace('index.html?c=' + encodeURIComponent(last));
+        } else {
+            window.location.replace('index.html');
+        }
+    </script>
+</head>
+<body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #F8FAFC;">
+    <div style="text-align: center;">
+        <h2 style="color: #0D9488;">Connecting to Dental Clinic Portal...</h2>
+        <p style="color: #64748B;">Please wait while we route your clinic request.</p>
+    </div>
+</body>
+</html>

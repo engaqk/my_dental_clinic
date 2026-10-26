@@ -17,7 +17,47 @@ function showLoginModal() {
 function closeLoginModal() {
     document.getElementById('loginModal').style.display = 'none';
     document.getElementById('loginError').style.display = 'none';
+    const modalTitle = document.querySelector('#loginModal h2');
+    const modalHero = document.querySelector('#loginModal .hero-label');
+    if (modalTitle) modalTitle.innerText = 'Staff Access';
+    if (modalHero) modalHero.innerText = 'AUTHENTICATION';
 }
+
+// Dedicated SuperAdmin Login Modal Trigger
+function openSuperAdminLogin(event) {
+    if (event && event.preventDefault) event.preventDefault();
+
+    // Check if already authenticated as super_admin
+    const userStr = sessionStorage.getItem('staffUser');
+    let user = null;
+    try { user = JSON.parse(userStr); } catch(e){}
+
+    if (user && user.role === 'super_admin') {
+        if (typeof showSection === 'function') showSection('dashboard');
+        if (typeof showDashboardTab === 'function') showDashboardTab('superadmin');
+        if (typeof loadTenantsList === 'function') loadTenantsList();
+        return;
+    }
+
+    sessionStorage.setItem('pendingRedirectTab', 'superadmin');
+    showLoginModal();
+
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const modalTitle = document.querySelector('#loginModal h2');
+    const modalHero = document.querySelector('#loginModal .hero-label');
+    
+    if (modalTitle) modalTitle.innerText = 'SuperAdmin Console';
+    if (modalHero) modalHero.innerText = 'TENANT CONFIGURATION';
+    if (usernameInput) {
+        usernameInput.value = 'superadmin';
+    }
+    if (passwordInput) {
+        passwordInput.value = '';
+        setTimeout(() => passwordInput.focus(), 200);
+    }
+}
+window.openSuperAdminLogin = openSuperAdminLogin;
 
 // Show/hide forgot password modal
 function showForgotPasswordModal() {
@@ -96,6 +136,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         document.getElementById('dashboard').style.display = 'block';
                         document.getElementById('main-content').style.display = 'none';
+                    }
+
+                    const pendingTab = sessionStorage.getItem('pendingRedirectTab');
+                    if (user && user.role === 'super_admin') {
+                        if (typeof showDashboardTab === 'function') {
+                            showDashboardTab(pendingTab || 'superadmin');
+                        }
+                        if (typeof loadTenantsList === 'function') {
+                            loadTenantsList();
+                        }
+                        sessionStorage.removeItem('pendingRedirectTab');
                     }
 
                     if (typeof loadAppointments === 'function') {

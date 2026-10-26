@@ -47,6 +47,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         initQRCode();
         if (window.checkSuperAdmin) window.checkSuperAdmin();
 
+        // Check for SuperAdmin direct URL navigation (?login=superadmin or ?superadmin=true)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('login') === 'superadmin' || urlParams.get('superadmin') === 'true' || urlParams.get('superadmin') === '1') {
+            window.location.href = 'superadmin.html';
+            return;
+        }
+
         // Handle OAuth Redirect Result for PWA Standalone logins
         if (window.dbAPI.auth) {
             window.dbAPI.auth.getRedirectResult().then((result) => {
@@ -634,7 +641,7 @@ function sendBookingEmail(appt) {
                 date: appt.appointmentDate || appt.date,
                 time: appt.appointmentTime,
                 reason: appt.reason,
-                clinicName: 'My Dental Clinic'
+                clinicName: window.currentClinicSettings?.clinic_name || 'My Dental Clinic'
             })
         }).then(res => res.json())
           .then(data => console.log('Notification API result:', data))
@@ -1086,10 +1093,25 @@ document.getElementById('settingsForm')?.addEventListener('submit', async (e) =>
 
 function loadClinicSettings() {
     window.dbAPI.getSettings().then(settings => {
+        window.currentClinicSettings = settings;
+        const clinicName = settings.clinic_name || 'MY DENTAL CLINIC';
+        const subtitle = settings.subtitle || 'Dental & Cosmetic Clinic';
+
         const nameEl = document.getElementById('mainClinicName');
         const subEl = document.getElementById('mainClinicSubtitle');
-        if (nameEl) nameEl.innerText = settings.clinic_name || 'MY DENTAL CLINIC';
-        if (subEl) subEl.innerText = settings.subtitle || 'Dental & Cosmetic Clinic';
+        const footerNameEl = document.getElementById('footerClinicName');
+
+        if (nameEl) nameEl.innerText = clinicName;
+        if (subEl) subEl.innerText = subtitle;
+        if (footerNameEl) footerNameEl.innerText = clinicName;
+
+        document.title = `${clinicName} | ${subtitle}`;
+
+        if (settings.primary_color) {
+            document.documentElement.style.setProperty('--primary', settings.primary_color);
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            if (metaTheme) metaTheme.setAttribute('content', settings.primary_color);
+        }
     });
 }
 
@@ -1773,66 +1795,101 @@ function applyLanguage(lang) {
 
 // Multi-Tenant Functions
 function openManageClinicsModal() {
-    document.getElementById('manageClinicsModal').style.display = 'block';
+    const el = document.getElementById('manageClinicsModal');
+    if (el) el.style.display = 'block';
+    if (typeof showDashboardTab === 'function') showDashboardTab('superadmin');
     loadTenantsList();
 }
 
 function closeManageClinicsModal() {
-    document.getElementById('manageClinicsModal').style.display = 'none';
+    const el = document.getElementById('manageClinicsModal');
+    if (el) el.style.display = 'none';
+    const tab = document.getElementById('superadminTab');
+    if (tab) tab.style.display = 'none';
+    if (typeof showDashboardTab === 'function') showDashboardTab('patients');
 }
 
 async function loadTenantsList() {
     const list = document.getElementById('clinicsList');
-    list.innerHTML = 'Loading clinics...';
+    if (!list) return;
+    list.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading clinics...</div>';
     try {
-        const snapshot = await window.dbAPI.db.collection('tenants').get();
-        if (snapshot.empty) {
-            list.innerHTML = '<p>No clinics found (other than default if not initialized).</p>';
-            return;
+        let tenants = [];
+        if (window.dbAPI && window.dbAPI.db) {
+            try {
+                const snapshot = await window.dbAPI.db.collection('tenants').get();
+                snapshot.forEach(doc => {
+                    tenants.push({ id: doc.id, ...doc.data() });
+                });
+            } catch (err) {
+                console.warn('Firestore tenants fetch warning:', err);
+            }
         }
 
-        // Auto-migrate existing clinics to have default [slug]admin users
-        snapshot.forEach(doc => {
-            const id = doc.id;
-            const data = doc.data();
-            if (id !== 'default') {
-                const adminId = id + 'admin';
-                window.dbAPI.db.collection('tenants').doc(id).collection('staff').doc(adminId).set({
-                    name: (data.name || id) + ' Admin',
-                    email: adminId,
-                    password: 'admin',
-                    role: 'admin'
-                }, { merge: true }).catch(e => console.error(e));
-            }
-        });
+        // Always ensure default clinic is present
+        if (!tenants.some(t => t.id === 'default')) {
+            tenants.unshift({
+                id: 'default',
+                name: 'My Dental Clinic (Default)',
+                subtitle: 'Dental & Cosmetic Clinic',
+                primary_color: '#10B981'
+            });
+        }
 
+        // Always ensure Swastik Dental Clinic is present and seeded
+        if (!tenants.some(t => t.id === 'swastik-dental' || t.id === 'swastik')) {
+            const swastikObj = {
+                id: 'swastik-dental',
+                name: 'Swastik Dental Clinic',
+                subtitle: 'Dr. Chintal Baman (BDS)',
+                primary_color: '#0D9488',
+                createdAt: new Date().toISOString()
+            };
+            tenants.push(swastikObj);
+            if (window.dbAPI && window.dbAPI.db) {
+                window.dbAPI.db.collection('tenants').doc('swastik-dental').set(swastikObj, { merge: true }).catch(console.error);
+                window.dbAPI.db.collection('tenants').doc('swastik-dental').collection('settings').doc('clinic').set({
+                    clinic_name: 'Swastik Dental Clinic',
+                    subtitle: 'Dr. Chintal Baman (BDS)',
+                    doctor_name: 'Dr. Chintal Baman (BDS)',
+                    primary_color: '#0D9488'
+                }, { merge: true }).catch(console.error);
+            }
+        }
+
+        // Render HTML
         let html = '';
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            html += `<div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center;">
+        tenants.forEach(t => {
+            const tenantPath = t.id === 'default' ? '/' : `/${t.id}`;
+            const visitUrl = (window.location.protocol === 'file:') ? `index.html?c=${t.id}` : (t.id === 'default' ? 'index.html' : `${t.id}/`);
+            html += `<div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 0.5rem;">
                 <div>
-                    <strong>${data.name || doc.id}</strong>
-                    <div style="font-size:0.8rem; color:#64748B;">Slug: ${doc.id}</div>
+                    <strong style="color: #0F172A; font-size: 0.95rem;">${t.name || t.id}</strong>
+                    <div style="font-size:0.8rem; color:#64748B;">Slug: <code>${t.id}</code> &bull; Path: <code>${tenantPath}</code></div>
                 </div>
-                <a href="/?c=${doc.id}" target="_blank" class="btn-primary" style="padding:0.25rem 0.5rem; font-size:0.8rem;">Visit</a>
+                <div style="display:flex; gap:0.5rem;">
+                    <a href="${visitUrl}" target="_blank" class="btn-primary" style="padding:0.35rem 0.75rem; font-size:0.8rem;">Open Clinic</a>
+                    <a href="index.html?c=${t.id}" target="_blank" class="btn-primary" style="padding:0.35rem 0.75rem; font-size:0.8rem; background: #64748B;">Direct ?c=</a>
+                </div>
             </div>`;
         });
         list.innerHTML = html;
-        
+
         // Populate switcher
         const switcher = document.getElementById('tenantSwitcher');
-        let options = '<option value="default">Default Clinic</option>';
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            if (doc.id !== 'default') {
-                options += `<option value="${doc.id}">${data.name || doc.id}</option>`;
-            }
-        });
-        switcher.innerHTML = options;
-        switcher.value = window.dbAPI.tenantId;
+        if (switcher) {
+            let options = '<option value="default">Default Clinic</option>';
+            tenants.forEach(t => {
+                if (t.id !== 'default') {
+                    options += `<option value="${t.id}">${t.name || t.id}</option>`;
+                }
+            });
+            switcher.innerHTML = options;
+            switcher.value = window.dbAPI.tenantId || 'default';
+        }
 
     } catch (e) {
-        list.innerHTML = 'Error loading clinics: ' + e.message;
+        list.innerHTML = '<div style="color: red; padding: 1rem;">Error loading clinics: ' + e.message + '</div>';
     }
 }
 
@@ -1840,6 +1897,8 @@ document.getElementById('addClinicForm')?.addEventListener('submit', async (e) =
     e.preventDefault();
     const slug = document.getElementById('newClinicSlug').value.toLowerCase().trim();
     const name = document.getElementById('newClinicName').value.trim();
+    const subtitle = document.getElementById('newClinicSubtitle')?.value?.trim() || '';
+    const color = document.getElementById('newClinicColor')?.value || document.getElementById('newClinicColorHex')?.value || '#0D9488';
     
     if(!slug) return alert('Slug is required');
     
@@ -1847,12 +1906,13 @@ document.getElementById('addClinicForm')?.addEventListener('submit', async (e) =
         const db = window.dbAPI.db;
         await db.collection('tenants').doc(slug).set({
             name: name,
+            subtitle: subtitle,
             createdAt: new Date().toISOString()
         });
         
         // Auto-create default admin staff user for this clinic
         await db.collection('tenants').doc(slug).collection('staff').doc(slug + 'admin').set({
-            name: name + ' Admin',
+            name: subtitle ? `${name} - ${subtitle}` : `${name} Admin`,
             email: slug + 'admin', // using slug+admin as username
             password: 'admin',
             role: 'admin'
@@ -1861,12 +1921,15 @@ document.getElementById('addClinicForm')?.addEventListener('submit', async (e) =
         // Initialize clinic settings
         await db.collection('tenants').doc(slug).collection('settings').doc('clinic').set({
             clinic_name: name,
+            subtitle: subtitle,
+            doctor_name: subtitle,
             contact_number: '',
             clinic_address: '',
-            primary_color: '#10B981'
+            primary_color: color
         });
 
-        alert('Clinic created successfully!');
+        const accessUrl = (window.location.protocol === 'file:') ? `index.html?c=${slug}` : `/${slug}`;
+        alert(`Tenant "${name}" (${slug}) created successfully!\n\nAccess Link: ${window.location.origin}${accessUrl}\nStaff Login: ${slug}admin\nPassword: admin`);
         document.getElementById('addClinicForm').reset();
         loadTenantsList();
     } catch(err) {
@@ -1876,7 +1939,11 @@ document.getElementById('addClinicForm')?.addEventListener('submit', async (e) =
 
 function switchTenant(tenantId) {
     if (tenantId) {
-        window.location.href = '/?c=' + tenantId;
+        if (window.location.protocol === 'file:') {
+            window.location.href = (tenantId === 'default') ? 'index.html' : ('index.html?c=' + tenantId);
+        } else {
+            window.location.href = (tenantId === 'default') ? '/' : ('/' + tenantId);
+        }
     }
 }
 
@@ -2729,15 +2796,17 @@ function generateRxPDFDocument(rxRecord) {
     doc.rect(0, 0, 210, 6, 'F');
 
     // 2. Clinic Header
+    const clinicName = window.currentClinicSettings?.clinic_name || 'MY DENTAL CLINIC';
+    const clinicSubtitle = window.currentClinicSettings?.subtitle || 'Dental & Cosmetic Clinic';
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
     doc.setTextColor(15, 23, 42);
-    doc.text('MY DENTAL CLINIC', 20, 22);
+    doc.text(clinicName.toUpperCase(), 20, 22);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(13, 148, 136);
-    doc.text('Dental & Implant Centre | Comprehensive Oral Care', 20, 28);
+    doc.text(clinicSubtitle, 20, 28);
 
     // 3. Document Title (Right Aligned)
     doc.setFont('helvetica', 'bold');
@@ -2881,7 +2950,7 @@ function generateRxPDFDocument(rxRecord) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text('MY DENTAL CLINIC | For emergency care contact clinic helpline', 20, 281);
+    doc.text(`${(window.currentClinicSettings?.clinic_name || 'MY DENTAL CLINIC').toUpperCase()} | For emergency care contact clinic helpline`, 20, 281);
     doc.text('Developed by proconixsoftware.vercel.app', 190, 281, { align: 'right' });
 
     // Save PDF
@@ -2903,8 +2972,9 @@ function shareRxWhatsApp() {
     const adviceList = Array.from(document.querySelectorAll('input[name="rxAdvice"]:checked')).map(el => el.value);
     const notes = document.getElementById('rxAdditionalNotes')?.value?.trim();
 
+    const clinicTitle = (window.currentClinicSettings?.clinic_name || 'MY DENTAL CLINIC').toUpperCase();
     let msg = `💊 *DENTAL PRESCRIPTION (Rx)*\n`;
-    msg += `🏥 *MY DENTAL CLINIC*\n`;
+    msg += `🏥 *${clinicTitle}*\n`;
     msg += `👤 *Patient:* ${activePatient.name}\n`;
     msg += `📅 *Date:* ${new Date().toLocaleDateString()}\n`;
     msg += `---------------------------\n`;
@@ -3186,15 +3256,17 @@ function generateTreatmentPlanPDFDocument(planRecord) {
     doc.rect(0, 0, 210, 6, 'F');
 
     // 2. Clinic Header
+    const clinicName = window.currentClinicSettings?.clinic_name || 'MY DENTAL CLINIC';
+    const clinicSubtitle = window.currentClinicSettings?.subtitle || 'Dental & Cosmetic Clinic';
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(22);
     doc.setTextColor(15, 23, 42);
-    doc.text('MY DENTAL CLINIC', 20, 22);
+    doc.text(clinicName.toUpperCase(), 20, 22);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.setTextColor(13, 148, 136);
-    doc.text('Dental & Implant Centre | Case Presentation & Cost Estimate', 20, 28);
+    doc.text(clinicSubtitle, 20, 28);
 
     // 3. Document Title (Right Aligned)
     doc.setFont('helvetica', 'bold');
@@ -3337,8 +3409,8 @@ function generateTreatmentPlanPDFDocument(planRecord) {
     doc.line(20, 275, 190, 275);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(100, 116, 139);
-    doc.text('MY DENTAL CLINIC | Empowering Healthy Smiles Every Day', 20, 281);
+    const clinicTitle = (window.currentClinicSettings?.clinic_name || 'MY DENTAL CLINIC').toUpperCase();
+    doc.text(`${clinicTitle} | Empowering Healthy Smiles Every Day`, 20, 281);
     doc.text('Developed by proconixsoftware.vercel.app', 190, 281, { align: 'right' });
 
     // Save PDF
@@ -3359,8 +3431,9 @@ function shareTreatmentPlanWhatsApp() {
 
     const { subtotal, discount, grandTotal } = calculatePlanTotal();
 
+    const clinicTitle = (window.currentClinicSettings?.clinic_name || 'MY DENTAL CLINIC').toUpperCase();
     let msg = `📋 *TREATMENT PLAN & ESTIMATE*\n`;
-    msg += `🏥 *MY DENTAL CLINIC*\n`;
+    msg += `🏥 *${clinicTitle}*\n`;
     msg += `👤 *Patient:* ${activePatient.name}\n`;
     msg += `📅 *Date:* ${new Date().toLocaleDateString()}\n`;
     msg += `---------------------------\n`;
@@ -3445,9 +3518,9 @@ function reprintTreatmentPlanPDF(planJson) {
 
 function reprintTreatmentPlanWhatsApp(planJson) {
     try {
-        const plan = JSON.parse(decodeURIComponent(planJson));
+        const clinicTitle = (window.currentClinicSettings?.clinic_name || 'MY DENTAL CLINIC').toUpperCase();
         let msg = `📋 *TREATMENT PLAN & ESTIMATE*\n`;
-        msg += `🏥 *MY DENTAL CLINIC*\n`;
+        msg += `🏥 *${clinicTitle}*\n`;
         msg += `👤 *Patient:* ${plan.patientName}\n`;
         msg += `📅 *Date:* ${plan.date}\n`;
         msg += `---------------------------\n`;

@@ -2,7 +2,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Dental Clinic | Premium Care</title>
-    <link rel="stylesheet" href="style.css?v=38">
+    <link rel="stylesheet" href="style.css?v=39">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -43,6 +43,7 @@
                     <li><a href="#" onclick="scrollToTour()" id="tour-nav">Portal Tour</a></li>
                     <li><a href="#" onclick="scrollToBooking()">Book Appointment</a></li>
                     <li id="portal-nav-item"><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Clinical Portal (Admin/Staff)</a></li>
+                    <li id="superadmin-nav-item"><a href="superadmin.html" id="superadmin-nav" onclick="window.location.href='superadmin.html'" style="color: #8B5CF6; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-crown" style="color: #F59E0B; font-size: 0.95rem;"></i> SuperAdmin</a></li>
                     <li id="pwa-install-item"><a href="javascript:void(0)" id="pwaInstallBtn" onclick="triggerPWAInstall(); return false;" style="color: var(--primary); font-weight: 800;"><i class="fas fa-download"></i> Install App</a></li>
                     <li id="logout-nav-item" style="display: none;"><a href="#" onclick="logout()" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
@@ -494,15 +495,30 @@
             <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem;">Create new isolated clinic environments. Each clinic has its own patients, settings, and appointments.</p>
             
             <form id="addClinicForm" style="margin-bottom: 2rem; background: #f8fafc; padding: 1.5rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <div class="form-group">
-                    <label>Clinic Slug (e.g., 'smile-dental')</label>
-                    <input type="text" id="newClinicSlug" class="form-input" required="" pattern="[a-z0-9-]+" title="Only lowercase letters, numbers, and hyphens allowed">
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.5rem;">
+                    <div class="form-group">
+                        <label>Clinic Slug (e.g., 'swastik-dental')</label>
+                        <input type="text" id="newClinicSlug" class="form-input" required="" pattern="[a-z0-9-]+" title="Only lowercase letters, numbers, and hyphens allowed" placeholder="e.g. swastik-dental">
+                    </div>
+                    <div class="form-group">
+                        <label>Clinic Name</label>
+                        <input type="text" id="newClinicName" class="form-input" required="" placeholder="e.g. Swastik Dental Clinic">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>Clinic Name</label>
-                    <input type="text" id="newClinicName" class="form-input" required="">
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div class="form-group">
+                        <label>Doctor Name & Degrees</label>
+                        <input type="text" id="newClinicSubtitle" class="form-input" placeholder="e.g. Dr. Chintal Baman (BDS)">
+                    </div>
+                    <div class="form-group">
+                        <label>Theme Color</label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="color" id="newClinicColor" value="#0D9488" style="height: 40px; width: 50px; border-radius: 6px; cursor: pointer; border: 1px solid #CBD5E1;">
+                            <input type="text" id="newClinicColorHex" value="#0D9488" class="form-input" style="flex: 1;" placeholder="#0D9488" onchange="document.getElementById('newClinicColor').value = this.value">
+                        </div>
+                    </div>
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%;">Create New Clinic</button>
+                <button type="submit" class="btn-primary" style="width: 100%;"><i class="fas fa-plus-circle"></i> Create New Clinic Tenant</button>
             </form>
 
             <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Existing Clinics</h3>
@@ -620,6 +636,8 @@
             <div style="width: 100%; height: 1px; background: rgba(255, 255, 255, 0.1); margin: 0.5rem 0;"></div>
             <div style="font-size: 0.85rem; color: #94A3B8; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; align-items: center;">
                 <span>&copy; <span id="footerYear">2026</span> All rights reserved.</span>
+                <span>•</span>
+                <a href="superadmin.html" style="color: #A78BFA; font-weight: 700; text-decoration: none;"><i class="fas fa-shield-alt"></i> SuperAdmin Console</a>
                 <span>•</span>
                 <span>Developed by <a href="https://proconixsoftware.vercel.app" target="_blank" rel="noopener noreferrer" style="color: #38BDF8; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; transition: color 0.2s;" onmouseover="this.style.color='#7DD3FC'" onmouseout="this.style.color='#38BDF8'">proconixsoftware.vercel.app</a></span>
             </div>
@@ -1208,10 +1226,10 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=38"></script>
-    <script src="auth.js?v=38"></script>
-    <script src="script.js?v=38"></script>
-    <script src="premium-features.js?v=38"></script>
+    <script src="db-api.js?v=42"></script>
+    <script src="auth.js?v=42"></script>
+    <script src="script.js?v=42"></script>
+    <script src="premium-features.js?v=42"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {
@@ -1545,7 +1563,11 @@
         </a>
         <a href="javascript:void(0)" onclick="handleMobileNav('portal')" class="mobile-nav-item" id="mobNavPortal">
             <i class="fas fa-stethoscope"></i>
-            <span>Clinical Portal</span>
+            <span>Portal</span>
+        </a>
+        <a href="superadmin.html" class="mobile-nav-item" id="mobNavSuperadmin" style="color: #8B5CF6;">
+            <i class="fas fa-crown" style="color: #F59E0B;"></i>
+            <span>SuperAdmin</span>
         </a>
     </nav>
 </body></html>
