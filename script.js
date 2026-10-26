@@ -1052,6 +1052,9 @@ function showDashboardTab(name) {
         target.style.display = 'block';
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+    if (name === 'settings') {
+        populateSettingsForm();
+    }
 }
 
 function initQRCode() {
@@ -1062,40 +1065,222 @@ function initQRCode() {
 function logout() { sessionStorage.clear(); window.location.reload(); }
 function closeProfileModal() { document.body.classList.remove('profile-modal-open'); document.getElementById('patientProfileModal').style.display = 'none'; refreshDashboard(); }
 function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
-function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
+
+// --- COLOR UTILITIES & TENANT THEME ENGINE ---
+function hexToRgb(hex) {
+    if (!hex) return { r: 13, g: 148, b: 136 };
+    let cleanHex = hex.replace('#', '').trim();
+    if (cleanHex.length === 3) {
+        cleanHex = cleanHex.split('').map(c => c + c).join('');
+    }
+    const num = parseInt(cleanHex, 16);
+    if (isNaN(num)) return { r: 13, g: 148, b: 136 };
+    return {
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255
+    };
+}
+
+function rgbToHex(r, g, b) {
+    const clamp = v => Math.max(0, Math.min(255, Math.round(v)));
+    return '#' + [clamp(r), clamp(g), clamp(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+
+function adjustColorBrightness(hex, percent) {
+    const { r, g, b } = hexToRgb(hex);
+    if (percent < 0) {
+        const factor = 1 + percent;
+        return rgbToHex(r * factor, g * factor, b * factor);
+    } else {
+        return rgbToHex(r + (255 - r) * percent, g + (255 - g) * percent, b + (255 - b) * percent);
+    }
+}
+
+function applyTenantTheme(colorHex) {
+    if (!colorHex || typeof colorHex !== 'string') return;
+    let hex = colorHex.trim();
+    if (!hex.startsWith('#')) hex = '#' + hex;
+    if (!/^#[0-9A-Fa-f]{3,8}$/.test(hex)) return;
+
+    const primary = hex.length === 4 ? '#' + hex.slice(1).split('').map(c => c+c).join('') : hex.slice(0, 7);
+    const primaryDark = adjustColorBrightness(primary, -0.22);
+    const primaryLight = adjustColorBrightness(primary, 0.88);
+    const { r, g, b } = hexToRgb(primary);
+
+    document.documentElement.style.setProperty('--primary', primary);
+    document.documentElement.style.setProperty('--primary-dark', primaryDark);
+    document.documentElement.style.setProperty('--primary-light', primaryLight);
+    document.documentElement.style.setProperty('--primary-rgb', `${r}, ${g}, ${b}`);
+
+    // Update meta theme-color for browser address/status bar
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) metaTheme.setAttribute('content', primary);
+
+    // Update preview swatch in settings form if present
+    const swatch = document.getElementById('settingThemePreviewSwatch');
+    if (swatch) swatch.style.background = primary;
+}
+
+// --- DYNAMIC TENANT PWA ENGINE ---
+function updateTenantPWA(settings) {
+    try {
+        const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
+        const isDefault = !tenantId || tenantId === 'default';
+        const clinicName = (settings && (settings.clinic_name || settings.name)) ? (settings.clinic_name || settings.name) : 'My Dental Clinic';
+        const subtitle = (settings && settings.subtitle) ? settings.subtitle : 'Dental & Cosmetic Clinic';
+        const primaryColor = (settings && (settings.primary_color || settings.primaryColor)) ? (settings.primary_color || settings.primaryColor) : '#0D9488';
+        
+        let startUrl = isDefault ? '/' : `/${tenantId}`;
+        if (window.location.protocol === 'file:') {
+            startUrl = isDefault ? 'index.html' : `index.html?c=${tenantId}`;
+        }
+
+        const manifestData = {
+            name: clinicName,
+            short_name: clinicName.length > 18 ? clinicName.substring(0, 16) + '..' : clinicName,
+            start_url: startUrl,
+            scope: '/',
+            display: 'standalone',
+            orientation: 'portrait',
+            background_color: '#ffffff',
+            theme_color: primaryColor,
+            description: `${clinicName} - ${subtitle}`,
+            categories: ["medical", "health", "business"],
+            icons: [
+                {
+                    src: "/app-icon.png",
+                    sizes: "512x512",
+                    type: "image/png",
+                    purpose: "any maskable"
+                }
+            ]
+        };
+
+        const manifestBlob = new Blob([JSON.stringify(manifestData, null, 2)], { type: 'application/manifest+json' });
+        const manifestURL = URL.createObjectURL(manifestBlob);
+
+        let manifestTag = document.querySelector('link[rel="manifest"]');
+        if (!manifestTag) {
+            manifestTag = document.createElement('link');
+            manifestTag.rel = 'manifest';
+            document.head.appendChild(manifestTag);
+        }
+        manifestTag.setAttribute('href', manifestURL);
+
+        // Apple PWA metadata
+        let appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        if (!appleTitle) {
+            appleTitle = document.createElement('meta');
+            appleTitle.name = 'apple-mobile-web-app-title';
+            document.head.appendChild(appleTitle);
+        }
+        appleTitle.setAttribute('content', clinicName);
+
+        console.log(`📱 PWA Manifest dynamically configured: ${clinicName} (${tenantId}) -> ${startUrl}`);
+    } catch (e) {
+        console.warn('Tenant PWA adaptation note:', e);
+    }
+}
+
+// Live interactive theme functions for doctor settings form
+function updateThemeFromPicker(hex) {
+    const input = document.getElementById('settingPrimaryColor');
+    if (input) input.value = hex;
+    applyTenantTheme(hex);
+}
+
+function updateThemeFromInput(hex) {
+    const picker = document.getElementById('settingPrimaryColorPicker');
+    if (picker && /^#[0-9A-Fa-f]{6}$/.test(hex)) picker.value = hex;
+    applyTenantTheme(hex);
+}
+
+function selectThemePreset(hex, name) {
+    const picker = document.getElementById('settingPrimaryColorPicker');
+    const input = document.getElementById('settingPrimaryColor');
+    if (picker) picker.value = hex;
+    if (input) input.value = hex;
+    applyTenantTheme(hex);
+}
+
+function populateSettingsForm(settings) {
+    if (!settings) settings = window.currentClinicSettings || {};
+    const nameInput = document.getElementById('settingClinicName');
+    const subInput = document.getElementById('settingSubtitle');
+    const docInput = document.getElementById('settingDoctorName');
+    const colorPicker = document.getElementById('settingPrimaryColorPicker');
+    const colorHex = document.getElementById('settingPrimaryColor');
+    const userInput = document.getElementById('settingAdminUser');
+    const passInput = document.getElementById('settingAdminPass');
+    const swatch = document.getElementById('settingThemePreviewSwatch');
+
+    const color = settings.primary_color || settings.primaryColor || '#0D9488';
+
+    if (nameInput) nameInput.value = settings.clinic_name || settings.name || "";
+    if (subInput) subInput.value = settings.subtitle || "";
+    if (docInput) docInput.value = settings.doctor_name || settings.subtitle || "";
+    if (colorHex) colorHex.value = color;
+    if (colorPicker) colorPicker.value = color;
+    if (swatch) swatch.style.background = color;
+    if (userInput) userInput.value = settings.admin_user || "";
+    if (passInput) passInput.value = settings.admin_pass || "";
+}
 
 function openSettingsModal() {
-    const modal = document.getElementById('settingsModal');
-    window.dbAPI.getSettings().then(settings => {
-        document.getElementById('settingClinicName').value = settings.clinic_name || "";
-        document.getElementById('settingSubtitle').value = settings.subtitle || "";
-        document.getElementById('settingAdminUser').value = settings.admin_user || "";
-        document.getElementById('settingAdminPass').value = settings.admin_pass || "";
-        modal.style.display = 'flex';
-    });
+    if (typeof showDashboardTab === 'function') {
+        showDashboardTab('settings');
+    }
 }
 
 document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const primaryColor = document.getElementById('settingPrimaryColor')?.value || document.getElementById('settingPrimaryColorPicker')?.value || '#0D9488';
     const settings = {
-        clinic_name: document.getElementById('settingClinicName').value,
-        subtitle: document.getElementById('settingSubtitle').value,
-        admin_user: document.getElementById('settingAdminUser').value,
-        admin_pass: document.getElementById('settingAdminPass').value
+        clinic_name: document.getElementById('settingClinicName')?.value?.trim() || '',
+        subtitle: document.getElementById('settingSubtitle')?.value?.trim() || '',
+        doctor_name: document.getElementById('settingDoctorName')?.value?.trim() || '',
+        primary_color: primaryColor,
+        admin_user: document.getElementById('settingAdminUser')?.value?.trim() || '',
+        admin_pass: document.getElementById('settingAdminPass')?.value || ''
     };
-    const success = await window.dbAPI.saveSettings(settings);
-    if (success) { 
-        alert('Settings Updated Globally'); 
-        document.getElementById('settingsModal').style.display='none'; 
-        loadClinicSettings(); // Refresh UI immediately
+
+    // Immediate optimistic theme apply
+    applyTenantTheme(settings.primary_color);
+    updateTenantPWA(settings);
+
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.innerHTML : '';
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Settings...';
+    }
+
+    try {
+        const success = await window.dbAPI.saveSettings(settings);
+        if (success) {
+            alert('✅ Clinic Settings & Theme Color Updated Successfully!');
+            loadClinicSettings();
+        } else {
+            alert('Failed to save settings. Please try again.');
+        }
+    } catch (err) {
+        alert('Error saving settings: ' + err.message);
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText || '<i class="fas fa-save"></i> SAVE CLINIC SETTINGS &amp; THEME';
+        }
     }
 });
 
 function loadClinicSettings() {
+    if (!window.dbAPI) return;
     window.dbAPI.getSettings().then(settings => {
-        window.currentClinicSettings = settings;
-        const clinicName = settings.clinic_name || 'MY DENTAL CLINIC';
+        window.currentClinicSettings = settings || {};
+        const clinicName = settings.clinic_name || settings.name || 'MY DENTAL CLINIC';
         const subtitle = settings.subtitle || 'Dental & Cosmetic Clinic';
+        const themeColor = settings.primary_color || settings.primaryColor || '#0D9488';
 
         const nameEl = document.getElementById('mainClinicName');
         const subEl = document.getElementById('mainClinicSubtitle');
@@ -1107,11 +1292,11 @@ function loadClinicSettings() {
 
         document.title = `${clinicName} | ${subtitle}`;
 
-        if (settings.primary_color) {
-            document.documentElement.style.setProperty('--primary', settings.primary_color);
-            const metaTheme = document.querySelector('meta[name="theme-color"]');
-            if (metaTheme) metaTheme.setAttribute('content', settings.primary_color);
-        }
+        applyTenantTheme(themeColor);
+        updateTenantPWA(settings);
+        populateSettingsForm(settings);
+    }).catch(err => {
+        console.warn('loadClinicSettings error:', err);
     });
 }
 

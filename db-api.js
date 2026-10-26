@@ -610,6 +610,19 @@ class DatabaseAPI {
                 phone: '+91 98765 43210'
             };
         }
+        if (id === 'default' || !id) {
+            return {
+                clinic_name: 'My Dental Clinic',
+                subtitle: 'Dental & Cosmetic Clinic',
+                primary_color: '#10B981',
+                admin_user: 'admin',
+                admin_pass: 'admin',
+                doctor_name: 'Dr. Dental Expert (MDS)',
+                degrees: 'M.D.S., B.D.S.',
+                address: 'Modern Dental Care Center',
+                phone: '+91 98765 43210'
+            };
+        }
         return null;
     }
 
@@ -689,11 +702,15 @@ class DatabaseAPI {
             };
 
             await this.getCollection('settings').doc('clinic').set(dataToSave, { merge: true });
-            await this.db.collection('tenants').doc(this.tenantId).set({
-                name: dataToSave.clinic_name,
-                subtitle: dataToSave.subtitle,
-                updatedAt: new Date().toISOString()
-            }, { merge: true });
+            if (this.db) {
+                await this.db.collection('tenants').doc(this.tenantId).set({
+                    name: dataToSave.clinic_name,
+                    subtitle: dataToSave.subtitle,
+                    primary_color: dataToSave.primary_color,
+                    doctor_name: dataToSave.doctor_name,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            }
             console.log('Settings successfully synced to Firestore for tenant:', this.tenantId);
             return true;
         } catch (error) {

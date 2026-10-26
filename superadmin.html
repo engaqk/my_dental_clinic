@@ -381,9 +381,18 @@
                             <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
                                 Clinic Brand Theme Color
                             </label>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <input type="color" id="newColorPicker" value="#0D9488" style="height: 42px; width: 50px; border-radius: 8px; border: 1.5px solid #CBD5E1; cursor: pointer; padding: 2px;" onchange="document.getElementById('newColorHex').value = this.value">
-                                <input type="text" id="newColorHex" value="#0D9488" class="form-input" style="height: 42px; flex: 1; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem;" oninput="document.getElementById('newColorPicker').value = this.value">
+                            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+                                <input type="color" id="newColorPicker" value="#0D9488" style="height: 42px; width: 50px; border-radius: 8px; border: 1.5px solid #CBD5E1; cursor: pointer; padding: 2px;" onchange="setNewTenantColor(this.value)">
+                                <input type="text" id="newColorHex" value="#0D9488" class="form-input" style="height: 42px; flex: 1; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem; font-family: monospace; font-weight: 700;" oninput="setNewTenantColor(this.value)">
+                            </div>
+                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                <button type="button" onclick="setNewTenantColor('#0D9488')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 2px 7px; font-size: 0.72rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #0D9488;"></span> Emerald</button>
+                                <button type="button" onclick="setNewTenantColor('#2563EB')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 2px 7px; font-size: 0.72rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #2563EB;"></span> Blue</button>
+                                <button type="button" onclick="setNewTenantColor('#10B981')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 2px 7px; font-size: 0.72rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #10B981;"></span> Mint</button>
+                                <button type="button" onclick="setNewTenantColor('#7C3AED')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 2px 7px; font-size: 0.72rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #7C3AED;"></span> Purple</button>
+                                <button type="button" onclick="setNewTenantColor('#0F766E')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 2px 7px; font-size: 0.72rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #0F766E;"></span> Teal</button>
+                                <button type="button" onclick="setNewTenantColor('#D97706')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 2px 7px; font-size: 0.72rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #D97706;"></span> Amber</button>
+                                <button type="button" onclick="setNewTenantColor('#E11D48')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 2px 7px; font-size: 0.72rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 3px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #E11D48;"></span> Rose</button>
                             </div>
                         </div>
                     </div>
@@ -433,6 +442,87 @@
                 </div>
             </div>
 
+        </div>
+
+        <!-- EDIT TENANT MODAL -->
+        <div id="saEditTenantModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.65); z-index: 9999; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box; backdrop-filter: blur(4px);">
+            <div style="background: white; border-radius: 18px; max-width: 540px; width: 100%; padding: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.2); position: relative; max-height: 90vh; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <div id="editModalColorIcon" style="width: 38px; height: 38px; border-radius: 10px; background: #8B5CF6; display: flex; align-items: center; justify-content: center; color: white;">
+                            <i class="fas fa-palette"></i>
+                        </div>
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #0F172A;">Edit Clinic &amp; Theme</h3>
+                            <span id="editModalSlugBadge" style="font-size: 0.75rem; color: #64748B; font-weight: 700;">Slug: swastik-dental</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeEditTenantModal()" style="background: none; border: none; font-size: 1.5rem; color: #94A3B8; cursor: pointer; padding: 0.25rem;">&times;</button>
+                </div>
+
+                <form id="saEditTenantForm" onsubmit="submitUpdateTenant(event)">
+                    <input type="hidden" id="editSlug">
+
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                            Clinic Name
+                        </label>
+                        <input type="text" id="editName" required class="form-input" style="height: 42px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                            Doctor Name &amp; Degrees (Subtitle)
+                        </label>
+                        <input type="text" id="editSubtitle" class="form-input" style="height: 42px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                            Brand Theme Color
+                        </label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.65rem;">
+                            <input type="color" id="editColorPicker" value="#0D9488" style="height: 42px; width: 50px; border-radius: 8px; border: 1.5px solid #CBD5E1; cursor: pointer; padding: 2px;" onchange="syncEditColor(this.value)">
+                            <input type="text" id="editColorHex" value="#0D9488" class="form-input" style="height: 42px; flex: 1; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem; font-family: monospace; font-weight: 700;" oninput="syncEditColor(this.value)">
+                            <div id="editColorPreview" style="width: 42px; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #0D9488; flex-shrink: 0;" title="Live Preview"></div>
+                        </div>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button type="button" onclick="syncEditColor('#0D9488')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #0D9488;"></span> Emerald</button>
+                            <button type="button" onclick="syncEditColor('#2563EB')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #2563EB;"></span> Blue</button>
+                            <button type="button" onclick="syncEditColor('#10B981')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #10B981;"></span> Mint</button>
+                            <button type="button" onclick="syncEditColor('#7C3AED')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #7C3AED;"></span> Purple</button>
+                            <button type="button" onclick="syncEditColor('#0F766E')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #0F766E;"></span> Teal</button>
+                            <button type="button" onclick="syncEditColor('#D97706')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #D97706;"></span> Amber</button>
+                            <button type="button" onclick="syncEditColor('#E11D48')" style="border: 1px solid #CBD5E1; background: #F8FAFC; border-radius: 99px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #E11D48;"></span> Rose</button>
+                        </div>
+                    </div>
+
+                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 1rem; margin-bottom: 1.25rem;">
+                        <span style="display: block; font-weight: 800; font-size: 0.75rem; color: #475569; text-transform: uppercase; margin-bottom: 0.75rem;">
+                            <i class="fas fa-key"></i> Staff Login Credentials
+                        </span>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                            <div>
+                                <label style="font-size: 0.72rem; color: #64748B; display: block; font-weight: 700; margin-bottom: 0.2rem;">Username</label>
+                                <input type="text" id="editAdminUser" required class="form-input" style="height: 38px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 6px; padding: 0 0.65rem;">
+                            </div>
+                            <div>
+                                <label style="font-size: 0.72rem; color: #64748B; display: block; font-weight: 700; margin-bottom: 0.2rem;">Password</label>
+                                <input type="text" id="editAdminPass" required class="form-input" style="height: 38px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 6px; padding: 0 0.65rem;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                        <button type="button" onclick="closeEditTenantModal()" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.65rem 1.25rem; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
+                            Cancel
+                        </button>
+                        <button type="submit" id="btnSaveTenantEdit" class="btn-primary" style="background: #8B5CF6; border-radius: 8px; padding: 0.65rem 1.5rem; font-weight: 800; font-size: 0.88rem; cursor: pointer;">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
 
     </main>
@@ -582,6 +672,9 @@
                     }
                 }
 
+                // Save globally for edit modal
+                window.allLoadedTenants = tenants;
+
                 // Update count stat
                 document.getElementById('statClinicsCount').innerText = tenants.length;
 
@@ -613,7 +706,10 @@
                                 </div>
                             </div>
 
-                            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                                <button onclick="openEditTenantModal('${t.id}')" class="btn-portal-back" style="font-size: 0.82rem; font-weight: 700; cursor: pointer; color: #4338CA; border-color: #C7D2FE; background: #EEF2FF; padding: 0.45rem 0.85rem;" title="Edit Name &amp; Brand Theme">
+                                    <i class="fas fa-palette" style="color: ${color};"></i> Edit Theme &amp; Details
+                                </button>
                                 <a href="${launchUrl}" target="_blank" class="btn-launch-tenant" title="Open ${t.name}">
                                     <i class="fas fa-external-link-alt"></i> Open Clinic (${tenantPath})
                                 </a>
@@ -630,6 +726,126 @@
             } catch (err) {
                 console.error('Error loading tenants:', err);
                 container.innerHTML = '<div style="color: #DC2626; text-align: center; padding: 1.5rem;">Failed to load tenants: ' + err.message + '</div>';
+            }
+        }
+
+        function setNewTenantColor(hex) {
+            const p = document.getElementById('newColorPicker');
+            const t = document.getElementById('newColorHex');
+            if (p) p.value = hex;
+            if (t) t.value = hex;
+        }
+
+        function syncEditColor(color) {
+            if (!color) return;
+            const picker = document.getElementById('editColorPicker');
+            const input = document.getElementById('editColorHex');
+            const preview = document.getElementById('editColorPreview');
+            const icon = document.getElementById('editModalColorIcon');
+
+            if (picker) picker.value = color;
+            if (input) input.value = color;
+            if (preview) preview.style.background = color;
+            if (icon) icon.style.background = color;
+        }
+
+        function openEditTenantModal(tenantId) {
+            const tenant = (window.allLoadedTenants || []).find(t => t.id === tenantId);
+            if (!tenant) return;
+
+            document.getElementById('editSlug').value = tenant.id;
+            document.getElementById('editModalSlugBadge').innerText = `Slug: ${tenant.id}`;
+            document.getElementById('editName').value = tenant.name || tenant.id;
+            document.getElementById('editSubtitle').value = tenant.subtitle || "";
+            document.getElementById('editAdminUser').value = tenant.admin_user || (tenant.id === 'default' ? 'admin' : (tenant.id + 'admin'));
+            document.getElementById('editAdminPass').value = tenant.admin_pass || "admin";
+
+            const color = tenant.primary_color || "#0D9488";
+            syncEditColor(color);
+
+            const modal = document.getElementById('saEditTenantModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function closeEditTenantModal() {
+            const modal = document.getElementById('saEditTenantModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function submitUpdateTenant(e) {
+            e.preventDefault();
+            const slug = document.getElementById('editSlug').value;
+            const name = document.getElementById('editName').value.trim();
+            const subtitle = document.getElementById('editSubtitle').value.trim();
+            const color = document.getElementById('editColorHex').value.trim() || '#0D9488';
+            const adminUser = document.getElementById('editAdminUser').value.trim();
+            const adminPass = document.getElementById('editAdminPass').value;
+            const btn = document.getElementById('btnSaveTenantEdit');
+
+            if (!name) {
+                alert('Please enter a valid clinic name.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                if (window.dbAPI && window.dbAPI.db) {
+                    const db = window.dbAPI.db;
+
+                    // 1. Update tenants collection doc
+                    await db.collection('tenants').doc(slug).set({
+                        name: name,
+                        subtitle: subtitle,
+                        primary_color: color,
+                        admin_user: adminUser,
+                        admin_pass: adminPass,
+                        updatedAt: new Date().toISOString()
+                    }, { merge: true });
+
+                    // 2. Update clinic settings doc
+                    await db.collection('tenants').doc(slug).collection('settings').doc('clinic').set({
+                        clinic_name: name,
+                        subtitle: subtitle,
+                        doctor_name: subtitle,
+                        primary_color: color,
+                        admin_user: adminUser,
+                        admin_pass: adminPass
+                    }, { merge: true });
+
+                    // 3. Update staff login record
+                    await db.collection('tenants').doc(slug).collection('staff').doc(adminUser).set({
+                        name: subtitle || `${name} Admin`,
+                        email: adminUser,
+                        password: adminPass,
+                        role: 'admin'
+                    }, { merge: true });
+                }
+
+                // Cache in localStorage for fast local dev/testing
+                try {
+                    const cacheKey = 'clinicSettings_' + slug;
+                    const existing = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+                    existing.clinic_name = name;
+                    existing.subtitle = subtitle;
+                    existing.doctor_name = subtitle;
+                    existing.primary_color = color;
+                    existing.admin_user = adminUser;
+                    existing.admin_pass = adminPass;
+                    localStorage.setItem(cacheKey, JSON.stringify(existing));
+                } catch(err){}
+
+                alert(`✅ Clinic "${name}" (${slug}) updated successfully!\nBrand Color: ${color}`);
+                closeEditTenantModal();
+                loadAllTenants();
+
+            } catch (err) {
+                console.error('Error updating tenant:', err);
+                alert('Failed to update tenant: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
             }
         }
 

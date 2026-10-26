@@ -7,6 +7,21 @@
         if (window.location.protocol.startsWith('http') && window.location.pathname.replace(/^\/+|\/+$/g, '').length > 0) {
             document.write('<base href="' + window.location.origin + '/">');
         }
+        // Instant pre-render tenant theme bootstrap (zero-flicker)
+        (function() {
+            try {
+                const p = window.location.pathname.replace(/^\/+|\/+$/g, '');
+                const segs = p ? p.split('/') : [];
+                const last = segs[segs.length - 1];
+                const q = new URLSearchParams(window.location.search).get('c');
+                const tid = q || (last && !last.includes('.') && last !== 'api' && last !== 'superadmin' ? last : 'default');
+                const cached = JSON.parse(localStorage.getItem('clinicSettings_' + tid) || 'null');
+                const color = (cached && cached.primary_color) ? cached.primary_color : (tid.includes('swastik') ? '#0D9488' : '#10B981');
+                if (color) {
+                    document.documentElement.style.setProperty('--primary', color);
+                }
+            } catch(e){}
+        })();
     </script>
     <link rel="stylesheet" href="style.css?v=43">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -431,23 +446,78 @@
                 </div>
             <div id="settingsTab" class="dashboard-tab" style="display: none;"><div class="card" style="max-width: 1000px; margin: 0px auto;">
             
-            <div style="text-align: center; margin-bottom: 2.5rem;">
-                <span class="hero-label">GLOBAL CONFIG</span>
-                <h2 style="font-family: 'Outfit'; margin:0;">Clinic Settings</h2>
+            <div style="text-align: center; margin-bottom: 2rem;">
+                <span class="hero-label">CLINIC PERSONALIZATION</span>
+                <h2 style="font-family: 'Outfit'; margin: 0.5rem 0 0.25rem 0;">Clinic Settings &amp; Theme</h2>
+                <p style="color: var(--text-muted); font-size: 0.92rem; margin: 0;">Customize your clinic branding, doctor credentials, and visual theme color.</p>
             </div>
             <form id="settingsForm">
-                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                    <div class="form-group"><label>Clinic Branding</label><input type="text" id="settingClinicName" placeholder="Clinic Name"></div>
-                    <div class="form-group"><label>Slogan / Tagline</label><input type="text" id="settingSubtitle" placeholder="Clinical Slogan"></div>
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.25rem;">
+                    <div class="form-group">
+                        <label><i class="fas fa-hospital"></i> Clinic Name</label>
+                        <input type="text" id="settingClinicName" required placeholder="e.g. Swastik Dental Clinic">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-user-md"></i> Doctor Name &amp; Degrees</label>
+                        <input type="text" id="settingDoctorName" placeholder="e.g. Dr. Chintal Baman (BDS)">
+                    </div>
                 </div>
+
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.25rem;">
+                    <div class="form-group">
+                        <label><i class="fas fa-quote-left"></i> Tagline / Clinical Slogan</label>
+                        <input type="text" id="settingSubtitle" placeholder="e.g. Advanced Dental Care &amp; Aesthetics">
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-palette"></i> Clinic Theme Color</label>
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <input type="color" id="settingPrimaryColorPicker" value="#0D9488" style="height: 48px; width: 60px; border-radius: 10px; border: 2px solid #E2E8F0; cursor: pointer; padding: 2px;" onchange="updateThemeFromPicker(this.value)">
+                            <input type="text" id="settingPrimaryColor" value="#0D9488" placeholder="#0D9488" style="flex: 1; font-family: monospace; font-weight: 700;" oninput="updateThemeFromInput(this.value)">
+                            <div id="settingThemePreviewSwatch" style="width: 48px; height: 48px; border-radius: 10px; background: #0D9488; border: 2px solid #E2E8F0; box-shadow: 0 2px 6px rgba(0,0,0,0.1); flex-shrink: 0;" title="Theme Preview"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Theme Color Presets Palette -->
+                <div style="margin-bottom: 1.5rem; background: var(--bg-soft); padding: 1rem 1.25rem; border-radius: 14px; border: 1px solid #E2E8F0;">
+                    <label style="display: block; font-size: 0.8rem; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 0.65rem;">
+                        <i class="fas fa-swatchbook" style="color: var(--primary);"></i> Recommended Dental Themes
+                    </label>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <button type="button" class="theme-preset-btn" onclick="selectThemePreset('#0D9488', 'Emerald Teal')" style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #CBD5E1; background: white; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+                            <span style="width: 14px; height: 14px; border-radius: 50%; background: #0D9488; display: inline-block;"></span> Emerald Teal
+                        </button>
+                        <button type="button" class="theme-preset-btn" onclick="selectThemePreset('#2563EB', 'Royal Blue')" style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #CBD5E1; background: white; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+                            <span style="width: 14px; height: 14px; border-radius: 50%; background: #2563EB; display: inline-block;"></span> Royal Blue
+                        </button>
+                        <button type="button" class="theme-preset-btn" onclick="selectThemePreset('#10B981', 'Fresh Mint')" style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #CBD5E1; background: white; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+                            <span style="width: 14px; height: 14px; border-radius: 50%; background: #10B981; display: inline-block;"></span> Fresh Mint
+                        </button>
+                        <button type="button" class="theme-preset-btn" onclick="selectThemePreset('#7C3AED', 'Cosmetic Purple')" style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #CBD5E1; background: white; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+                            <span style="width: 14px; height: 14px; border-radius: 50%; background: #7C3AED; display: inline-block;"></span> Cosmetic Purple
+                        </button>
+                        <button type="button" class="theme-preset-btn" onclick="selectThemePreset('#0F766E', 'Deep Ocean')" style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #CBD5E1; background: white; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+                            <span style="width: 14px; height: 14px; border-radius: 50%; background: #0F766E; display: inline-block;"></span> Deep Ocean
+                        </button>
+                        <button type="button" class="theme-preset-btn" onclick="selectThemePreset('#D97706', 'Warm Amber')" style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #CBD5E1; background: white; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+                            <span style="width: 14px; height: 14px; border-radius: 50%; background: #D97706; display: inline-block;"></span> Warm Amber
+                        </button>
+                        <button type="button" class="theme-preset-btn" onclick="selectThemePreset('#E11D48', 'Ruby Rose')" style="display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 99px; border: 1.5px solid #CBD5E1; background: white; cursor: pointer; font-size: 0.8rem; font-weight: 700;">
+                            <span style="width: 14px; height: 14px; border-radius: 50%; background: #E11D48; display: inline-block;"></span> Ruby Rose
+                        </button>
+                    </div>
+                </div>
+
                 <div id="superAdminFields">
                     <div class="admin-sync-title"><i class="fas fa-sync-alt"></i> Administrative Sync</div>
-                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.25rem;">
                         <div class="form-group"><label>Admin User</label><input type="text" id="settingAdminUser"></div>
                         <div class="form-group"><label>Admin Pass</label><input type="password" id="settingAdminPass"></div>
                     </div>
                 </div>
-                <button type="submit" class="btn-primary" style="margin-top: 2rem;">SAVE GLOBAL SETTINGS</button>
+                <button type="submit" class="btn-primary" style="margin-top: 1.5rem; width: 100%; height: 50px; font-size: 0.95rem; font-weight: 800; cursor: pointer;">
+                    <i class="fas fa-save"></i> SAVE CLINIC SETTINGS &amp; THEME
+                </button>
             </form>
 
         <!-- Staff Management -->
