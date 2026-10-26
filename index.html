@@ -2,7 +2,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Dental Clinic | Premium Care</title>
-    <link rel="stylesheet" href="style.css?v=39">
+    <script>
+        // Ensure relative assets (css/js/images) resolve cleanly from root when accessed via /slug SPA path
+        if (window.location.protocol.startsWith('http') && window.location.pathname.replace(/^\/+|\/+$/g, '').length > 0) {
+            document.write('<base href="' + window.location.origin + '/">');
+        }
+    </script>
+    <link rel="stylesheet" href="style.css?v=43">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -43,7 +49,7 @@
                     <li><a href="#" onclick="scrollToTour()" id="tour-nav">Portal Tour</a></li>
                     <li><a href="#" onclick="scrollToBooking()">Book Appointment</a></li>
                     <li id="portal-nav-item"><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Clinical Portal (Admin/Staff)</a></li>
-                    <li id="superadmin-nav-item"><a href="superadmin.html" id="superadmin-nav" onclick="window.location.href='superadmin.html'" style="color: #8B5CF6; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-crown" style="color: #F59E0B; font-size: 0.95rem;"></i> SuperAdmin</a></li>
+                    <li id="superadmin-nav-item"><a href="superadmin.html" id="superadmin-nav" onclick="if(window.location.protocol!=='file:'){window.location.href='/superadmin'; return false;} else {window.location.href='superadmin.html'; return false;}" style="color: #8B5CF6; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-crown" style="color: #F59E0B; font-size: 0.95rem;"></i> SuperAdmin</a></li>
                     <li id="pwa-install-item"><a href="javascript:void(0)" id="pwaInstallBtn" onclick="triggerPWAInstall(); return false;" style="color: var(--primary); font-weight: 800;"><i class="fas fa-download"></i> Install App</a></li>
                     <li id="logout-nav-item" style="display: none;"><a href="#" onclick="logout()" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
@@ -1226,10 +1232,10 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=42"></script>
-    <script src="auth.js?v=42"></script>
-    <script src="script.js?v=42"></script>
-    <script src="premium-features.js?v=42"></script>
+    <script src="db-api.js?v=44"></script>
+    <script src="auth.js?v=44"></script>
+    <script src="script.js?v=44"></script>
+    <script src="premium-features.js?v=44"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {
@@ -1565,7 +1571,7 @@
             <i class="fas fa-stethoscope"></i>
             <span>Portal</span>
         </a>
-        <a href="superadmin.html" class="mobile-nav-item" id="mobNavSuperadmin" style="color: #8B5CF6;">
+        <a href="superadmin.html" onclick="if(window.location.protocol!=='file:'){window.location.href='/superadmin'; return false;} else {window.location.href='superadmin.html'; return false;}" class="mobile-nav-item" id="mobNavSuperadmin" style="color: #8B5CF6;">
             <i class="fas fa-crown" style="color: #F59E0B;"></i>
             <span>SuperAdmin</span>
         </a>

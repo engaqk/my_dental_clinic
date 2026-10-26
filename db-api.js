@@ -74,19 +74,50 @@ class DatabaseAPI {
         }
     }
 
-    // Get Appointments
-    // --- STAFF MANAGEMENT ---
+    // --- MULTI-TENANT LOCAL STORAGE PARTITIONING HELPERS ---
+    getStorageKey(key) {
+        return `${this.tenantId}_${key}`;
+    }
+
+    getLocalData(key, defaultVal = []) {
+        try {
+            const tenantVal = localStorage.getItem(this.getStorageKey(key));
+            if (tenantVal !== null) {
+                return JSON.parse(tenantVal);
+            }
+            if (this.tenantId === 'default') {
+                const legacyVal = localStorage.getItem(key);
+                if (legacyVal !== null) return JSON.parse(legacyVal);
+            }
+        } catch(e) {}
+        return defaultVal;
+    }
+
+    setLocalData(key, val) {
+        try {
+            localStorage.setItem(this.getStorageKey(key), JSON.stringify(val));
+            if (this.tenantId === 'default') {
+                localStorage.setItem(key, JSON.stringify(val));
+            }
+        } catch(e) {}
+    }
+
+    // --- STAFF MANAGEMENT (TENANT ISOLATED) ---
     async addStaff(staffData) {
         if (!this.db) throw new Error('Offline mode');
         const emailKey = staffData.email.toLowerCase();
-        await this.getCollection('staff').doc(emailKey).set(staffData);
+        await this.getCollection('staff').doc(emailKey).set({
+            ...staffData,
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId
+        }, { merge: true });
         return true;
     }
 
     async getStaffList() {
         if (!this.db) return [];
         const snapshot = await this.getCollection('staff').get();
-        return snapshot.docs.map(doc => doc.data());
+        return snapshot.docs.map(doc => doc.data()).filter(s => !s.tenant_id || s.tenant_id === this.tenantId);
     }
 
     async deleteStaff(email) {
@@ -95,24 +126,30 @@ class DatabaseAPI {
         return true;
     }
 
+    // --- APPOINTMENTS (TENANT ISOLATED) ---
     async getAppointments() {
         if (!this.useFirebase) {
-            return JSON.parse(localStorage.getItem('appointments')) || [];
+            return this.getLocalData('dentalAppointments', []);
         }
         try {
-            console.log('Fetching appointments from Firestore...');
+            console.log(`Fetching appointments for clinic tenant [${this.tenantId}] from Firestore...`);
             const snapshot = await this.getCollection('appointments').get();
             const appointments = [];
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                // Ensure we have a valid ID (numeric preferred for sorting)
+                // Strict Tenant Isolation: skip if record belongs to another clinic
+                if (data.tenant_id && data.tenant_id !== this.tenantId) {
+                    return;
+                }
                 const docId = doc.id;
                 const numericId = data.id || (isNaN(parseInt(docId)) ? 0 : parseInt(docId));
 
                 appointments.push({
                     id: numericId,
-                    docId: docId, // Keep original doc ID for updates/deletes
-                    idString: docId, // For compatibility
+                    docId: docId,
+                    idString: docId,
+                    tenant_id: data.tenant_id || this.tenantId,
+                    clinic_slug: data.clinic_slug || this.tenantId,
                     date: data.date || data.booking_date || new Date().toLocaleDateString(),
                     appointmentDate: data.appointmentDate || data.appointment_date || '',
                     appointmentTime: data.appointmentTime || data.appointment_time || '',
@@ -129,101 +166,89 @@ class DatabaseAPI {
                 });
             });
 
-            console.log(`Successfully fetched ${appointments.length} appointments.`);
+            console.log(`Successfully fetched ${appointments.length} appointments for tenant [${this.tenantId}].`);
 
-            // Sort by createdAt or numeric ID descending
+            // Save isolated local cache
+            this.setLocalData('dentalAppointments', appointments);
+
             return appointments.sort((a, b) => {
                 const timeA = a.createdAt || a.id || 0;
                 const timeB = b.createdAt || b.id || 0;
                 return timeB - timeA;
             });
         } catch (error) {
-            if (error.code === 'permission-denied') {
-                console.error('SECURITY RULES WARNING: Access to "appointments" collection is blocked by Firestore Security Rules.');
-            } else {
-                console.error('Firebase error fetching appointments:', error);
-            }
-            try {
-                return JSON.parse(localStorage.getItem('dentalAppointments')) || [];
-            } catch (e) {
-                return [];
-            }
+            console.warn(`Firebase error fetching appointments for [${this.tenantId}]:`, error);
+            return this.getLocalData('dentalAppointments', []);
         }
     }
 
-    // Create new appointment
+    // Create new appointment (Strictly isolated by collection and tenant_id)
     async createAppointment(appointment) {
+        const payload = {
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
+            id: appointment.id || Date.now(),
+            name: appointment.name || 'Unknown',
+            email: appointment.email || '',
+            place: appointment.place || '',
+            mobile: window.phoneUtils ? window.phoneUtils.normalizePhone(appointment.mobile) : appointment.mobile,
+            phoneNumber: window.phoneUtils ? window.phoneUtils.normalizePhone(appointment.mobile) : appointment.mobile,
+            appointmentDate: appointment.appointmentDate || '',
+            appointmentTime: appointment.appointmentTime || '',
+            reason: appointment.reason || '',
+            fee: parseFloat(appointment.fee) || 0,
+            status: appointment.status || 'Pending',
+            medicalAlerts: appointment.medicalAlerts || [],
+            medicalNotes: appointment.medicalNotes || '',
+            date: appointment.date || new Date().toLocaleDateString()
+        };
+
         if (!this.useFirebase) {
-            let appointments = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
-            const newAppointment = { ...appointment, id: Date.now() };
-            appointments.push(newAppointment);
-            localStorage.setItem('dentalAppointments', JSON.stringify(appointments));
+            let appointments = this.getLocalData('dentalAppointments', []);
+            const newAppointment = { ...payload, id: Date.now() };
+            appointments.unshift(newAppointment);
+            this.setLocalData('dentalAppointments', appointments);
             return newAppointment;
         }
 
         try {
-            console.log('Attempting to save appointment to Firestore...', appointment);
-            const normalizedMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(appointment.mobile) : appointment.mobile;
-            
-            // Use .add() instead of .doc().set() to ensure it's treated as a new document
-            // and let Firestore generate a unique string ID.
+            console.log(`Attempting to save appointment for tenant [${this.tenantId}]...`, payload);
             const docRef = await this.getCollection('appointments').add({
-                id: appointment.id || Date.now(), // Keep numeric ID for sorting
-                name: appointment.name || 'Unknown',
-                email: appointment.email || '',
-                place: appointment.place || '',
-                mobile: normalizedMobile || appointment.mobile || '',
-                phoneNumber: normalizedMobile || appointment.mobile || '',
-                appointmentDate: appointment.appointmentDate || '',
-                appointmentTime: appointment.appointmentTime || '',
-                reason: appointment.reason || '',
-                fee: parseFloat(appointment.fee) || 0,
-                status: appointment.status || 'Pending',
-                medicalAlerts: appointment.medicalAlerts || [],
-                medicalNotes: appointment.medicalNotes || '',
-                date: appointment.date || new Date().toLocaleDateString(),
+                ...payload,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            console.log('Successfully saved to Firestore with ID:', docRef.id);
+            console.log(`Successfully saved to tenant [${this.tenantId}] with doc ID:`, docRef.id);
 
-            return {
-                id: appointment.id || Date.now(),
-                docId: docRef.id,
-                date: appointment.date || new Date().toLocaleDateString(),
-                appointmentDate: appointment.appointmentDate,
-                appointmentTime: appointment.appointmentTime,
-                name: appointment.name,
-                email: appointment.email || '',
-                place: appointment.place || '',
-                mobile: appointment.mobile,
-                reason: appointment.reason,
-                fee: appointment.fee || 0,
-                status: appointment.status || 'Pending'
+            const savedAppt = {
+                ...payload,
+                docId: docRef.id
             };
+
+            // Update isolated local cache
+            let localList = this.getLocalData('dentalAppointments', []);
+            localList.unshift(savedAppt);
+            this.setLocalData('dentalAppointments', localList);
+
+            return savedAppt;
         } catch (error) {
-            console.error('CRITICAL: Firestore booking failed!', error);
-            if (error.code === 'permission-denied') {
-                console.error('CHECK SECURITY RULES: Public write to "appointments" might be blocked.');
-            }
-            
-            // Fallback to local storage so the user doesn't lose the booking
-            let appointments = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
-            const newAppointment = { ...appointment, id: Date.now() };
-            appointments.push(newAppointment);
-            localStorage.setItem('dentalAppointments', JSON.stringify(appointments));
-            return newAppointment;
+            console.error(`CRITICAL: Booking failed for tenant [${this.tenantId}]!`, error);
+            let appointments = this.getLocalData('dentalAppointments', []);
+            const fallbackAppt = { ...payload, id: Date.now() };
+            appointments.unshift(fallbackAppt);
+            this.setLocalData('dentalAppointments', appointments);
+            return fallbackAppt;
         }
     }
 
     // Update appointment
     async updateAppointment(id, updates) {
         if (!this.useFirebase) {
-            let appointments = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
-            const index = appointments.findIndex(a => a.id.toString() === id.toString());
+            let appointments = this.getLocalData('dentalAppointments', []);
+            const index = appointments.findIndex(a => a.id.toString() === id.toString() || a.docId === id);
             if (index !== -1) {
                 appointments[index] = { ...appointments[index], ...updates };
-                localStorage.setItem('dentalAppointments', JSON.stringify(appointments));
+                this.setLocalData('dentalAppointments', appointments);
                 return appointments[index];
             }
             return null;
@@ -245,15 +270,19 @@ class DatabaseAPI {
                 }
             }
             
-            await docRef.update(updates);
+            await docRef.update({
+                ...updates,
+                tenant_id: this.tenantId,
+                clinic_slug: this.tenantId
+            });
             
             // Local fallback update
             try {
-                let local = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
+                let local = this.getLocalData('dentalAppointments', []);
                 const idx = local.findIndex(a => a.id.toString() === id.toString() || a.docId === id);
                 if (idx !== -1) {
                     local[idx] = { ...local[idx], ...updates };
-                    localStorage.setItem('dentalAppointments', JSON.stringify(local));
+                    this.setLocalData('dentalAppointments', local);
                 }
             } catch(e){}
 
@@ -267,15 +296,18 @@ class DatabaseAPI {
     // Delete appointment
     async deleteAppointment(id) {
         if (!this.useFirebase) {
-            let appointments = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
-            appointments = appointments.filter(a => a.id !== id);
-            localStorage.setItem('dentalAppointments', JSON.stringify(appointments));
+            let appointments = this.getLocalData('dentalAppointments', []);
+            appointments = appointments.filter(a => a.id.toString() !== id.toString() && a.docId !== id);
+            this.setLocalData('dentalAppointments', appointments);
             return true;
         }
 
         try {
             if (!this.db) throw new Error('Firestore not initialized');
             await this.getCollection('appointments').doc(id.toString()).delete();
+            let appointments = this.getLocalData('dentalAppointments', []);
+            appointments = appointments.filter(a => a.id.toString() !== id.toString() && a.docId !== id);
+            this.setLocalData('dentalAppointments', appointments);
             return true;
         } catch (error) {
             console.error('Firebase error deleting appointment:', error);
@@ -332,7 +364,7 @@ class DatabaseAPI {
 
         // Check local storage records
         try {
-            const local = JSON.parse(localStorage.getItem('dentalAppointments')) || JSON.parse(localStorage.getItem('appointments')) || [];
+            const local = this.getLocalData('dentalAppointments', []);
             local.forEach(app => {
                 const appDate = app.appointmentDate || app.appointment_date || app.date || '';
                 if (isMatchingDate(appDate) && app.status !== 'Cancelled') {
@@ -467,6 +499,8 @@ class DatabaseAPI {
         }
 
         const logEntry = {
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
             email: email,
             ipAddress: ip,
             timestamp: new Date().toISOString()
@@ -481,25 +515,25 @@ class DatabaseAPI {
         }
 
         // Local fallback / cache
-        const localLogs = JSON.parse(localStorage.getItem('adminLoginLogs')) || [];
+        const localLogs = this.getLocalData('adminLoginLogs', []);
         localLogs.unshift(logEntry);
         // keep only latest 50
-        localStorage.setItem('adminLoginLogs', JSON.stringify(localLogs.slice(0, 50)));
+        this.setLocalData('adminLoginLogs', localLogs.slice(0, 50));
     }
 
     // Get admin login history
     async getAdminLoginHistory() {
         if (!this.useFirebase) {
-            return JSON.parse(localStorage.getItem('adminLoginLogs')) || [];
+            return this.getLocalData('adminLoginLogs', []);
         }
 
         try {
             const snapshot = await this.getCollection('login_history').orderBy('timestamp', 'desc').limit(50).get();
             if (snapshot.empty) return [];
-            return snapshot.docs.map(doc => doc.data());
+            return snapshot.docs.map(doc => doc.data()).filter(l => !l.tenant_id || l.tenant_id === this.tenantId);
         } catch (error) {
             console.error('Failed to fetch login history from Firestore', error);
-            return JSON.parse(localStorage.getItem('adminLoginLogs')) || [];
+            return this.getLocalData('adminLoginLogs', []);
         }
     }
 
@@ -694,20 +728,22 @@ class DatabaseAPI {
         }
     }
 
-    // Get Marketing Contacts (Firestore + localStorage fallback merged)
+    // Get Marketing Contacts (Firestore + localStorage fallback merged, tenant isolated)
     async getMarketingContacts() {
-        // Always load local contacts first
-        let localContacts = [];
-        try {
-            localContacts = JSON.parse(localStorage.getItem('marketing_contacts_local') || '[]');
-        } catch(e) {}
+        // Always load isolated local contacts first
+        let localContacts = this.getLocalData('marketing_contacts_local', []);
 
         if (!this.useFirebase) return localContacts;
 
         try {
             const snapshot = await this.getCollection('marketing_contacts').get();
             const firestoreContacts = [];
-            snapshot.forEach(doc => firestoreContacts.push({ id: doc.id, ...doc.data() }));
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (!data.tenant_id || data.tenant_id === this.tenantId) {
+                    firestoreContacts.push({ id: doc.id, ...data });
+                }
+            });
 
             // Merge: add local-only contacts not yet in Firestore
             const firestoreMobiles = new Set(firestoreContacts.map(c => c.mobile));
@@ -723,11 +759,11 @@ class DatabaseAPI {
     async addMarketingContact(contact) {
         // Always save to localStorage immediately
         try {
-            const local = JSON.parse(localStorage.getItem('marketing_contacts_local') || '[]');
+            const local = this.getLocalData('marketing_contacts_local', []);
             const isDup = local.some(c => c.mobile === contact.mobile);
             if (!isDup) {
-                local.push({ id: 'local_' + Date.now(), name: contact.name, mobile: contact.mobile, source: 'Marketing' });
-                localStorage.setItem('marketing_contacts_local', JSON.stringify(local));
+                local.push({ id: 'local_' + Date.now(), name: contact.name, mobile: contact.mobile, source: 'Marketing', tenant_id: this.tenantId });
+                this.setLocalData('marketing_contacts_local', local);
             }
         } catch(e) {}
 
@@ -735,17 +771,19 @@ class DatabaseAPI {
 
         try {
             const docRef = await this.getCollection('marketing_contacts').add({
+                tenant_id: this.tenantId,
+                clinic_slug: this.tenantId,
                 name: contact.name,
                 mobile: contact.mobile,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
             // Remove from local cache since it's now in Firestore
             try {
-                let local = JSON.parse(localStorage.getItem('marketing_contacts_local') || '[]');
+                let local = this.getLocalData('marketing_contacts_local', []);
                 local = local.filter(c => c.mobile !== contact.mobile);
-                localStorage.setItem('marketing_contacts_local', JSON.stringify(local));
+                this.setLocalData('marketing_contacts_local', local);
             } catch(e) {}
-            return { id: docRef.id, ...contact };
+            return { id: docRef.id, tenant_id: this.tenantId, ...contact };
         } catch (error) {
             if (error.code === 'permission-denied') {
                 console.warn('Firestore blocked - contact saved locally only. Update Firebase Rules to persist online.');
@@ -885,13 +923,13 @@ class DatabaseAPI {
         }
     }
 
-    // --- NEW: Multi-Seating & Payment Management ---
+    // --- NEW: Multi-Seating & Payment Management (Tenant Isolated) ---
 
     async getPayments(appointmentId) {
         let localPayments = [];
         try {
-            localPayments = (JSON.parse(localStorage.getItem('dentalPayments')) || [])
-                            .filter(p => p.appointmentId.toString() === appointmentId.toString());
+            localPayments = (this.getLocalData('dentalPayments', []))
+                            .filter(p => p.appointmentId && p.appointmentId.toString() === appointmentId.toString() && (!p.tenant_id || p.tenant_id === this.tenantId));
         } catch(e){}
 
         if (!this.useFirebase) return localPayments;
@@ -900,9 +938,13 @@ class DatabaseAPI {
                 .where('appointmentId', '==', appointmentId.toString())
                 .get();
             const firestorePayments = [];
-            snapshot.forEach(doc => firestorePayments.push({ id: doc.id, ...doc.data() }));
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (!data.tenant_id || data.tenant_id === this.tenantId) {
+                    firestorePayments.push({ id: doc.id, ...data });
+                }
+            });
             
-            // Prefer Firestore, fallback to local if empty but doc exists
             return firestorePayments.length > 0 ? firestorePayments : localPayments;
         } catch (error) {
             return localPayments;
@@ -910,11 +952,17 @@ class DatabaseAPI {
     }
 
     async addPayment(payment) {
-        const data = { ...payment, type: 'payment', createdAt: new Date() };
+        const data = { 
+            ...payment, 
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
+            type: 'payment', 
+            createdAt: new Date().toISOString() 
+        };
         try {
-            let local = JSON.parse(localStorage.getItem('dentalPayments')) || [];
+            let local = this.getLocalData('dentalPayments', []);
             local.push(data);
-            localStorage.setItem('dentalPayments', JSON.stringify(local));
+            this.setLocalData('dentalPayments', local);
         } catch(e){}
 
         if (!this.useFirebase) return true;
@@ -928,11 +976,17 @@ class DatabaseAPI {
     }
 
     async addCharge(charge) {
-        const data = { ...charge, type: 'charge', createdAt: new Date() };
+        const data = { 
+            ...charge, 
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
+            type: 'charge', 
+            createdAt: new Date().toISOString() 
+        };
         try {
-            let local = JSON.parse(localStorage.getItem('dentalPayments')) || [];
+            let local = this.getLocalData('dentalPayments', []);
             local.push(data);
-            localStorage.setItem('dentalPayments', JSON.stringify(local));
+            this.setLocalData('dentalPayments', local);
         } catch(e){}
 
         if (!this.useFirebase) return true;
@@ -946,35 +1000,48 @@ class DatabaseAPI {
     }
 
     async getPatientHistory(mobile) {
-        if (!this.useFirebase) return [];
+        if (!this.useFirebase) {
+            return (this.getLocalData('dentalAppointments', []))
+                .filter(a => a.mobile === mobile && (!a.tenant_id || a.tenant_id === this.tenantId));
+        }
         try {
             const snapshot = await this.getCollection('appointments')
                 .where('mobile', '==', mobile)
                 .get();
             const history = [];
-            snapshot.forEach(doc => history.push({ id: doc.id, ...doc.data() }));
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (!data.tenant_id || data.tenant_id === this.tenantId) {
+                    history.push({ id: doc.id, ...data });
+                }
+            });
             return history.sort((a, b) => {
                 const dateA = a.appointmentDate || a.date;
                 const dateB = b.appointmentDate || b.date;
-                return dateB.localeCompare(dateA);
+                return (dateB || '').localeCompare(dateA || '');
             });
         } catch (error) {
             return [];
         }
     }
 
-    // --- NEW: Patient Diagnosis History ---
+    // --- NEW: Patient Diagnosis History (Tenant Isolated) ---
     async getDiagnoses(mobile) {
         if (!this.useFirebase) {
-            return (JSON.parse(localStorage.getItem('dentalDiagnoses')) || [])
-                .filter(d => d.mobile === mobile);
+            return (this.getLocalData('dentalDiagnoses', []))
+                .filter(d => d.mobile === mobile && (!d.tenant_id || d.tenant_id === this.tenantId));
         }
         try {
             const snapshot = await this.getCollection('diagnoses')
                 .where('mobile', '==', mobile)
                 .get();
             const diagnoses = [];
-            snapshot.forEach(doc => diagnoses.push({ id: doc.id, ...doc.data() }));
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (!data.tenant_id || data.tenant_id === this.tenantId) {
+                    diagnoses.push({ id: doc.id, ...data });
+                }
+            });
             return diagnoses.sort((a, b) => b.timestamp - a.timestamp);
         } catch (error) {
             return [];
@@ -984,15 +1051,17 @@ class DatabaseAPI {
     async addDiagnosis(diagnosis) {
         const data = {
             ...diagnosis,
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
             timestamp: Date.now(),
-            createdAt: this.useFirebase ? firebase.firestore.FieldValue.serverTimestamp() : new Date()
+            createdAt: this.useFirebase ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
         };
 
         // Local cache
         try {
-            let local = JSON.parse(localStorage.getItem('dentalDiagnoses')) || [];
+            let local = this.getLocalData('dentalDiagnoses', []);
             local.push(data);
-            localStorage.setItem('dentalDiagnoses', JSON.stringify(local));
+            this.setLocalData('dentalDiagnoses', local);
         } catch(e){}
 
         if (!this.useFirebase) return true;
@@ -1004,19 +1073,26 @@ class DatabaseAPI {
         }
     }
 
-    // --- NEW: Patient Charting & Signature ---
+    // --- NEW: Patient Charting & Signature (Tenant Isolated) ---
     async savePatientChart(mobile, chartData) {
+        const payload = {
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
+            data: chartData,
+            updatedAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+        };
+
         if (this.useFirebase) {
             try {
-                await this.getCollection('patient_charts').doc(mobile).set({ data: chartData }, { merge: true });
+                await this.getCollection('patient_charts').doc(mobile).set(payload, { merge: true });
             } catch (err) {
                 console.warn("Failed to save chart to Firebase", err);
             }
         }
         try {
-            let local = JSON.parse(localStorage.getItem('dentalCharts')) || {};
+            let local = this.getLocalData('dentalCharts', {});
             local[mobile] = chartData;
-            localStorage.setItem('dentalCharts', JSON.stringify(local));
+            this.setLocalData('dentalCharts', local);
         } catch(e){}
     }
 
@@ -1030,7 +1106,7 @@ class DatabaseAPI {
             }
         }
         try {
-            let local = JSON.parse(localStorage.getItem('dentalCharts')) || {};
+            let local = this.getLocalData('dentalCharts', {});
             return local[mobile] || {};
         } catch(e) {
             return {};
@@ -1038,17 +1114,24 @@ class DatabaseAPI {
     }
 
     async savePatientSignature(mobile, signatureBase64) {
+        const payload = {
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
+            data: signatureBase64,
+            updatedAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
+        };
+
         if (this.useFirebase) {
             try {
-                await this.getCollection('patient_signatures').doc(mobile).set({ data: signatureBase64 }, { merge: true });
+                await this.getCollection('patient_signatures').doc(mobile).set(payload, { merge: true });
             } catch (err) {
                 console.warn("Failed to save signature to Firebase", err);
             }
         }
         try {
-            let local = JSON.parse(localStorage.getItem('dentalSignatures')) || {};
+            let local = this.getLocalData('dentalSignatures', {});
             local[mobile] = signatureBase64;
-            localStorage.setItem('dentalSignatures', JSON.stringify(local));
+            this.setLocalData('dentalSignatures', local);
         } catch(e){}
     }
 
@@ -1062,48 +1145,56 @@ class DatabaseAPI {
             }
         }
         try {
-            let local = JSON.parse(localStorage.getItem('dentalSignatures')) || {};
+            let local = this.getLocalData('dentalSignatures', {});
             return local[mobile] || null;
         } catch(e) {
             return null;
         }
     }
-    // --- DIGITAL PRESCRIPTIONS (Rx) ---
+
+    // --- DIGITAL PRESCRIPTIONS (Rx - Tenant Isolated) ---
     async savePrescription(rxData) {
         const payload = {
             ...rxData,
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
             createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
         };
         try {
-            let local = JSON.parse(localStorage.getItem('dentalPrescriptions') || '[]');
-            local.unshift({ ...rxData, id: Date.now(), createdAt: Date.now() });
-            localStorage.setItem('dentalPrescriptions', JSON.stringify(local));
+            let local = this.getLocalData('dentalPrescriptions', []);
+            local.unshift({ ...payload, id: Date.now() });
+            this.setLocalData('dentalPrescriptions', local);
         } catch(e) {}
 
         if (this.useFirebase && this.db) {
             try {
                 const docRef = await this.getCollection('prescriptions').add(payload);
-                return { id: docRef.id, ...rxData };
+                return { id: docRef.id, ...payload };
             } catch (err) {
                 console.warn('Failed to save prescription to Firebase (saved to local cache):', err);
             }
         }
-        return { id: Date.now(), ...rxData };
+        return { id: Date.now(), ...payload };
     }
 
     async getPrescriptions(mobile) {
         const normMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(mobile) : mobile;
         let results = [];
         try {
-            const local = JSON.parse(localStorage.getItem('dentalPrescriptions') || '[]');
-            results = local.filter(r => r.mobile === mobile || r.patientMobile === mobile || (normMobile && (r.mobile === normMobile || r.patientMobile === normMobile)));
+            const local = this.getLocalData('dentalPrescriptions', []);
+            results = local.filter(r => (!r.tenant_id || r.tenant_id === this.tenantId) && (r.mobile === mobile || r.patientMobile === mobile || (normMobile && (r.mobile === normMobile || r.patientMobile === normMobile))));
         } catch(e) {}
 
         if (this.useFirebase && this.db) {
             try {
                 const snap = await this.getCollection('prescriptions').where('mobile', '==', mobile).get();
                 const fbResults = [];
-                snap.forEach(doc => fbResults.push({ id: doc.id, ...doc.data() }));
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    if (!data.tenant_id || data.tenant_id === this.tenantId) {
+                        fbResults.push({ id: doc.id, ...data });
+                    }
+                });
                 if (fbResults.length > 0) return fbResults;
             } catch (err) {
                 console.warn('Failed to fetch prescriptions from Firebase:', err);
@@ -1112,42 +1203,49 @@ class DatabaseAPI {
         return results;
     }
 
-    // --- TREATMENT PLANS & COST ESTIMATES ---
+    // --- TREATMENT PLANS & COST ESTIMATES (Tenant Isolated) ---
     async saveTreatmentPlan(planData) {
         const payload = {
             ...planData,
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
             createdAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
         };
         try {
-            let local = JSON.parse(localStorage.getItem('dentalTreatmentPlans') || '[]');
-            local.unshift({ ...planData, id: Date.now(), createdAt: Date.now() });
-            localStorage.setItem('dentalTreatmentPlans', JSON.stringify(local));
+            let local = this.getLocalData('dentalTreatmentPlans', []);
+            local.unshift({ ...payload, id: Date.now() });
+            this.setLocalData('dentalTreatmentPlans', local);
         } catch(e) {}
 
         if (this.useFirebase && this.db) {
             try {
                 const docRef = await this.getCollection('treatment_plans').add(payload);
-                return { id: docRef.id, ...planData };
+                return { id: docRef.id, ...payload };
             } catch (err) {
                 console.warn('Failed to save treatment plan to Firebase (saved to local cache):', err);
             }
         }
-        return { id: Date.now(), ...planData };
+        return { id: Date.now(), ...payload };
     }
 
     async getTreatmentPlans(mobile) {
         const normMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(mobile) : mobile;
         let results = [];
         try {
-            const local = JSON.parse(localStorage.getItem('dentalTreatmentPlans') || '[]');
-            results = local.filter(r => r.mobile === mobile || r.patientMobile === mobile || (normMobile && (r.mobile === normMobile || r.patientMobile === normMobile)));
+            const local = this.getLocalData('dentalTreatmentPlans', []);
+            results = local.filter(r => (!r.tenant_id || r.tenant_id === this.tenantId) && (r.mobile === mobile || r.patientMobile === mobile || (normMobile && (r.mobile === normMobile || r.patientMobile === normMobile))));
         } catch(e) {}
 
         if (this.useFirebase && this.db) {
             try {
                 const snap = await this.getCollection('treatment_plans').where('mobile', '==', mobile).get();
                 const fbResults = [];
-                snap.forEach(doc => fbResults.push({ id: doc.id, ...doc.data() }));
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    if (!data.tenant_id || data.tenant_id === this.tenantId) {
+                        fbResults.push({ id: doc.id, ...data });
+                    }
+                });
                 if (fbResults.length > 0) return fbResults;
             } catch (err) {
                 console.warn('Failed to fetch treatment plans from Firebase:', err);
@@ -1156,18 +1254,20 @@ class DatabaseAPI {
         return results;
     }
 
-    // --- PATIENT MEDICAL ALERTS & HEALTH PROFILE ---
+    // --- PATIENT MEDICAL ALERTS & HEALTH PROFILE (Tenant Isolated) ---
     async savePatientMedicalAlerts(mobile, alerts, notes) {
         const payload = {
+            tenant_id: this.tenantId,
+            clinic_slug: this.tenantId,
             mobile,
             alerts: alerts || [],
             notes: notes || '',
             updatedAt: (typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue) ? firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString()
         };
         try {
-            let local = JSON.parse(localStorage.getItem('dentalMedicalAlerts') || '{}');
-            local[mobile] = { alerts, notes };
-            localStorage.setItem('dentalMedicalAlerts', JSON.stringify(local));
+            let local = this.getLocalData('dentalMedicalAlerts', {});
+            local[mobile] = { alerts, notes, tenant_id: this.tenantId };
+            this.setLocalData('dentalMedicalAlerts', local);
         } catch(e) {}
 
         if (this.useFirebase && this.db) {
@@ -1184,14 +1284,19 @@ class DatabaseAPI {
     async getPatientMedicalAlerts(mobile) {
         let localAlerts = { alerts: [], notes: '' };
         try {
-            const local = JSON.parse(localStorage.getItem('dentalMedicalAlerts') || '{}');
+            const local = this.getLocalData('dentalMedicalAlerts', {});
             if (local[mobile]) localAlerts = local[mobile];
         } catch(e) {}
 
         if (this.useFirebase && this.db) {
             try {
                 const doc = await this.getCollection('patient_medical_alerts').doc(mobile).get();
-                if (doc.exists) return doc.data();
+                if (doc.exists) {
+                    const data = doc.data();
+                    if (!data.tenant_id || data.tenant_id === this.tenantId) {
+                        return data;
+                    }
+                }
             } catch (err) {
                 console.warn('Failed to fetch medical alerts from Firebase:', err);
             }

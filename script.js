@@ -89,7 +89,7 @@ async function refreshDashboard() {
             snap.forEach(doc => allTxns.push(doc.data()));
         } catch(e) { console.error('Error loading payments:', e); }
     } else {
-        allTxns = JSON.parse(localStorage.getItem('dentalPayments')) || [];
+        allTxns = window.dbAPI ? window.dbAPI.getLocalData('dentalPayments', []) : (JSON.parse(localStorage.getItem('dentalPayments')) || []);
     }
     
     const revenue = allTxns.filter(t => t.type === 'payment').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
@@ -450,7 +450,7 @@ async function renderFinances(patient) {
             console.error('Error fetching payments:', e);
         }
     } else {
-        const local = JSON.parse(localStorage.getItem('dentalPayments')) || [];
+        const local = window.dbAPI ? window.dbAPI.getLocalData('dentalPayments', []) : (JSON.parse(localStorage.getItem('dentalPayments')) || []);
         allTxns = local.filter(p => p.mobile === patient.mobile);
     }
 
@@ -1469,7 +1469,7 @@ async function refreshPatientPortalData() {
             console.error("Failed to query appointments by email:", e);
         }
     } else {
-        const all = JSON.parse(localStorage.getItem('dentalAppointments')) || [];
+        const all = window.dbAPI ? window.dbAPI.getLocalData('dentalAppointments', []) : (JSON.parse(localStorage.getItem('dentalAppointments')) || []);
         appointments = all.filter(a => a.email && a.email.toLowerCase().trim() === loggedInPatientEmail.toLowerCase().trim());
     }
 
@@ -1521,7 +1521,7 @@ async function refreshPatientPortalData() {
                         console.error("Failed to query diagnoses:", e);
                     }
                 } else {
-                    const allDiag = JSON.parse(localStorage.getItem('dentalDiagnoses')) || [];
+                    const allDiag = window.dbAPI ? window.dbAPI.getLocalData('dentalDiagnoses', []) : (JSON.parse(localStorage.getItem('dentalDiagnoses')) || []);
                     diagnoses = allDiag.filter(d => mobiles.includes(d.mobile));
                 }
             }
@@ -1861,7 +1861,7 @@ async function loadTenantsList() {
         let html = '';
         tenants.forEach(t => {
             const tenantPath = t.id === 'default' ? '/' : `/${t.id}`;
-            const visitUrl = (window.location.protocol === 'file:') ? `index.html?c=${t.id}` : (t.id === 'default' ? 'index.html' : `${t.id}/`);
+            const visitUrl = (window.location.protocol === 'file:') ? `index.html?c=${t.id}` : (t.id === 'default' ? '/' : `/${t.id}`);
             html += `<div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 0.5rem;">
                 <div>
                     <strong style="color: #0F172A; font-size: 0.95rem;">${t.name || t.id}</strong>

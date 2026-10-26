@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SuperAdmin Console | Multi-Tenant Clinic Management</title>
-    <link rel="stylesheet" href="style.css?v=40">
+    <script>
+        if (window.location.protocol.startsWith('http') && window.location.pathname.replace(/^\/+|\/+$/g, '').length > 0) {
+            document.write('<base href="' + window.location.origin + '/">');
+        }
+    </script>
+    <link rel="stylesheet" href="style.css?v=43">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <meta name="theme-color" content="#8B5CF6">
@@ -415,7 +420,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="phoneUtils.js"></script>
-    <script src="db-api.js?v=42"></script>
+    <script src="db-api.js?v=44"></script>
 
     <!-- SuperAdmin Logic Script -->
     <script>
@@ -559,7 +564,7 @@
                     const adminPass = t.admin_pass || 'admin';
                     const isDefault = t.id === 'default';
                     const tenantPath = isDefault ? '/' : `/${t.id}`;
-                    const launchUrl = (window.location.protocol === 'file:') ? `index.html?c=${t.id}` : (isDefault ? 'index.html' : `${t.id}/`);
+                    const launchUrl = (window.location.protocol === 'file:') ? `index.html?c=${t.id}` : (isDefault ? '/' : `/${t.id}`);
 
                     return `
                         <div class="tenant-item">
