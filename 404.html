@@ -11,14 +11,14 @@
         const last = segments[segments.length - 1];
 
         if (last === 'superadmin' || last === 'superadmin.html') {
-            window.location.replace('superadmin.html');
+            window.location.replace('/superadmin.html');
         } else if (last && !last.includes('.')) {
             // Dynamic clinic tenant detected
             sessionStorage.setItem('activeTenantId', last);
             localStorage.setItem('activeTenantId', last);
-            window.location.replace('index.html?c=' + encodeURIComponent(last));
+            window.location.replace('/index.html?c=' + encodeURIComponent(last));
         } else {
-            window.location.replace('index.html');
+            window.location.replace('/index.html');
         }
     </script>
 </head>
