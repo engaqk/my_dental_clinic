@@ -6,7 +6,7 @@
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/superadmin", "destination": "/superadmin.html" },
-    { "source": "/:slug([a-z0-9-]+)", "destination": "/index.html?c=:slug" }
+    { "source": "/:slug([a-z0-9-]+)", "destination": "/?c=:slug" }
   ],
   "headers": [
     {

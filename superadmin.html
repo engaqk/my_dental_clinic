@@ -31,7 +31,7 @@
         .sa-header {
             background: white;
             border-bottom: 1px solid #E2E8F0;
-            padding: 1rem 1.5rem;
+            padding: 0.85rem 1.25rem;
             position: sticky;
             top: 0;
             z-index: 100;
@@ -43,8 +43,43 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
+            gap: 0.75rem;
+            flex-wrap: nowrap;
+        }
+        @media (max-width: 640px) {
+            .sa-header {
+                padding: 0.65rem 0.85rem;
+            }
+            .sa-header-container {
+                gap: 0.5rem;
+                flex-wrap: nowrap;
+            }
+            .sa-title-text span {
+                display: none;
+            }
+            .sa-title-text h1 {
+                font-size: 1.05rem;
+            }
+            .sa-badge {
+                width: 36px !important;
+                height: 36px !important;
+                font-size: 1.05rem !important;
+                border-radius: 9px !important;
+            }
+            .btn-portal-back {
+                padding: 0.45rem 0.75rem !important;
+                font-size: 0.8rem !important;
+                white-space: nowrap !important;
+            }
+            .sa-main-content {
+                margin: 1.25rem auto !important;
+                padding: 0 0.85rem !important;
+            }
+            .sa-login-card {
+                margin: 1.5rem auto !important;
+                padding: 1.75rem 1.25rem !important;
+                border-radius: 18px !important;
+            }
         }
         .sa-brand {
             display: flex;
@@ -232,7 +267,7 @@
         <div class="sa-header-container">
             <a href="superadmin.html" class="sa-brand">
                 <div class="sa-badge">
-                    <i class="fas fa-shield-alt"></i>
+                    <i class="fas fa-crown" style="color: #F59E0B;"></i>
                 </div>
                 <div class="sa-title-text">
                     <h1>SuperAdmin Console</h1>
@@ -241,8 +276,8 @@
             </a>
             
             <div class="sa-nav-actions">
-                <a href="index.html" class="btn-portal-back">
-                    <i class="fas fa-arrow-left"></i> Back to Clinic Portal
+                <a href="/" class="btn-portal-back">
+                    <i class="fas fa-arrow-left"></i> <span>Clinic Portal</span>
                 </a>
                 <button id="saHeaderLogoutBtn" onclick="handleSuperAdminLogout()" class="btn-sa-logout" style="display: none;">
                     <i class="fas fa-sign-out-alt"></i> Logout
@@ -257,11 +292,11 @@
         <!-- VIEW 1: SUPERADMIN LOGIN FORM -->
         <div id="saLoginView" class="sa-login-card">
             <div class="sa-login-header">
-                <div style="width: 56px; height: 56px; margin: 0 auto 1rem; background: #EDE9FE; color: #8B5CF6; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.75rem;">
-                    <i class="fas fa-user-shield"></i>
+                <div style="width: 56px; height: 56px; margin: 0 auto 1rem; background: #FEF3C7; color: #F59E0B; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+                    <i class="fas fa-crown"></i>
                 </div>
                 <h2 style="margin: 0; font-size: 1.45rem; font-weight: 800; color: #0F172A;">SuperAdmin Login</h2>
-                <p style="margin: 0.4rem 0 0; font-size: 0.85rem; color: #64748B;">Enter your master credentials to configure clinic tenants</p>
+                <p style="margin: 0.4rem 0 0; font-size: 0.85rem; color: #64748B;">Enter master credentials to configure clinic tenants</p>
             </div>
 
             <div id="saLoginAlert" style="display: none; background: #FEE2E2; color: #DC2626; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; margin-bottom: 1.25rem; border: 1px solid #FCA5A5; text-align: center; font-weight: 600;">
@@ -270,9 +305,9 @@
             <form id="saLoginForm" onsubmit="submitSuperAdminLogin(event)">
                 <div class="form-group" style="margin-bottom: 1rem;">
                     <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
-                        SuperAdmin Username
+                        Username
                     </label>
-                    <input type="text" id="saUsername" value="superadmin" required autocomplete="username" class="form-input" style="height: 44px; width: 100%; box-sizing: border-box; font-size: 0.95rem; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 0 0.85rem;">
+                    <input type="text" id="saUsername" required autocomplete="username" placeholder="Username" class="form-input" style="height: 46px; width: 100%; box-sizing: border-box; font-size: 1rem; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 0 0.85rem;">
                 </div>
 
                 <div class="form-group" style="margin-bottom: 1.25rem;">
@@ -280,24 +315,17 @@
                         Password
                     </label>
                     <div style="position: relative;">
-                        <input type="password" id="saPassword" required autocomplete="current-password" placeholder="Enter password (admin53)" class="form-input" style="height: 44px; width: 100%; box-sizing: border-box; font-size: 0.95rem; border: 1.5px solid #CBD5E1; border-radius: 10px; padding: 0 2.5rem 0 0.85rem;">
+                        <input type="password" id="saPassword" required autocomplete="current-password" placeholder="Password" class="form-input" style="height: 46px; width: 100%; box-sizing: border-box; font-size: 1rem; border: 1.5px solid #CBD5E1; border-radius: 12px; padding: 0 2.5rem 0 0.85rem;">
                         <button type="button" onclick="togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: #94A3B8; cursor: pointer;">
                             <i class="fas fa-eye" id="pwdEyeIcon"></i>
                         </button>
                     </div>
                 </div>
 
-                <button type="submit" id="saLoginBtn" class="btn-primary" style="background: #8B5CF6; width: 100%; height: 46px; font-weight: 800; font-size: 0.95rem; border-radius: 10px; justify-content: center; cursor: pointer;">
-                    <i class="fas fa-lock-open"></i> ACCESS SUPERADMIN CONSOLE
+                <button type="submit" id="saLoginBtn" class="btn-primary" style="background: #8B5CF6; width: 100%; height: 48px; font-weight: 800; font-size: 1rem; border-radius: 12px; justify-content: center; cursor: pointer; margin-top: 0.5rem;">
+                    <i class="fas fa-crown" style="color: #F59E0B; margin-right: 6px;"></i> ACCESS SUPERADMIN CONSOLE
                 </button>
             </form>
-
-            <div class="hint-box">
-                <i class="fas fa-info-circle" style="color: #8B5CF6; margin-right: 4px;"></i>
-                <strong>Configured Credentials:</strong><br>
-                Username: <code style="background: #E2E8F0; padding: 1px 5px; border-radius: 4px;">superadmin</code> &bull; 
-                Password: <code style="background: #E2E8F0; padding: 1px 5px; border-radius: 4px;">admin53</code>
-            </div>
         </div>
 
         <!-- VIEW 2: AUTHENTICATED SUPERADMIN DASHBOARD -->
