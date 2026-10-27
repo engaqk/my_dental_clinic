@@ -54,13 +54,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        // Handle OAuth Redirect Result for PWA Standalone logins
-        if (window.dbAPI.auth) {
-            window.dbAPI.auth.getRedirectResult().then((result) => {
+        // Handle OAuth Redirect Result for PWA and Mobile logins
+        if (window.dbAPI && window.dbAPI.auth) {
+            window.dbAPI.auth.getRedirectResult().then(async (result) => {
                 if (result && result.user) {
-                    console.log("OAuth redirect login successful:", result.user.email);
-                    setupPatientDashboard(result.user.email, result.user.displayName || 'Patient');
-                    showSection('patient-portal');
+                    const rUser = result.user;
+                    console.log("OAuth redirect login successful:", rUser.email);
+                    const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
+                    localStorage.setItem('tenant_access_verified_' + tenantId, 'true');
+                    
+                    if (typeof window.dbAPI.recordGoogleVisitor === 'function') {
+                        await window.dbAPI.recordGoogleVisitor(rUser);
+                    }
+                    if (typeof setupLoggedInPatient === 'function') {
+                        await setupLoggedInPatient(rUser);
+                    }
+                    if (typeof dispatchPatientWelcomeEmail === 'function' && rUser.email) {
+                        dispatchPatientWelcomeEmail(rUser, window.currentClinicSettings);
+                    }
+                    const gateModal = document.getElementById('firstTimeAccessGateModal');
+                    if (gateModal) gateModal.style.display = 'none';
+                    if (typeof setupPatientDashboard === 'function') {
+                        setupPatientDashboard(rUser.email, rUser.displayName || 'Patient');
+                    }
                 }
             }).catch(err => {
                 console.error("OAuth redirect handler error:", err);
@@ -1358,14 +1374,31 @@ async function handleFirstTimeGoogleSignIn() {
         let user = null;
         if (window.dbAPI && window.dbAPI.auth && typeof firebase !== 'undefined' && firebase.auth) {
             const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             
             if (isStandalone) {
                 await window.dbAPI.auth.signInWithRedirect(provider);
                 return;
             } else {
-                const res = await window.dbAPI.auth.signInWithPopup(provider);
-                user = res.user;
+                try {
+                    const res = await window.dbAPI.auth.signInWithPopup(provider);
+                    user = res.user;
+                } catch (popupErr) {
+                    console.warn('Popup login attempt:', popupErr);
+                    if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+                        if (alertBox) {
+                            alertBox.style.background = '#EFF6FF';
+                            alertBox.style.borderColor = '#BFDBFE';
+                            alertBox.style.color = '#1D4ED8';
+                            alertBox.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Popup closed. Switching to full-page Google sign-in...';
+                            alertBox.style.display = 'block';
+                        }
+                        await window.dbAPI.auth.signInWithRedirect(provider);
+                        return;
+                    }
+                    throw popupErr;
+                }
             }
         } else {
             // Local fallback simulation if Firebase offline
@@ -1418,6 +1451,8 @@ async function handleFirstTimeGoogleSignIn() {
                 errorMsg = '⚠️ Domain "' + window.location.hostname + '" is not authorized in Firebase Console. Please add it under Authentication > Settings > Authorized Domains.';
             } else if (err.code === 'auth/operation-not-allowed' || (err.message && err.message.toLowerCase().includes('operation-not-allowed'))) {
                 errorMsg = '⚠️ Google Sign-in provider is disabled in Firebase Console. Please enable Google under Authentication > Sign-in method.';
+            } else if (err.code === 'auth/popup-closed-by-user' || (err.message && err.message.toLowerCase().includes('popup has been closed'))) {
+                errorMsg = '⚠️ Popup closed before completion. If closed automatically, please ensure "' + window.location.hostname + '" is added to Firebase Authorized Domains.';
             } else if (err.message && err.message.toLowerCase().includes('action is invalid')) {
                 errorMsg = '⚠️ Firebase error: Action invalid. Ensure "' + window.location.hostname + '" is added to Firebase Authorized Domains and Google Sign-in is enabled.';
             }
