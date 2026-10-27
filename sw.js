@@ -1,9 +1,18 @@
-const CACHE_NAME = 'dental-clinic-v38'; // Force reload for mobile layout & cancellation
+/**
+ * sw.js - Service Worker for Dental Clinic PWA
+ * Version: v45.3.0
+ * Features: Instant auto-update, Network-First strategy for fresh deployments, offline fallback.
+ */
+
+const CACHE_NAME = 'dental-clinic-v45-3';
+
 const ASSETS = [
     './',
     'index.html',
+    'superadmin.html',
     'style.css',
     'script.js',
+    'emailTemplates.js',
     'premium-features.js',
     'translations.js',
     'db-api.js',
@@ -15,54 +24,93 @@ const ASSETS = [
     'logo-green.png',
     'favicon.ico',
     'app-icon.png',
-    'manifest.webmanifest',
-    'screenshot-home.png',
-    'screenshot-services.png',
-    'screenshot-dashboard.png',
-    'screenshot-profile.png',
-    'screenshot-bill.png'
+    'manifest.webmanifest'
 ];
 
+// Install: Cache core assets and skip waiting immediately
 self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS).catch(err => {
-                console.warn('SW: Some assets failed to cache during install:', err);
+                console.warn('SW: Non-critical asset cache warning:', err);
             });
         })
     );
 });
 
+// Activate: Delete old caches and take control of all open pages immediately
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) => {
             return Promise.all(
-                keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+                keys.filter(key => key !== CACHE_NAME).map(key => {
+                    console.log('SW: Purging old cache:', key);
+                    return caches.delete(key);
+                })
             );
-        }).then(() => self.clients.claim())
+        }).then(() => self.clients.claim()).then(() => {
+            // Notify all open client windows and PWAs that a new version is active
+            return self.clients.matchAll({ type: 'window' }).then(clients => {
+                clients.forEach(client => {
+                    client.postMessage({ type: 'SW_VERSION_UPDATED', version: CACHE_NAME });
+                });
+            });
+        })
     );
 });
 
+// Fetch: Network-First for HTML and scripts so users ALWAYS receive the latest deployment
 self.addEventListener('fetch', (event) => {
-    // 1. Do not intercept non-GET requests or API calls
-    if (event.request.method !== 'GET' || event.request.url.includes('/api/')) {
+    const url = event.request.url;
+
+    // 1. Never intercept non-GET, API calls, or version.json check
+    if (event.request.method !== 'GET' || url.includes('/api/') || url.includes('version.json') || url.includes('identitytoolkit') || url.includes('googleapis.com')) {
         return;
     }
 
-    // 2. Bypass Service Worker for manifest.webmanifest to avoid 401/CORS issues with some providers
-    if (event.request.url.includes('manifest.webmanifest')) {
+    // 2. Bypass manifest to avoid browser authentication/CORS issues
+    if (url.includes('manifest.webmanifest')) {
         return;
     }
 
-    event.respondWith(
-        caches.match(event.request, { ignoreSearch: true }).then((response) => {
-            return response || fetch(event.request).catch(() => {
-                // If both fail and it's a page request, maybe show a custom offline page
-                if (event.request.mode === 'navigate') {
-                    return caches.match('./');
+    // 3. Network-First Strategy for Navigation (HTML) and Core JS/CSS
+    const isNavigation = event.request.mode === 'navigate' || url.endsWith('.html') || url.endsWith('/');
+    const isCodeAsset = url.endsWith('.js') || url.endsWith('.css');
+
+    if (isNavigation || isCodeAsset) {
+        event.respondWith(
+            fetch(event.request).then(networkResponse => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(cache => {
+                        cache.put(event.request, responseClone);
+                    });
                 }
-            });
+                return networkResponse;
+            }).catch(() => {
+                // Network unavailable -> fallback to offline cache
+                return caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
+                    if (cachedResponse) return cachedResponse;
+                    if (isNavigation) return caches.match('index.html');
+                });
+            })
+        );
+        return;
+    }
+
+    // 4. Stale-While-Revalidate for images & static assets
+    event.respondWith(
+        caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
+            const fetchPromise = fetch(event.request).then(networkResponse => {
+                if (networkResponse && networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                }
+                return networkResponse;
+            }).catch(() => cachedResponse);
+
+            return cachedResponse || fetchPromise;
         })
     );
 });

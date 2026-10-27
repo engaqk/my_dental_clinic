@@ -1316,20 +1316,30 @@ function checkFirstTimeAccessGate(settings) {
 
     const verifiedKey = 'tenant_access_verified_' + tenantId;
     const isVerified = localStorage.getItem(verifiedKey);
-    if (isVerified) {
-        return; // User already verified previously! Never prompt again.
+    // If previously saved as 'guest', clear it because guest is strictly removed!
+    if (isVerified === 'guest') {
+        localStorage.removeItem(verifiedKey);
+    } else if (isVerified && localStorage.getItem('tenant_patient_user_' + tenantId)) {
+        return; // User already verified with Google previously!
     }
 
-    // Show sleek 1-click Google Sign-In startup modal
+    // Show sleek Google Sign-In startup modal with formatted Dr. Name & Clinic Name
     const modal = document.getElementById('firstTimeAccessGateModal');
     if (modal) {
         const clinicNameEl = document.getElementById('gateClinicNameDisplay');
-        const clinicSubEl = document.getElementById('gateClinicSubDisplay');
+        const doctorNameEl = document.getElementById('gateDoctorNameDisplay');
+        
+        const rawClinic = settings.clinic_name || settings.name || 'My Dental Clinic';
+        let rawDoctor = settings.doctor_name || settings.subtitle || '';
+        
         if (clinicNameEl) {
-            clinicNameEl.innerText = settings.clinic_name || settings.name || 'Welcome to Our Clinic';
+            clinicNameEl.innerText = rawClinic;
         }
-        if (clinicSubEl && (settings.subtitle || settings.doctor_name)) {
-            clinicSubEl.innerText = `${settings.doctor_name || settings.subtitle} • 1-Click Patient Sign-In`;
+        if (doctorNameEl) {
+            if (rawDoctor && !rawDoctor.toLowerCase().startsWith('dr')) {
+                rawDoctor = 'Dr. ' + rawDoctor;
+            }
+            doctorNameEl.innerText = rawDoctor || 'Specialist Dental Care';
         }
         modal.style.display = 'flex';
     }
@@ -1380,7 +1390,12 @@ async function handleFirstTimeGoogleSignIn() {
             // 3. Maintain patient profile
             await setupLoggedInPatient(user);
 
-            // 4. Smooth dismiss modal
+            // 4. Dispatch Welcome Email via SMTP
+            if (user.email) {
+                dispatchPatientWelcomeEmail(user, window.currentClinicSettings);
+            }
+
+            // 5. Smooth dismiss modal
             if (alertBox) {
                 alertBox.style.background = '#DCFCE7';
                 alertBox.style.borderColor = '#86EFAC';
@@ -1398,30 +1413,53 @@ async function handleFirstTimeGoogleSignIn() {
     } catch (err) {
         console.warn('Google sign-in gate notice:', err);
         if (alertBox) {
-            alertBox.innerText = err.message || 'Google sign-in could not be completed. You may continue as guest.';
+            alertBox.innerText = err.message || 'Google sign-in could not be completed. Please try again.';
             alertBox.style.display = 'block';
         }
     } finally {
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = `
-                <svg width="22" height="22" viewBox="0 0 48 48">
+                <svg width="20" height="20" viewBox="0 0 48 48">
                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                     <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
                     <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                     <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 </svg>
-                Continue with Google
+                Sign in with Google
             `;
         }
     }
 }
 
 function handleFirstTimeGuestBypass() {
-    const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
-    localStorage.setItem('tenant_access_verified_' + tenantId, 'guest');
-    const modal = document.getElementById('firstTimeAccessGateModal');
-    if (modal) modal.style.display = 'none';
+    // Guest bypass is disabled. Google sign-in is mandatory.
+    handleFirstTimeGoogleSignIn();
+}
+
+async function dispatchPatientWelcomeEmail(user, settings) {
+    if (!user || !user.email) return;
+    try {
+        const s = settings || window.currentClinicSettings || {};
+        fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                to: user.email,
+                type: 'welcome',
+                name: user.displayName || 'Valued Patient',
+                clinicName: s.clinic_name || 'My Dental Clinic',
+                doctorName: s.doctor_name || s.subtitle || 'Dental Specialist',
+                phone: s.phone || '',
+                address: s.address || '',
+                primaryColor: s.primary_color || '#0D9488'
+            })
+        }).then(r => r.json())
+          .then(res => console.log('✅ Welcome email dispatched to patient:', res))
+          .catch(e => console.warn('Welcome email dispatch notice:', e));
+    } catch (e) {
+        console.warn('Welcome email dispatch notice:', e);
+    }
 }
 
 async function setupLoggedInPatient(user) {
@@ -1807,8 +1845,10 @@ async function saveNewDiagnosis() {
     }
 }
 
-// --- PWA REGISTRATION & UPDATE FLOW ---
+// --- PWA REGISTRATION & INSTANT AUTO-REFRESH ON NEW DEPLOYMENT ---
 if ('serviceWorker' in navigator) {
+    let isRefreshing = false;
+
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
             console.log('💎 Premium Engine: PWA Service Worker Registered');
@@ -1816,35 +1856,67 @@ if ('serviceWorker' in navigator) {
             // Force checking for updates immediately on page load
             reg.update().catch(err => console.log('SW update check bypassed:', err.message));
             
-            // Periodically check for updates every 5 minutes in background
+            // Periodic check for SW update every 60 seconds
             setInterval(() => {
                 reg.update().catch(err => console.log('SW periodic update bypassed:', err.message));
-            }, 5 * 60 * 1000);
+            }, 60 * 1000);
 
-            // Also check for updates when user returns to/focuses the window
+            // Check for updates when user refocuses the app/tab
             window.addEventListener('focus', () => {
                 reg.update().catch(err => console.log('SW focus update bypassed:', err.message));
+                checkForAppDeploymentUpdate();
             });
         }).catch(err => {
             console.warn('SW: Registration failed:', err);
         });
+
+        // Check version on initial launch
+        checkForAppDeploymentUpdate();
+        setInterval(checkForAppDeploymentUpdate, 60 * 1000);
     });
 
-    // Automatically reload once when the service worker changes (new version activated)
-    let isRefreshing = false;
+    // Auto-refresh immediately when controller changes (new ServiceWorker activated)
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!isRefreshing) {
             isRefreshing = true;
-            // Create a toast notification for the update
-            const toast = document.createElement('div');
-            toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--primary);color:white;padding:1rem 2rem;border-radius:30px;box-shadow:0 10px 25px rgba(0,0,0,0.2);z-index:99999;display:flex;align-items:center;gap:1rem;font-weight:800;animation:slideUp 0.3s ease-out;';
-            toast.innerHTML = `
-                <span><i class="fas fa-sync-alt" style="animation: spin 2s linear infinite;"></i> App Updated!</span>
-                <button onclick="window.location.reload(true)" style="background:white;color:var(--primary);border:none;padding:0.5rem 1rem;border-radius:20px;font-weight:bold;cursor:pointer;">Refresh Now</button>
-            `;
-            document.body.appendChild(toast);
+            window.location.reload(true);
         }
     });
+
+    // Also auto-refresh when SW broadcasts SW_VERSION_UPDATED
+    navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'SW_VERSION_UPDATED') {
+            if (!isRefreshing) {
+                isRefreshing = true;
+                window.location.reload(true);
+            }
+        }
+    });
+}
+
+// Polling deployment tracker: checks /version.json to auto-refresh all browser & PWA instances
+async function checkForAppDeploymentUpdate() {
+    try {
+        const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && data.build) {
+            const currentBuild = localStorage.getItem('app_installed_build_version');
+            if (currentBuild && currentBuild !== String(data.build)) {
+                console.log('🚀 New deployment detected (Build: ' + data.build + '). Purging caches & auto-refreshing...');
+                localStorage.setItem('app_installed_build_version', String(data.build));
+                if ('caches' in window) {
+                    const keys = await caches.keys();
+                    await Promise.all(keys.map(k => caches.delete(k)));
+                }
+                window.location.reload(true);
+                return;
+            }
+            localStorage.setItem('app_installed_build_version', String(data.build));
+        }
+    } catch (e) {
+        // Silent catch for offline or non-blocking network glitches
+    }
 }
 
 // Security Logs Modal logic

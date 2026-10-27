@@ -56,9 +56,9 @@ module.exports = async (req, res) => {
         const smsDeviceId = gateway.deviceId;
         const adminEmail = clinic.admin_email || "abdulqadir.galaxy53@gmail.com";
 
-        // Use Vercel env variables if available, otherwise fallback
-        const smtpUser = process.env.SMTP_USER || 'my.dental.app01@gmail.com';
-        const smtpPass = process.env.SMTP_PASS || 'okaw nmsf jmrd wpds';
+        // Use Vercel env variables if available, otherwise fallback to configured credentials
+        const smtpUser = process.env.SMTP_USER || 'mydentalapp77@gmail.com';
+        const smtpPass = (process.env.SMTP_PASS || 'pswn dsqn slql maee').trim();
 
         // Setup Transporter for Gmail SMTP (using custom TLS settings for serverless environments)
         const transporter = nodemailer.createTransport({
@@ -217,8 +217,6 @@ module.exports = async (req, res) => {
             }
         }
 
-        // Send admin mail
-        await transporter.sendMail(adminMailOptions);
 
         return res.status(200).json({ 
             success: true, 

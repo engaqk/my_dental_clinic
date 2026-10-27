@@ -1749,39 +1749,40 @@
         <div style="background: white; border-radius: 20px; max-width: 390px; width: 100%; padding: 2rem 1.75rem; box-shadow: 0 24px 48px rgba(0,0,0,0.25); position: relative; box-sizing: border-box; text-align: center; animation: gateFadeIn 0.3s ease-out;">
             
             <!-- Clinic Logo / Badge Icon -->
-            <div style="width: 58px; height: 58px; border-radius: 18px; background: var(--primary-light, #CCFBF1); color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1.15rem auto; box-shadow: 0 6px 16px rgba(13,148,136,0.2);">
+            <div style="width: 56px; height: 56px; border-radius: 16px; background: var(--primary-light, #CCFBF1); color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1rem auto; box-shadow: 0 4px 14px rgba(13,148,136,0.18);">
                 <i class="fas fa-tooth"></i>
             </div>
 
-            <h3 id="gateClinicNameDisplay" style="margin: 0 0 0.35rem 0; font-size: 1.3rem; font-weight: 800; color: var(--secondary, #0F172A); line-height: 1.25;">Welcome to Our Clinic</h3>
-            <p id="gateClinicSubDisplay" style="margin: 0 0 1.5rem 0; font-size: 0.85rem; color: #64748B; line-height: 1.4;">
-                Sign in with your Google account for instant 1-click patient access
+            <!-- Clinic Name Display -->
+            <h3 id="gateClinicNameDisplay" style="margin: 0 0 0.35rem 0; font-size: 1.35rem; font-weight: 800; color: #0F172A; line-height: 1.25; letter-spacing: -0.3px;">Welcome to Our Clinic</h3>
+            
+            <!-- Doctor Name & Credentials Badge -->
+            <div id="gateDoctorContainer" style="display: inline-flex; align-items: center; gap: 6px; background: #F1F5F9; padding: 0.35rem 0.85rem; border-radius: 20px; margin-bottom: 1.15rem;">
+                <i class="fas fa-user-md" style="color: var(--primary, #0D9488); font-size: 0.85rem;"></i>
+                <span id="gateDoctorNameDisplay" style="font-size: 0.82rem; font-weight: 700; color: #334155;">Specialist Dental Care</span>
+            </div>
+
+            <p style="margin: 0 0 1.35rem 0; font-size: 0.84rem; color: #64748B; line-height: 1.45;">
+                Sign in with your Google account to access your patient portal, bookings, and records
             </p>
 
-            <!-- 1-Click Google Sign-In Button -->
-            <button type="button" id="btnGoogleGateSignIn" onclick="handleFirstTimeGoogleSignIn()" style="width: 100%; height: 50px; border-radius: 12px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #1E293B; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease;">
-                <svg width="22" height="22" viewBox="0 0 48 48">
+            <!-- Mandatory Google Sign-In Button -->
+            <button type="button" id="btnGoogleGateSignIn" onclick="handleFirstTimeGoogleSignIn()" style="width: 100%; height: 48px; border-radius: 12px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #1E293B; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease;">
+                <svg width="20" height="20" viewBox="0 0 48 48">
                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                     <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
                     <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                     <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 </svg>
-                Continue with Google
+                Sign in with Google
             </button>
 
             <!-- Reassurance Note -->
-            <div style="margin-top: 1.15rem; font-size: 0.76rem; color: #94A3B8; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                <i class="fas fa-shield-alt" style="color: #10B981;"></i> Fast 1-Click Access &bull; Complete profile in portal
+            <div style="margin-top: 1.15rem; font-size: 0.75rem; color: #94A3B8; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fas fa-shield-alt" style="color: #10B981;"></i> Secure Patient Portal Verification
             </div>
 
             <div id="gateErrorAlert" style="display: none; background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.78rem; font-weight: 600; margin-top: 0.85rem; text-align: center;"></div>
-
-            <!-- Guest / Continue as Visitor Bypass Link -->
-            <div style="margin-top: 1.25rem; border-top: 1px solid #F1F5F9; padding-top: 0.85rem;">
-                <a href="javascript:void(0)" onclick="handleFirstTimeGuestBypass()" style="font-size: 0.78rem; color: #64748B; text-decoration: underline; font-weight: 600;">
-                    Continue as Guest Visitor
-                </a>
-            </div>
 
         </div>
     </div>
