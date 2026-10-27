@@ -1413,7 +1413,15 @@ async function handleFirstTimeGoogleSignIn() {
     } catch (err) {
         console.warn('Google sign-in gate notice:', err);
         if (alertBox) {
-            alertBox.innerText = err.message || 'Google sign-in could not be completed. Please try again.';
+            let errorMsg = err.message || 'Google sign-in could not be completed. Please try again.';
+            if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.toLowerCase().includes('unauthorized domain'))) {
+                errorMsg = '⚠️ Domain "' + window.location.hostname + '" is not authorized in Firebase Console. Please add it under Authentication > Settings > Authorized Domains.';
+            } else if (err.code === 'auth/operation-not-allowed' || (err.message && err.message.toLowerCase().includes('operation-not-allowed'))) {
+                errorMsg = '⚠️ Google Sign-in provider is disabled in Firebase Console. Please enable Google under Authentication > Sign-in method.';
+            } else if (err.message && err.message.toLowerCase().includes('action is invalid')) {
+                errorMsg = '⚠️ Firebase error: Action invalid. Ensure "' + window.location.hostname + '" is added to Firebase Authorized Domains and Google Sign-in is enabled.';
+            }
+            alertBox.innerText = errorMsg;
             alertBox.style.display = 'block';
         }
     } finally {
