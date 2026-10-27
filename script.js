@@ -60,6 +60,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (result && result.user) {
                     const rUser = result.user;
                     console.log("OAuth redirect login successful:", rUser.email);
+                    
+                    // If login was initiated from Doctor/Staff login modal:
+                    const pendingType = sessionStorage.getItem('pendingStaffLoginType');
+                    if (pendingType === 'doctor') {
+                        sessionStorage.removeItem('pendingStaffLoginType');
+                        if (typeof loginStaffAsDoctor === 'function') {
+                            loginStaffAsDoctor(rUser);
+                            return;
+                        }
+                    }
+
                     const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
                     localStorage.setItem('tenant_access_verified_' + tenantId, 'true');
                     
@@ -1315,50 +1326,108 @@ function toggleGatePinVisibility() {
 }
 
 function checkFirstTimeAccessGate(settings) {
-    if (!settings) settings = window.currentClinicSettings || {};
-    const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
-    
-    // Check if user is logged in as staff/superadmin
-    const staffUserStr = sessionStorage.getItem('staffUser');
-    const isSuper = sessionStorage.getItem('isSuperAdmin') === 'true';
-    if (staffUserStr || isSuper) {
-        const modal = document.getElementById('firstTimeAccessGateModal');
-        if (modal) modal.style.display = 'none';
-        return;
-    }
-
-    // Check if patient is already logged in or verified
-    checkPatientLoginStatus();
-
-    const verifiedKey = 'tenant_access_verified_' + tenantId;
-    const isVerified = localStorage.getItem(verifiedKey);
-    // If previously saved as 'guest', clear it because guest is strictly removed!
-    if (isVerified === 'guest') {
-        localStorage.removeItem(verifiedKey);
-    } else if (isVerified && localStorage.getItem('tenant_patient_user_' + tenantId)) {
-        return; // User already verified with Google previously!
-    }
-
-    // Show sleek Google Sign-In startup modal with formatted Dr. Name & Clinic Name
+    // Gmail login is designated for Clinic Staff & Doctors only.
+    // Public website & appointment booking form are completely open to all visitors without any startup gate.
     const modal = document.getElementById('firstTimeAccessGateModal');
-    if (modal) {
-        const clinicNameEl = document.getElementById('gateClinicNameDisplay');
-        const doctorNameEl = document.getElementById('gateDoctorNameDisplay');
-        
-        const rawClinic = settings.clinic_name || settings.name || 'My Dental Clinic';
-        let rawDoctor = settings.doctor_name || settings.subtitle || '';
-        
-        if (clinicNameEl) {
-            clinicNameEl.innerText = rawClinic;
-        }
-        if (doctorNameEl) {
-            if (rawDoctor && !rawDoctor.toLowerCase().startsWith('dr')) {
-                rawDoctor = 'Dr. ' + rawDoctor;
-            }
-            doctorNameEl.innerText = rawDoctor || 'Specialist Dental Care';
-        }
-        modal.style.display = 'flex';
+    if (modal) modal.style.display = 'none';
+}
+
+async function handleDoctorGoogleSignIn() {
+    const btn = document.getElementById('btnDoctorGoogleSignIn');
+    const errBox = document.getElementById('loginError');
+    if (errBox) errBox.style.display = 'none';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to Google...';
     }
+
+    try {
+        let user = null;
+        if (window.dbAPI && window.dbAPI.auth && typeof firebase !== 'undefined' && firebase.auth) {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            provider.setCustomParameters({ prompt: 'select_account' });
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+            sessionStorage.setItem('pendingStaffLoginType', 'doctor');
+
+            if (isStandalone) {
+                await window.dbAPI.auth.signInWithRedirect(provider);
+                return;
+            } else {
+                try {
+                    const res = await window.dbAPI.auth.signInWithPopup(provider);
+                    user = res.user;
+                } catch (popupErr) {
+                    console.warn('Doctor popup attempt, fallback to redirect:', popupErr);
+                    if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/cancelled-popup-request') {
+                        await window.dbAPI.auth.signInWithRedirect(provider);
+                        return;
+                    }
+                    throw popupErr;
+                }
+            }
+        } else {
+            user = {
+                displayName: 'Dr. Clinical Specialist',
+                email: 'doctor@clinic.com',
+                photoURL: ''
+            };
+        }
+
+        if (user) {
+            loginStaffAsDoctor(user);
+        }
+    } catch (err) {
+        console.warn('Doctor Google login error:', err);
+        if (errBox) {
+            let errorMsg = err.message || 'Google sign-in could not be completed.';
+            if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.toLowerCase().includes('unauthorized domain'))) {
+                errorMsg = '⚠️ Domain "' + window.location.hostname + '" is not authorized in Firebase Console. Please add it under Authentication > Settings > Authorized Domains.';
+            } else if (err.code === 'auth/popup-closed-by-user' || (err.message && err.message.toLowerCase().includes('popup has been closed'))) {
+                errorMsg = '⚠️ Popup closed before completion. If closed automatically, ensure "' + window.location.hostname + '" is in Firebase Authorized Domains.';
+            }
+            errBox.innerText = errorMsg;
+            errBox.style.display = 'block';
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Sign in with Google (Doctor Login)
+            `;
+        }
+    }
+}
+
+function loginStaffAsDoctor(user) {
+    const staffData = {
+        name: user.displayName || 'Doctor',
+        email: user.email,
+        role: 'doctor',
+        photoURL: user.photoURL || ''
+    };
+    sessionStorage.setItem('staffLoggedIn', 'true');
+    sessionStorage.setItem('staffUser', JSON.stringify(staffData));
+
+    if (window.dbAPI && typeof window.dbAPI.logAdminLogin === 'function') {
+        window.dbAPI.logAdminLogin({
+            username: user.email,
+            role: 'doctor',
+            status: 'SUCCESS (Doctor Google Auth)',
+            clinic: window.currentClinicSettings?.clinic_name || 'Clinic'
+        });
+    }
+
+    if (typeof closeLoginModal === 'function') closeLoginModal();
+    if (typeof showSection === 'function') showSection('dashboard');
+    if (typeof refreshDashboard === 'function') refreshDashboard();
+    if (typeof switchActiveStaffRole === 'function') switchActiveStaffRole('doctor');
 }
 
 async function handleFirstTimeGoogleSignIn() {
@@ -1534,11 +1603,7 @@ async function setupLoggedInPatient(user) {
         }
     }
 
-    // Auto-fill booking form fields
-    const nameInput = document.getElementById('name');
-    const emailInput = document.getElementById('email');
-    if (nameInput && !nameInput.value) nameInput.value = user.displayName || user.name || '';
-    if (emailInput && !emailInput.value) emailInput.value = user.email || '';
+    // Public booking form is kept clean and not pre-filled
 
     // Populate patient profile tab fields
     const pAvatar = document.getElementById('patientProfileAvatar');
@@ -2040,9 +2105,6 @@ async function setupPatientDashboard(email, displayName) {
     document.getElementById('patientWelcomeName').innerText = `Welcome back, ${displayName}`;
     document.getElementById('patientWelcomeEmail').innerText = email;
     
-    // Auto fill email field in booking form for convenience
-    const emailInput = document.getElementById('email');
-    if (emailInput) emailInput.value = email;
 
     // Load data
     await refreshPatientPortalData();
@@ -2673,30 +2735,79 @@ function enforceRoleRestrictions() {
         const userStr = sessionStorage.getItem('staffUser');
         if (userStr) {
             const user = JSON.parse(userStr);
-            const isStaff = user.role === 'staff';
-            
-            // Hide earnings
-            const earningsCard = document.getElementById('stats-earnings');
-            if (earningsCard) {
-                if (isStaff) {
-                    earningsCard.style.display = 'none';
+            const role = (user.role || 'doctor').toLowerCase();
+            const isDoctor = role === 'doctor' || role === 'admin' || role === 'super_admin';
+            const isCompounder = role === 'compounder';
+            const isReceptionist = role === 'receptionist';
+
+            // 1. Update role badge in dashboard header
+            const badge = document.getElementById('currentRoleBadge');
+            if (badge) {
+                badge.innerText = role.toUpperCase();
+                if (isDoctor) {
+                    badge.style.background = '#DCFCE7';
+                    badge.style.color = '#15803D';
+                } else if (isCompounder) {
+                    badge.style.background = '#EDE9FE';
+                    badge.style.color = '#6D28D9';
                 } else {
-                    earningsCard.style.display = 'block'; // Or however it was originally displayed, assume block/flex handled by css, just removing inline none if it exists. Actually it's better to just hide if staff.
+                    badge.style.background = '#E0F2FE';
+                    badge.style.color = '#0369A1';
                 }
             }
+
+            // 2. Update button styles in role switcher bar
+            const btnDoc = document.getElementById('roleBtnDoctor');
+            const btnComp = document.getElementById('roleBtnCompounder');
+            const btnRecep = document.getElementById('roleBtnRecep');
+
+            if (btnDoc) {
+                btnDoc.style.background = isDoctor ? 'var(--primary, #0D9488)' : 'transparent';
+                btnDoc.style.color = isDoctor ? '#FFFFFF' : '#475569';
+            }
+            if (btnComp) {
+                btnComp.style.background = isCompounder ? '#8B5CF6' : 'transparent';
+                btnComp.style.color = isCompounder ? '#FFFFFF' : '#475569';
+            }
+            if (btnRecep) {
+                btnRecep.style.background = isReceptionist ? '#0284C7' : 'transparent';
+                btnRecep.style.color = isReceptionist ? '#FFFFFF' : '#475569';
+            }
+
+            // 3. Financials: Only Doctor / Admin can view Total Revenue
+            const earningsCard = document.getElementById('stats-earnings');
+            if (earningsCard) {
+                earningsCard.style.display = isDoctor ? 'flex' : 'none';
+            }
             
-            // Hide settings tab button
+            // 4. Settings button: Only Doctor / Admin can view Settings
             const settingsTabBtns = document.querySelectorAll('button[onclick="showDashboardTab(\'settings\')"]');
             settingsTabBtns.forEach(btn => {
-                if (isStaff) btn.style.display = 'none';
+                btn.style.display = isDoctor ? 'inline-block' : 'none';
             });
 
-            // Prevent viewing Settings tab explicitly
-            if (isStaff && document.getElementById('tab-settings')?.style.display !== 'none') {
+            // Prevent viewing Settings tab explicitly if not Doctor
+            if (!isDoctor && document.getElementById('tab-settings')?.style.display !== 'none') {
                 showDashboardTab('patients');
             }
         }
-    } catch(e) {}
+    } catch(e) {
+        console.warn('enforceRoleRestrictions error:', e);
+    }
+}
+
+function switchActiveStaffRole(newRole) {
+    let staffUser = {};
+    try {
+        staffUser = JSON.parse(sessionStorage.getItem('staffUser')) || {};
+    } catch(e) {
+        staffUser = {};
+    }
+
+    staffUser.role = newRole;
+    sessionStorage.setItem('staffUser', JSON.stringify(staffUser));
+    enforceRoleRestrictions();
+    console.log('💎 Clinical role view switched to:', newRole);
 }
 
 // Call restrictions after loading dashboard

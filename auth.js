@@ -19,8 +19,8 @@ function closeLoginModal() {
     document.getElementById('loginError').style.display = 'none';
     const modalTitle = document.querySelector('#loginModal h2');
     const modalHero = document.querySelector('#loginModal .hero-label');
-    if (modalTitle) modalTitle.innerText = 'Staff Access';
-    if (modalHero) modalHero.innerText = 'AUTHENTICATION';
+    if (modalTitle) modalTitle.innerText = 'Staff & Doctor Access';
+    if (modalHero) modalHero.innerText = 'CLINICAL PORTAL';
 }
 
 // Dedicated SuperAdmin Login Modal Trigger

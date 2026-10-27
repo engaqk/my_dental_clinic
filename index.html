@@ -320,6 +320,25 @@
                     </div>
                 </div>
 
+                <!-- Clinical Role Switcher (Doctor, Compounder, Receptionist) -->
+                <div id="roleSwitcherBar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; background: #FFFFFF; padding: 0.6rem 1rem; border-radius: 14px; border: 1px solid #E2E8F0; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.75rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Active Role View:</span>
+                        <span id="currentRoleBadge" style="font-size: 0.75rem; font-weight: 800; background: #DCFCE7; color: #15803D; padding: 2px 10px; border-radius: 99px; text-transform: uppercase;">Doctor</span>
+                    </div>
+                    <div style="display: flex; gap: 6px; background: #F1F5F9; padding: 3px; border-radius: 10px;">
+                        <button type="button" id="roleBtnDoctor" onclick="switchActiveStaffRole('doctor')" style="border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: var(--primary, #0D9488); color: white; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-user-md"></i> Doctor
+                        </button>
+                        <button type="button" id="roleBtnCompounder" onclick="switchActiveStaffRole('compounder')" style="border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-mortar-pestle"></i> Compounder
+                        </button>
+                        <button type="button" id="roleBtnRecep" onclick="switchActiveStaffRole('receptionist')" style="border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-concierge-bell"></i> Receptionist
+                        </button>
+                    </div>
+                </div>
+
                 <div class="stats-row">
                     <div class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 1rem;">
                         <i class="fas fa-user-check" style="margin-bottom:0.25rem; font-size: 1.2rem;"></i>
@@ -1236,10 +1255,28 @@
         <div class="modal-content" style="max-width: 400px; padding: 1.5rem 1.25rem;">
             <span class="close-modal" id="closeLogin" onclick="closeLoginModal()">×</span>
             <div class="modal-header-block" style="text-align: center; margin-bottom: 1.1rem;">
-                <span class="hero-label">AUTHENTICATION</span>
-                <h2 style="font-family: 'Outfit'; margin: 0.25rem 0 0 0; font-size: 1.4rem;">Staff Access</h2>
+                <span class="hero-label">CLINICAL PORTAL</span>
+                <h2 style="font-family: 'Outfit'; margin: 0.25rem 0 0 0; font-size: 1.4rem;">Staff & Doctor Access</h2>
             </div>
             <div id="loginError" style="color: #dc3545; font-size: 0.82rem; text-align: center; display: none; margin-bottom: 0.85rem;">Invalid username or password.</div>
+
+            <!-- Doctor Google Sign-In Button -->
+            <button type="button" id="btnDoctorGoogleSignIn" onclick="handleDoctorGoogleSignIn()" style="width: 100%; height: 46px; border-radius: 10px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #1E293B; font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 1rem; transition: all 0.2s ease;">
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Sign in with Google (Doctor Login)
+            </button>
+
+            <div style="display: flex; align-items: center; margin-bottom: 1rem; color: #94A3B8; font-size: 0.72rem; font-weight: 700;">
+                <div style="flex: 1; height: 1px; background: #E2E8F0;"></div>
+                <span style="padding: 0 10px; text-transform: uppercase;">or staff credentials</span>
+                <div style="flex: 1; height: 1px; background: #E2E8F0;"></div>
+            </div>
+
             <form id="loginForm">
                 <div class="form-group" style="margin-bottom: 0.75rem;">
                     <label style="display: block; font-weight: 800; font-size: 0.75rem; margin-bottom: 0.25rem; color: var(--text-muted); text-transform: uppercase;">Professional ID</label>
