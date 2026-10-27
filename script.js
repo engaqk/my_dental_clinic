@@ -1217,6 +1217,11 @@ function populateSettingsForm(settings) {
 
     const color = settings.primary_color || settings.primaryColor || '#0D9488';
 
+    const gateEnabledInput = document.getElementById('settingAccessGateEnabled');
+    const pinInput = document.getElementById('settingAccessPin');
+    if (gateEnabledInput) gateEnabledInput.checked = (settings.access_gate_enabled !== false);
+    if (pinInput) pinInput.value = settings.access_pin || '1234';
+
     if (nameInput) nameInput.value = settings.clinic_name || settings.name || "";
     if (subInput) subInput.value = settings.subtitle || "";
     if (docInput) docInput.value = settings.doctor_name || settings.subtitle || "";
@@ -1236,11 +1241,16 @@ function openSettingsModal() {
 document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const primaryColor = document.getElementById('settingPrimaryColor')?.value || document.getElementById('settingPrimaryColorPicker')?.value || '#0D9488';
+    const gateEnabled = document.getElementById('settingAccessGateEnabled')?.checked !== false;
+    const accessPin = document.getElementById('settingAccessPin')?.value?.trim() || '1234';
+
     const settings = {
         clinic_name: document.getElementById('settingClinicName')?.value?.trim() || '',
         subtitle: document.getElementById('settingSubtitle')?.value?.trim() || '',
         doctor_name: document.getElementById('settingDoctorName')?.value?.trim() || '',
         primary_color: primaryColor,
+        access_gate_enabled: gateEnabled,
+        access_pin: accessPin,
         admin_user: document.getElementById('settingAdminUser')?.value?.trim() || '',
         admin_pass: document.getElementById('settingAdminPass')?.value || ''
     };
@@ -1259,7 +1269,7 @@ document.getElementById('settingsForm')?.addEventListener('submit', async (e) =>
     try {
         const success = await window.dbAPI.saveSettings(settings);
         if (success) {
-            alert('✅ Clinic Settings & Theme Color Updated Successfully!');
+            alert('✅ Clinic Settings, Theme & Access PIN Updated Successfully!');
             loadClinicSettings();
         } else {
             alert('Failed to save settings. Please try again.');
@@ -1273,6 +1283,302 @@ document.getElementById('settingsForm')?.addEventListener('submit', async (e) =>
         }
     }
 });
+
+// --- FIRST-TIME VISITOR ACCESS GATE (ONE-TIME VERIFICATION) ---
+function toggleGatePinVisibility() {
+    const pinInput = document.getElementById('gateVisitorPin');
+    const eyeIcon = document.getElementById('gateEyeIcon');
+    if (!pinInput) return;
+    if (pinInput.type === 'password') {
+        pinInput.type = 'text';
+        if (eyeIcon) { eyeIcon.classList.remove('fa-eye'); eyeIcon.classList.add('fa-eye-slash'); }
+    } else {
+        pinInput.type = 'password';
+        if (eyeIcon) { eyeIcon.classList.remove('fa-eye-slash'); eyeIcon.classList.add('fa-eye'); }
+    }
+}
+
+function checkFirstTimeAccessGate(settings) {
+    if (!settings) settings = window.currentClinicSettings || {};
+    const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
+    
+    // Check if user is logged in as staff/superadmin
+    const staffUserStr = sessionStorage.getItem('staffUser');
+    const isSuper = sessionStorage.getItem('isSuperAdmin') === 'true';
+    if (staffUserStr || isSuper) {
+        const modal = document.getElementById('firstTimeAccessGateModal');
+        if (modal) modal.style.display = 'none';
+        return;
+    }
+
+    // Check if patient is already logged in or verified
+    checkPatientLoginStatus();
+
+    const verifiedKey = 'tenant_access_verified_' + tenantId;
+    const isVerified = localStorage.getItem(verifiedKey);
+    if (isVerified) {
+        return; // User already verified previously! Never prompt again.
+    }
+
+    // Show sleek 1-click Google Sign-In startup modal
+    const modal = document.getElementById('firstTimeAccessGateModal');
+    if (modal) {
+        const clinicNameEl = document.getElementById('gateClinicNameDisplay');
+        const clinicSubEl = document.getElementById('gateClinicSubDisplay');
+        if (clinicNameEl) {
+            clinicNameEl.innerText = settings.clinic_name || settings.name || 'Welcome to Our Clinic';
+        }
+        if (clinicSubEl && (settings.subtitle || settings.doctor_name)) {
+            clinicSubEl.innerText = `${settings.doctor_name || settings.subtitle} • 1-Click Patient Sign-In`;
+        }
+        modal.style.display = 'flex';
+    }
+}
+
+async function handleFirstTimeGoogleSignIn() {
+    const alertBox = document.getElementById('gateErrorAlert');
+    const btn = document.getElementById('btnGoogleGateSignIn');
+    if (alertBox) alertBox.style.display = 'none';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting to Google...';
+    }
+
+    try {
+        let user = null;
+        if (window.dbAPI && window.dbAPI.auth && typeof firebase !== 'undefined' && firebase.auth) {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            
+            if (isStandalone) {
+                await window.dbAPI.auth.signInWithRedirect(provider);
+                return;
+            } else {
+                const res = await window.dbAPI.auth.signInWithPopup(provider);
+                user = res.user;
+            }
+        } else {
+            // Local fallback simulation if Firebase offline
+            user = {
+                uid: 'google_' + Date.now(),
+                displayName: 'Patient Guest',
+                email: 'patient.user@gmail.com',
+                photoURL: 'https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png'
+            };
+        }
+
+        if (user) {
+            const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
+            // 1. Mark verified for 1-time startup requirement
+            localStorage.setItem('tenant_access_verified_' + tenantId, 'true');
+
+            // 2. Record visitor in SuperAdmin logs & marketing leads
+            if (window.dbAPI && typeof window.dbAPI.recordGoogleVisitor === 'function') {
+                await window.dbAPI.recordGoogleVisitor(user);
+            }
+
+            // 3. Maintain patient profile
+            await setupLoggedInPatient(user);
+
+            // 4. Smooth dismiss modal
+            if (alertBox) {
+                alertBox.style.background = '#DCFCE7';
+                alertBox.style.borderColor = '#86EFAC';
+                alertBox.style.color = '#15803D';
+                alertBox.innerText = `✅ Welcome, ${user.displayName || 'Patient'}! Access granted.`;
+                alertBox.style.display = 'block';
+            }
+
+            setTimeout(() => {
+                const modal = document.getElementById('firstTimeAccessGateModal');
+                if (modal) modal.style.display = 'none';
+            }, 600);
+        }
+
+    } catch (err) {
+        console.warn('Google sign-in gate notice:', err);
+        if (alertBox) {
+            alertBox.innerText = err.message || 'Google sign-in could not be completed. You may continue as guest.';
+            alertBox.style.display = 'block';
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `
+                <svg width="22" height="22" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Continue with Google
+            `;
+        }
+    }
+}
+
+function handleFirstTimeGuestBypass() {
+    const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
+    localStorage.setItem('tenant_access_verified_' + tenantId, 'guest');
+    const modal = document.getElementById('firstTimeAccessGateModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function setupLoggedInPatient(user) {
+    if (!user || !user.email) return;
+    const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
+    window.currentPatientUser = user;
+    localStorage.setItem('tenant_patient_user_' + tenantId, JSON.stringify({
+        displayName: user.displayName || user.name || 'Patient',
+        email: user.email,
+        photoURL: user.photoURL || '',
+        uid: user.uid || ''
+    }));
+
+    // Update navbar avatar & name
+    const navItem = document.getElementById('patient-nav-item');
+    const loginItem = document.getElementById('patient-login-item');
+    const navAvatar = document.getElementById('patientNavAvatar');
+    const navName = document.getElementById('patientNavName');
+
+    if (navItem) navItem.style.display = 'inline-block';
+    if (loginItem) loginItem.style.display = 'none';
+    if (navName) navName.innerText = (user.displayName || user.name || 'Patient').split(' ')[0];
+    if (navAvatar) {
+        if (user.photoURL) {
+            navAvatar.src = user.photoURL;
+            navAvatar.style.display = 'inline-block';
+        } else {
+            navAvatar.style.display = 'none';
+        }
+    }
+
+    // Auto-fill booking form fields
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    if (nameInput && !nameInput.value) nameInput.value = user.displayName || user.name || '';
+    if (emailInput && !emailInput.value) emailInput.value = user.email || '';
+
+    // Populate patient profile tab fields
+    const pAvatar = document.getElementById('patientProfileAvatar');
+    const pFullName = document.getElementById('patientProfileFullName');
+    const pEmail = document.getElementById('patientProfileEmail');
+    if (pAvatar && user.photoURL) pAvatar.src = user.photoURL;
+    if (pFullName) pFullName.innerText = user.displayName || user.name || 'Patient';
+    if (pEmail) pEmail.innerText = user.email;
+
+    // Fetch extended profile data (mobile, address, notes)
+    if (window.dbAPI && typeof window.dbAPI.getPatientProfile === 'function') {
+        try {
+            const profile = await window.dbAPI.getPatientProfile(user.email);
+            if (profile) {
+                const mob = document.getElementById('patientProfileMobile');
+                const age = document.getElementById('patientProfileAge');
+                const gen = document.getElementById('patientProfileGender');
+                const addr = document.getElementById('patientProfileAddress');
+                const notes = document.getElementById('patientProfileMedicalNotes');
+                const bookingPhone = document.getElementById('phone');
+
+                if (mob && profile.mobile) {
+                    mob.value = profile.mobile;
+                    if (bookingPhone && !bookingPhone.value) bookingPhone.value = profile.mobile;
+                }
+                if (age && profile.age) age.value = profile.age;
+                if (gen && profile.gender) gen.value = profile.gender;
+                if (addr && profile.address) addr.value = profile.address;
+                if (notes && profile.medicalNotes) notes.value = profile.medicalNotes;
+            }
+        } catch(e) {}
+    }
+
+    // Also sync with patient portal dashboard
+    if (typeof setupPatientDashboard === 'function') {
+        setupPatientDashboard(user.email, user.displayName || 'Patient');
+    }
+}
+
+function checkPatientLoginStatus() {
+    const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
+    try {
+        const saved = JSON.parse(localStorage.getItem('tenant_patient_user_' + tenantId) || 'null');
+        if (saved && saved.email) {
+            setupLoggedInPatient(saved);
+        }
+    } catch(e) {}
+}
+
+async function savePatientProfileFromSection(e) {
+    e.preventDefault();
+    const user = window.currentPatientUser;
+    if (!user || !user.email) {
+        alert('Please sign in with Google first.');
+        return;
+    }
+
+    const mobile = document.getElementById('patientProfileMobile')?.value?.trim();
+    const age = document.getElementById('patientProfileAge')?.value?.trim();
+    const gender = document.getElementById('patientProfileGender')?.value;
+    const address = document.getElementById('patientProfileAddress')?.value?.trim();
+    const medicalNotes = document.getElementById('patientProfileMedicalNotes')?.value?.trim();
+    const alertBox = document.getElementById('patientProfileSaveAlert');
+    const btn = document.getElementById('btnSavePatientProfile');
+
+    if (!mobile || mobile.replace(/\D/g, '').length < 8) {
+        alert('Please enter a valid mobile phone number.');
+        return;
+    }
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Profile...';
+    }
+
+    try {
+        const payload = {
+            name: user.displayName || user.name || 'Patient',
+            email: user.email,
+            mobile: mobile,
+            phone: mobile,
+            age: age || '',
+            gender: gender || '',
+            address: address || '',
+            medicalNotes: medicalNotes || ''
+        };
+
+        if (window.dbAPI && typeof window.dbAPI.savePatientProfile === 'function') {
+            await window.dbAPI.savePatientProfile(user.email, payload);
+        }
+
+        // Auto-fill booking form mobile number
+        const bookingPhone = document.getElementById('phone');
+        if (bookingPhone) bookingPhone.value = mobile;
+
+        if (alertBox) {
+            alertBox.style.display = 'block';
+            setTimeout(() => { alertBox.style.display = 'none'; }, 4000);
+        }
+        alert('✅ Profile details saved successfully! Your contact is linked with your appointments.');
+
+    } catch(err) {
+        alert('Error saving profile: ' + err.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-save"></i> Save Profile Details';
+        }
+    }
+}
+
+function openPatientProfileView() {
+    showSection('patient-portal');
+    if (typeof switchPatientPortalTab === 'function') {
+        switchPatientPortalTab('profile');
+    }
+}
+
+function triggerGoogleSignInPrompt() {
+    handleFirstTimeGoogleSignIn();
+}
 
 function loadClinicSettings() {
     if (!window.dbAPI) return;
@@ -1295,6 +1601,7 @@ function loadClinicSettings() {
         applyTenantTheme(themeColor);
         updateTenantPWA(settings);
         populateSettingsForm(settings);
+        checkFirstTimeAccessGate(settings);
     }).catch(err => {
         console.warn('loadClinicSettings error:', err);
     });
@@ -1774,14 +2081,21 @@ function switchPatientPortalTab(tabName) {
     activePatientTab = tabName;
     
     // Toggle active buttons
-    document.getElementById('pTabBtnTimeline').classList.toggle('active', tabName === 'timeline');
-    document.getElementById('pTabBtnDiagnoses').classList.toggle('active', tabName === 'diagnoses');
-    document.getElementById('pTabBtnFinances').classList.toggle('active', tabName === 'finances');
+    document.getElementById('pTabBtnTimeline')?.classList.toggle('active', tabName === 'timeline');
+    document.getElementById('pTabBtnDiagnoses')?.classList.toggle('active', tabName === 'diagnoses');
+    document.getElementById('pTabBtnFinances')?.classList.toggle('active', tabName === 'finances');
+    document.getElementById('pTabBtnProfile')?.classList.toggle('active', tabName === 'profile');
     
     // Toggle active containers
-    document.getElementById('patientTimelineSection').style.display = tabName === 'timeline' ? 'block' : 'none';
-    document.getElementById('patientDiagnosesSection').style.display = tabName === 'diagnoses' ? 'block' : 'none';
-    document.getElementById('patientFinancesSection').style.display = tabName === 'finances' ? 'block' : 'none';
+    const tSec = document.getElementById('patientTimelineSection');
+    const dSec = document.getElementById('patientDiagnosesSection');
+    const fSec = document.getElementById('patientFinancesSection');
+    const pSec = document.getElementById('patientProfileSection');
+
+    if (tSec) tSec.style.display = tabName === 'timeline' ? 'block' : 'none';
+    if (dSec) dSec.style.display = tabName === 'diagnoses' ? 'block' : 'none';
+    if (fSec) fSec.style.display = tabName === 'finances' ? 'block' : 'none';
+    if (pSec) pSec.style.display = tabName === 'profile' ? 'block' : 'none';
 }
 
 function changeLanguage(lang) {

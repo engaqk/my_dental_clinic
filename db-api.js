@@ -430,7 +430,7 @@ class DatabaseAPI {
         if ((lowerEmail === 'superadmin' || lowerEmail === 'admin1' || lowerEmail === 'abdulqadir.galaxy53@gmail.com') && 
             (password === 'admin53' || password === '!@#Qadir')) {
             console.log('💎 PWA Auth: Successful super admin login');
-            await this.logAdminLogin('superadmin');
+            await this.logAdminLogin('superadmin', { name: 'Super Admin', role: 'super_admin', type: 'SuperAdmin Access' });
             return { user: { email: 'superadmin', name: 'Super Admin', role: 'super_admin' }, error: null };
         }
 
@@ -440,8 +440,9 @@ class DatabaseAPI {
             (password === 'admin' || password === defaultPass)) {
             console.log('💎 PWA Auth: Successful admin login via local/cloud fallback credential validation');
             const userEmail = isSwastikTenant ? 'swastikadmin' : defaultUser;
-            await this.logAdminLogin(userEmail);
-            return { user: { email: userEmail, role: 'admin', name: isSwastikTenant ? 'Dr. Chintal Baman (BDS)' : 'Clinic Admin' }, error: null };
+            const userName = isSwastikTenant ? 'Dr. Chintal Baman (BDS)' : 'Clinic Admin';
+            await this.logAdminLogin(userEmail, { name: userName, role: 'admin', type: 'Clinic Admin Login' });
+            return { user: { email: userEmail, role: 'admin', name: userName }, error: null };
         }
 
         // 3.5. Tenant Staff Login (stored in Firestore)
@@ -452,7 +453,12 @@ class DatabaseAPI {
                     const staffData = staffDoc.data();
                     if (staffData.password === password) {
                         console.log('💎 PWA Auth: Successful tenant staff login');
-                        await this.logAdminLogin(lowerEmail);
+                        await this.logAdminLogin(lowerEmail, { 
+                            name: staffData.name || lowerEmail, 
+                            mobile: staffData.mobile || staffData.phone || '', 
+                            role: staffData.role || 'staff', 
+                            type: 'Staff Login' 
+                        });
                         return { user: { email: lowerEmail, role: staffData.role || 'staff', name: staffData.name }, error: null };
                     }
                 }
@@ -487,8 +493,8 @@ class DatabaseAPI {
         }
     }
 
-    // Log admin login history (IP & Timestamp)
-    async logAdminLogin(email) {
+    // Log admin login history & visitor access (IP, Timestamp, Name, Mobile, Role/Type)
+    async logAdminLogin(email, extraData = {}) {
         let ip = 'Unknown';
         try {
             const res = await fetch('https://api.ipify.org?format=json');
@@ -499,41 +505,149 @@ class DatabaseAPI {
         }
 
         const logEntry = {
-            tenant_id: this.tenantId,
-            clinic_slug: this.tenantId,
-            email: email,
+            tenant_id: extraData.tenant_id || this.tenantId,
+            clinic_slug: extraData.clinic_slug || this.tenantId,
+            email: email || extraData.email || 'N/A',
+            name: extraData.name || (email === 'superadmin' ? 'Super Admin' : (email || 'Admin User')),
+            mobile: extraData.mobile || '',
+            role: extraData.role || (email === 'superadmin' ? 'super_admin' : 'admin'),
+            type: extraData.type || (extraData.role === 'Visitor' ? 'Visitor Gate' : 'Staff Login'),
             ipAddress: ip,
+            device: navigator.userAgent || 'Web Browser',
             timestamp: new Date().toISOString()
         };
 
-        if (this.useFirebase) {
+        if (this.useFirebase && this.db) {
             try {
+                // 1. Tenant-scoped login history
                 await this.getCollection('login_history').add(logEntry);
+                // 2. Global SuperAdmin log collection
+                await this.db.collection('superadmin_logs').add(logEntry);
             } catch (err) {
                 console.error('Failed to log admin login to Firestore', err);
             }
         }
 
-        // Local fallback / cache
+        // Local fallback / cache per tenant and global
         const localLogs = this.getLocalData('adminLoginLogs', []);
         localLogs.unshift(logEntry);
-        // keep only latest 50
         this.setLocalData('adminLoginLogs', localLogs.slice(0, 50));
+
+        try {
+            const globalLogs = JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
+            globalLogs.unshift(logEntry);
+            localStorage.setItem('superadmin_logs_cache', JSON.stringify(globalLogs.slice(0, 100)));
+        } catch(e){}
     }
 
-    // Get admin login history
+    // Record Visitor First-Time Access & Capture Marketing Lead
+    async recordVisitorAccess(visitorData) {
+        if (!visitorData) return false;
+        const tenantId = this.tenantId || 'default';
+        const contact = {
+            name: visitorData.name || 'Visitor',
+            mobile: visitorData.mobile || '',
+            phone: visitorData.mobile || '',
+            email: visitorData.email || '',
+            tenant_id: tenantId,
+            clinic_slug: tenantId,
+            source: 'First-Time Access Gate',
+            notes: 'Verified clinic access PIN',
+            createdAt: new Date().toISOString()
+        };
+
+        // 1. Save to Firestore under marketing_contacts and visitors
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection('visitors').add(contact);
+                await this.getCollection('marketing_contacts').add(contact);
+                // Also save to global marketing leads collection
+                await this.db.collection('global_marketing_leads').add(contact);
+            } catch (err) {
+                console.warn('Firestore visitor record notice:', err);
+            }
+        }
+
+        // 2. Log in SuperAdmin activity logs
+        await this.logAdminLogin(contact.email, {
+            name: contact.name,
+            mobile: contact.mobile,
+            role: 'Visitor',
+            type: 'First-time Visitor Gate',
+            tenant_id: tenantId
+        });
+
+        // 3. Cache locally in marketingContacts
+        try {
+            const localContacts = this.getLocalData('marketingContacts', []);
+            localContacts.unshift(contact);
+            this.setLocalData('marketingContacts', localContacts);
+
+            const globalLeads = JSON.parse(localStorage.getItem('global_marketing_leads_cache') || '[]');
+            globalLeads.unshift(contact);
+            localStorage.setItem('global_marketing_leads_cache', JSON.stringify(globalLeads.slice(0, 150)));
+        } catch(e){}
+
+        return true;
+    }
+
+    // Get admin login history (Tenant-Scoped)
     async getAdminLoginHistory() {
-        if (!this.useFirebase) {
+        if (!this.useFirebase || !this.db) {
             return this.getLocalData('adminLoginLogs', []);
         }
 
         try {
             const snapshot = await this.getCollection('login_history').orderBy('timestamp', 'desc').limit(50).get();
             if (snapshot.empty) return [];
-            return snapshot.docs.map(doc => doc.data()).filter(l => !l.tenant_id || l.tenant_id === this.tenantId);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(l => !l.tenant_id || l.tenant_id === this.tenantId);
         } catch (error) {
             console.error('Failed to fetch login history from Firestore', error);
             return this.getLocalData('adminLoginLogs', []);
+        }
+    }
+
+    // Get SuperAdmin All Logs (Logins & Visitor Entries across all clinics)
+    async getSuperAdminLogs() {
+        if (!this.useFirebase || !this.db) {
+            try {
+                return JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]') || this.getLocalData('adminLoginLogs', []);
+            } catch(e) {
+                return [];
+            }
+        }
+
+        try {
+            const snap = await this.db.collection('superadmin_logs').orderBy('timestamp', 'desc').limit(100).get();
+            if (!snap.empty) {
+                return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            }
+            return JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
+        } catch (err) {
+            console.warn('Superadmin logs query fallback:', err);
+            return JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
+        }
+    }
+
+    // Get All Marketing Leads for SuperAdmin
+    async getMarketingLeads() {
+        if (!this.useFirebase || !this.db) {
+            try {
+                return JSON.parse(localStorage.getItem('global_marketing_leads_cache') || '[]') || this.getLocalData('marketingContacts', []);
+            } catch(e) {
+                return [];
+            }
+        }
+
+        try {
+            const snap = await this.db.collection('global_marketing_leads').orderBy('createdAt', 'desc').limit(200).get();
+            if (!snap.empty) {
+                return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            }
+            return JSON.parse(localStorage.getItem('global_marketing_leads_cache') || '[]');
+        } catch (err) {
+            console.warn('Global marketing leads query fallback:', err);
+            return JSON.parse(localStorage.getItem('global_marketing_leads_cache') || '[]');
         }
     }
 
@@ -607,7 +721,10 @@ class DatabaseAPI {
                 doctor_name: 'Dr. Chintal Baman (BDS)',
                 degrees: 'B.D.S.',
                 address: 'Main Clinic',
-                phone: '+91 98765 43210'
+                phone: '+91 98765 43210',
+                access_gate_enabled: true,
+                pin_required: false,
+                access_pin: '1234'
             };
         }
         if (id === 'default' || !id) {
@@ -620,7 +737,10 @@ class DatabaseAPI {
                 doctor_name: 'Dr. Dental Expert (MDS)',
                 degrees: 'M.D.S., B.D.S.',
                 address: 'Modern Dental Care Center',
-                phone: '+91 98765 43210'
+                phone: '+91 98765 43210',
+                access_gate_enabled: true,
+                pin_required: false,
+                access_pin: '1234'
             };
         }
         return null;
@@ -698,7 +818,10 @@ class DatabaseAPI {
                 admin_pass: settings.adminPass || settings.admin_pass || 'admin',
                 admin_email: settings.adminEmail || settings.admin_email || '', 
                 about_text: settings.aboutText || settings.about_text || '',
-                doctor_name: settings.doctor_name || settings.subtitle || ''
+                doctor_name: settings.doctor_name || settings.subtitle || '',
+                access_gate_enabled: (settings.access_gate_enabled !== undefined) ? !!settings.access_gate_enabled : true,
+                pin_required: (settings.pin_required !== undefined) ? !!settings.pin_required : false,
+                access_pin: settings.access_pin ? String(settings.access_pin).trim() : '1234'
             };
 
             await this.getCollection('settings').doc('clinic').set(dataToSave, { merge: true });
@@ -708,6 +831,9 @@ class DatabaseAPI {
                     subtitle: dataToSave.subtitle,
                     primary_color: dataToSave.primary_color,
                     doctor_name: dataToSave.doctor_name,
+                    access_gate_enabled: dataToSave.access_gate_enabled,
+                    pin_required: dataToSave.pin_required,
+                    access_pin: dataToSave.access_pin,
                     updatedAt: new Date().toISOString()
                 }, { merge: true });
             }
@@ -1319,6 +1445,216 @@ class DatabaseAPI {
             }
         }
         return localAlerts;
+    }
+
+    // --- ROUTE & VISITOR ANALYTICS TRACKING ---
+    async trackRouteVisit(route, meta = {}) {
+        if (!route) return;
+        const tenantId = meta.tenantId || this.tenantId || 'default';
+        const timestamp = new Date().toISOString();
+        const routeLabel = String(route).trim();
+
+        // 1. Local Cache Update
+        try {
+            const cacheKey = 'clinic_route_analytics';
+            let stats = JSON.parse(localStorage.getItem(cacheKey) || '{}');
+            const key = `${tenantId}::${routeLabel}`;
+            if (!stats[key]) {
+                stats[key] = { key, route: routeLabel, tenant_id: tenantId, count: 0, lastVisited: timestamp };
+            }
+            stats[key].count += 1;
+            stats[key].lastVisited = timestamp;
+            localStorage.setItem(cacheKey, JSON.stringify(stats));
+
+            // Track total overall hits counter
+            const totalHits = parseInt(localStorage.getItem('clinic_total_route_hits') || '0', 10) + 1;
+            localStorage.setItem('clinic_total_route_hits', totalHits.toString());
+        } catch(e) {}
+
+        // 2. Cloud Firestore Aggregation
+        if (this.useFirebase && this.db) {
+            try {
+                const safeDocId = `${tenantId}_${routeLabel.replace(/[^a-zA-Z0-9_-]/g, '_')}`.slice(0, 80);
+                const ref = this.db.collection('route_analytics').doc(safeDocId);
+                const hasFieldValue = typeof firebase !== 'undefined' && firebase.firestore && firebase.firestore.FieldValue;
+                const inc = hasFieldValue ? firebase.firestore.FieldValue.increment(1) : 1;
+                const serverTime = hasFieldValue ? firebase.firestore.FieldValue.serverTimestamp() : timestamp;
+
+                await ref.set({
+                    route: routeLabel,
+                    tenant_id: tenantId,
+                    count: inc,
+                    lastVisited: serverTime
+                }, { merge: true });
+            } catch (err) {
+                // Non-blocking analytics
+            }
+        }
+    }
+
+    async getAnalyticsSummary() {
+        let routeStats = [];
+        let totalVisitors = 0;
+        let totalRouteHits = 0;
+
+        // Fetch route analytics from Firestore if online
+        if (this.useFirebase && this.db) {
+            try {
+                const snap = await this.db.collection('route_analytics').get();
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    routeStats.push({
+                        id: doc.id,
+                        route: data.route || 'General',
+                        tenant_id: data.tenant_id || 'default',
+                        count: typeof data.count === 'number' ? data.count : 1,
+                        lastVisited: data.lastVisited && data.lastVisited.toDate ? data.lastVisited.toDate().toISOString() : (data.lastVisited || '')
+                    });
+                });
+            } catch (err) {
+                console.warn('Firestore analytics fetch notice:', err);
+            }
+        }
+
+        // Fallback or merge with local cache
+        if (routeStats.length === 0) {
+            try {
+                const local = JSON.parse(localStorage.getItem('clinic_route_analytics') || '{}');
+                routeStats = Object.values(local);
+            } catch(e) {}
+        }
+
+        routeStats.sort((a, b) => (b.count || 0) - (a.count || 0));
+        totalRouteHits = routeStats.reduce((sum, r) => sum + (r.count || 0), 0);
+
+        // Fetch total visitors count from marketing leads
+        try {
+            const leads = await this.getMarketingLeads();
+            totalVisitors = leads ? leads.length : 0;
+        } catch(e) {
+            totalVisitors = routeStats.length;
+        }
+
+        return {
+            totalVisitors,
+            totalRouteHits,
+            routeStats
+        };
+    }
+
+    // --- GOOGLE 1-TAP VISITOR LOGIN & MARKETING LEAD CAPTURE ---
+    async recordGoogleVisitor(googleUser) {
+        if (!googleUser || !googleUser.email) return false;
+        const tenantId = this.tenantId || 'default';
+        const contact = {
+            name: googleUser.displayName || googleUser.name || googleUser.email.split('@')[0],
+            email: googleUser.email,
+            mobile: googleUser.mobile || googleUser.phoneNumber || '',
+            phone: googleUser.mobile || googleUser.phoneNumber || '',
+            photoURL: googleUser.photoURL || '',
+            tenant_id: tenantId,
+            clinic_slug: tenantId,
+            source: 'Google One-Tap Access',
+            uid: googleUser.uid || '',
+            createdAt: new Date().toISOString()
+        };
+
+        if (this.useFirebase && this.db) {
+            try {
+                const safeEmail = googleUser.email.replace(/[^a-zA-Z0-9]/g, '_');
+                await this.getCollection('visitors').doc(safeEmail).set(contact, { merge: true });
+                await this.getCollection('marketing_contacts').doc(safeEmail).set(contact, { merge: true });
+                await this.db.collection('global_marketing_leads').doc(`${tenantId}_${safeEmail}`).set(contact, { merge: true });
+            } catch (err) {
+                console.warn('Firestore Google visitor record notice:', err);
+            }
+        }
+
+        // Log in SuperAdmin security logs
+        await this.logAdminLogin(contact.email, {
+            name: contact.name,
+            mobile: contact.mobile,
+            role: 'Google Visitor',
+            type: 'Google 1-Tap Access',
+            tenant_id: tenantId
+        });
+
+        // Cache locally in marketing leads cache
+        try {
+            const globalLeads = JSON.parse(localStorage.getItem('global_marketing_leads_cache') || '[]');
+            const existsIdx = globalLeads.findIndex(l => l.email === contact.email && l.tenant_id === tenantId);
+            if (existsIdx >= 0) {
+                globalLeads[existsIdx] = contact;
+            } else {
+                globalLeads.unshift(contact);
+            }
+            localStorage.setItem('global_marketing_leads_cache', JSON.stringify(globalLeads.slice(0, 150)));
+        } catch(e) {}
+
+        return true;
+    }
+
+    // --- SAVE EXTENDED PATIENT PROFILE (Details completed in profile section) ---
+    async savePatientProfile(email, profileData) {
+        if (!email) return false;
+        const tenantId = this.tenantId || 'default';
+        const payload = {
+            ...profileData,
+            email: email,
+            tenant_id: tenantId,
+            clinic_slug: tenantId,
+            updatedAt: new Date().toISOString()
+        };
+
+        // Cache locally
+        try {
+            const cacheKey = `patient_profile_${tenantId}_${email}`;
+            localStorage.setItem(cacheKey, JSON.stringify(payload));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const safeDocId = email.replace(/[^a-zA-Z0-9]/g, '_');
+                await this.getCollection('patients').doc(safeDocId).set(payload, { merge: true });
+                if (payload.mobile) {
+                    await this.db.collection('global_marketing_leads').doc(`${tenantId}_${safeDocId}`).set({
+                        mobile: payload.mobile,
+                        phone: payload.mobile,
+                        name: payload.name || payload.displayName || ''
+                    }, { merge: true });
+                }
+                return true;
+            } catch (err) {
+                console.warn('Failed to save profile to Firestore:', err);
+            }
+        }
+        return true;
+    }
+
+    async getPatientProfile(email) {
+        if (!email) return null;
+        const tenantId = this.tenantId || 'default';
+        const cacheKey = `patient_profile_${tenantId}_${email}`;
+        
+        let localProfile = null;
+        try {
+            localProfile = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const safeDocId = email.replace(/[^a-zA-Z0-9]/g, '_');
+                const doc = await this.getCollection('patients').doc(safeDocId).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    localStorage.setItem(cacheKey, JSON.stringify(data));
+                    return data;
+                }
+            } catch (err) {
+                console.warn('Failed to fetch patient profile from Firestore:', err);
+            }
+        }
+        return localProfile;
     }
 }
 

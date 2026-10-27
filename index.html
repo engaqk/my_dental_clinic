@@ -63,6 +63,8 @@
                     <li><a href="#" onclick="showSection('home')" id="home-nav" class="active">Home</a></li>
                     <li><a href="#" onclick="scrollToTour()" id="tour-nav">Portal Tour</a></li>
                     <li><a href="#" onclick="scrollToBooking()">Book Appointment</a></li>
+                    <li id="patient-nav-item" style="display: none;"><a href="javascript:void(0)" onclick="openPatientProfileView()" style="display: inline-flex; align-items: center; gap: 7px; font-weight: 700; color: var(--primary);"><img id="patientNavAvatar" src="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none;"> <span id="patientNavName">My Profile</span></a></li>
+                    <li id="patient-login-item"><a href="javascript:void(0)" onclick="triggerGoogleSignInPrompt()" style="font-weight: 700; color: #475569;"><i class="fab fa-google" style="color: #4285F4;"></i> Sign In</a></li>
                     <li id="portal-nav-item"><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Clinical Portal (Admin/Staff)</a></li>
                     <li id="superadmin-nav-item"><a href="superadmin.html" id="superadmin-nav" onclick="if(window.location.protocol!=='file:'){window.location.href='/superadmin'; return false;} else {window.location.href='superadmin.html'; return false;}" style="color: #8B5CF6; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-crown" style="color: #F59E0B; font-size: 0.95rem;"></i> SuperAdmin</a></li>
                     <li id="pwa-install-item"><a href="javascript:void(0)" id="pwaInstallBtn" onclick="triggerPWAInstall(); return false;" style="color: var(--primary); font-weight: 800;"><i class="fas fa-download"></i> Install App</a></li>
@@ -508,6 +510,34 @@
                     </div>
                 </div>
 
+                <!-- First-Time Access Gate Configuration -->
+                <div style="margin-bottom: 1.5rem; background: var(--bg-soft); padding: 1.25rem; border-radius: 14px; border: 1px solid #E2E8F0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <span style="font-size: 0.85rem; font-weight: 800; color: #0F172A; text-transform: uppercase;">
+                            <i class="fas fa-user-shield" style="color: var(--primary);"></i> First-Time Visitor Access Gate
+                        </span>
+                        <div style="display: flex; gap: 0.85rem; align-items: center; flex-wrap: wrap;">
+                            <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700; color: var(--primary);">
+                                <input type="checkbox" id="settingAccessGateEnabled" checked style="width: 17px; height: 17px; accent-color: var(--primary);">
+                                Gate Active (1-Time Details)
+                            </label>
+                            <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700; color: #475569;">
+                                <input type="checkbox" id="settingPinRequired" style="width: 17px; height: 17px; accent-color: var(--primary);">
+                                Require Access PIN
+                            </label>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0 0 0.85rem 0;">
+                        New visitors provide their Name, Mobile &amp; Email on their first visit. If "Require Access PIN" is checked, visitors must also enter this PIN.
+                    </p>
+                    <div style="display: flex; gap: 1rem; align-items: center; max-width: 300px;">
+                        <div class="form-group" style="margin: 0; flex: 1;">
+                            <label style="font-size: 0.75rem; margin-bottom: 0.25rem;">Access PIN (if required)</label>
+                            <input type="text" id="settingAccessPin" value="1234" maxlength="8" placeholder="e.g. 1234" style="height: 42px; font-weight: 800; font-family: monospace; letter-spacing: 2px;">
+                        </div>
+                    </div>
+                </div>
+
                 <div id="superAdminFields">
                     <div class="admin-sync-title"><i class="fas fa-sync-alt"></i> Administrative Sync</div>
                     <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.25rem;">
@@ -673,6 +703,7 @@
                     <button class="profile-tab-btn active" id="pTabBtnTimeline" onclick="switchPatientPortalTab('timeline')">My History</button>
                     <button class="profile-tab-btn" id="pTabBtnDiagnoses" onclick="switchPatientPortalTab('diagnoses')">My Diagnoses</button>
                     <button class="profile-tab-btn" id="pTabBtnFinances" onclick="switchPatientPortalTab('finances')">Invoices &amp; Bills</button>
+                    <button class="profile-tab-btn" id="pTabBtnProfile" onclick="switchPatientPortalTab('profile')"><i class="fas fa-user-edit"></i> My Profile &amp; Contact</button>
                 </div>
 
                 <!-- Tab Contents -->
@@ -693,6 +724,64 @@
                     <div id="patientFinancesSection" style="display: none;">
                         <h3 style="margin-bottom: 1.5rem; color: var(--secondary);">My Transactions &amp; Bills</h3>
                         <div id="patientPaymentsList"></div>
+                    </div>
+
+                    <!-- Patient Profile & Contact Details Section -->
+                    <div id="patientProfileSection" style="display: none;">
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #E2E8F0;">
+                            <img id="patientProfileAvatar" src="https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png" alt="Profile" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2.5px solid var(--primary);">
+                            <div>
+                                <h3 id="patientProfileFullName" style="margin: 0; font-size: 1.25rem; font-weight: 800; color: var(--secondary);">Patient Name</h3>
+                                <p id="patientProfileEmail" style="margin: 3px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">email@example.com</p>
+                                <span style="font-size: 0.72rem; background: #DCFCE7; color: #15803D; font-weight: 700; padding: 1px 8px; border-radius: 99px; display: inline-block; margin-top: 4px;"><i class="fas fa-check-circle"></i> Google Verified Account</span>
+                            </div>
+                        </div>
+
+                        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; color: #475569;">
+                            <i class="fas fa-info-circle" style="color: var(--primary);"></i> Complete your contact information below for instant appointment confirmations, reminders, and clinic invoices.
+                        </div>
+
+                        <form id="patientProfileForm" onsubmit="savePatientProfileFromSection(event)">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 0.76rem; font-weight: 800; color: #475569; text-transform: uppercase;"><i class="fas fa-phone-alt"></i> Mobile Number (For SMS &amp; WhatsApp)</label>
+                                    <input type="tel" id="patientProfileMobile" required placeholder="e.g. 9876543210" maxlength="15" style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; padding: 0 0.85rem; box-sizing: border-box;">
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 0.76rem; font-weight: 800; color: #475569; text-transform: uppercase;"><i class="fas fa-birthday-cake"></i> Age / Date of Birth</label>
+                                    <input type="text" id="patientProfileAge" placeholder="e.g. 28 Yrs" style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; padding: 0 0.85rem; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 0.76rem; font-weight: 800; color: #475569; text-transform: uppercase;"><i class="fas fa-venus-mars"></i> Gender</label>
+                                    <select id="patientProfileGender" style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; padding: 0 0.85rem; box-sizing: border-box;">
+                                        <option value="">Select Gender</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin: 0;">
+                                    <label style="font-size: 0.76rem; font-weight: 800; color: #475569; text-transform: uppercase;"><i class="fas fa-map-marker-alt"></i> City / Residential Address</label>
+                                    <input type="text" id="patientProfileAddress" placeholder="e.g. Main Street, Local City" style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; padding: 0 0.85rem; box-sizing: border-box;">
+                                </div>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 1.25rem;">
+                                <label style="font-size: 0.76rem; font-weight: 800; color: #475569; text-transform: uppercase;"><i class="fas fa-heartbeat"></i> Medical Notes or Known Drug Allergies</label>
+                                <input type="text" id="patientProfileMedicalNotes" placeholder="e.g. None, or Penicillin allergy, Diabetes, High BP..." style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; padding: 0 0.85rem; box-sizing: border-box;">
+                            </div>
+
+                            <div id="patientProfileSaveAlert" style="display: none; background: #DCFCE7; color: #15803D; border: 1px solid #86EFAC; border-radius: 8px; padding: 0.65rem 1rem; font-size: 0.82rem; font-weight: 700; margin-bottom: 1rem;">
+                                ✓ Profile information updated successfully!
+                            </div>
+
+                            <button type="submit" id="btnSavePatientProfile" class="btn-primary" style="height: 44px; padding: 0 1.75rem; font-weight: 800; cursor: pointer;">
+                                <i class="fas fa-save"></i> Save Profile Details
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1304,6 +1393,7 @@
 
     <script src="db-api.js?v=44"></script>
     <script src="auth.js?v=44"></script>
+    <script src="emailTemplates.js?v=44"></script>
     <script src="script.js?v=44"></script>
     <script src="premium-features.js?v=44"></script>
     <script>
@@ -1313,6 +1403,14 @@
                 showLoginModal();
                 return;
             }
+
+            // Track route/section click analytics
+            try {
+                if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
+                    window.dbAPI.trackRouteVisit(id);
+                }
+            } catch(e){}
+
             const section = document.getElementById(id);
             if (section) {
                 document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
@@ -1646,4 +1744,45 @@
             <span>SuperAdmin</span>
         </a>
     </nav>
+    <!-- Sleek 1-Tap Google Sign-In Startup Access Modal -->
+    <div id="firstTimeAccessGateModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.78); backdrop-filter: blur(8px); z-index: 999999; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box;">
+        <div style="background: white; border-radius: 20px; max-width: 390px; width: 100%; padding: 2rem 1.75rem; box-shadow: 0 24px 48px rgba(0,0,0,0.25); position: relative; box-sizing: border-box; text-align: center; animation: gateFadeIn 0.3s ease-out;">
+            
+            <!-- Clinic Logo / Badge Icon -->
+            <div style="width: 58px; height: 58px; border-radius: 18px; background: var(--primary-light, #CCFBF1); color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; margin: 0 auto 1.15rem auto; box-shadow: 0 6px 16px rgba(13,148,136,0.2);">
+                <i class="fas fa-tooth"></i>
+            </div>
+
+            <h3 id="gateClinicNameDisplay" style="margin: 0 0 0.35rem 0; font-size: 1.3rem; font-weight: 800; color: var(--secondary, #0F172A); line-height: 1.25;">Welcome to Our Clinic</h3>
+            <p id="gateClinicSubDisplay" style="margin: 0 0 1.5rem 0; font-size: 0.85rem; color: #64748B; line-height: 1.4;">
+                Sign in with your Google account for instant 1-click patient access
+            </p>
+
+            <!-- 1-Click Google Sign-In Button -->
+            <button type="button" id="btnGoogleGateSignIn" onclick="handleFirstTimeGoogleSignIn()" style="width: 100%; height: 50px; border-radius: 12px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #1E293B; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease;">
+                <svg width="22" height="22" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Continue with Google
+            </button>
+
+            <!-- Reassurance Note -->
+            <div style="margin-top: 1.15rem; font-size: 0.76rem; color: #94A3B8; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <i class="fas fa-shield-alt" style="color: #10B981;"></i> Fast 1-Click Access &bull; Complete profile in portal
+            </div>
+
+            <div id="gateErrorAlert" style="display: none; background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.78rem; font-weight: 600; margin-top: 0.85rem; text-align: center;"></div>
+
+            <!-- Guest / Continue as Visitor Bypass Link -->
+            <div style="margin-top: 1.25rem; border-top: 1px solid #F1F5F9; padding-top: 0.85rem;">
+                <a href="javascript:void(0)" onclick="handleFirstTimeGuestBypass()" style="font-size: 0.78rem; color: #64748B; text-decoration: underline; font-weight: 600;">
+                    Continue as Guest Visitor
+                </a>
+            </div>
+
+        </div>
+    </div>
 </body></html>

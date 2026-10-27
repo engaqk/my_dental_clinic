@@ -331,18 +331,28 @@
         <!-- VIEW 2: AUTHENTICATED SUPERADMIN DASHBOARD -->
         <div id="saDashboardView" style="display: none;">
 
-            <!-- Overview Banner -->
-            <div style="background: linear-gradient(135deg, #1E1B4B, #312E81); color: white; padding: 1.75rem 2rem; border-radius: 18px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 10px 25px -5px rgba(30, 27, 75, 0.25);">
+            <!-- Overview Banner with Real-Time Stats -->
+            <div style="background: linear-gradient(135deg, #1E1B4B, #312E81); color: white; padding: 1.75rem 2rem; border-radius: 18px; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.5rem; box-shadow: 0 10px 25px -5px rgba(30, 27, 75, 0.25);">
                 <div>
                     <span style="background: rgba(139, 92, 246, 0.35); color: #C4B5FD; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-transform: uppercase;">
                         SuperAdmin Active Session
                     </span>
                     <h2 style="font-size: 1.6rem; margin: 0.5rem 0 0.25rem 0; font-weight: 800;">Tenant Control Console</h2>
-                    <p style="color: #A5B4FC; margin: 0; font-size: 0.88rem;">Manage isolated clinic environments, branding, credentials, and custom color themes.</p>
+                    <p style="color: #A5B4FC; margin: 0; font-size: 0.88rem;">Manage isolated clinic environments, branding, credentials, and traffic analytics.</p>
                 </div>
-                <div style="text-align: right;">
-                    <span style="font-size: 0.8rem; color: #A5B4FC; display: block;">Registered Clinics</span>
-                    <span id="statClinicsCount" style="font-size: 2.2rem; font-weight: 800; color: #FFFFFF; line-height: 1;">--</span>
+                <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.78rem; color: #A5B4FC; display: block;">Registered Clinics</span>
+                        <span id="statClinicsCount" style="font-size: 2rem; font-weight: 800; color: #FFFFFF; line-height: 1;">--</span>
+                    </div>
+                    <div style="text-align: right; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 1.5rem;">
+                        <span style="font-size: 0.78rem; color: #A5B4FC; display: block;">Total Visitors</span>
+                        <span id="statVisitorsCount" style="font-size: 2rem; font-weight: 800; color: #34D399; line-height: 1;">0</span>
+                    </div>
+                    <div style="text-align: right; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 1.5rem;">
+                        <span style="font-size: 0.78rem; color: #A5B4FC; display: block;">Route Clicks</span>
+                        <span id="statRouteHitsCount" style="font-size: 2rem; font-weight: 800; color: #60A5FA; line-height: 1;">0</span>
+                    </div>
                 </div>
             </div>
 
@@ -397,6 +407,29 @@
                         </div>
                     </div>
 
+                    <!-- First-Time Visitor Access Gate Settings -->
+                    <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 1rem; margin-bottom: 1.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <span style="font-weight: 800; font-size: 0.78rem; color: #475569; text-transform: uppercase;">
+                                <i class="fas fa-user-shield" style="color: #8B5CF6;"></i> First-Time Visitor Access Gate
+                            </span>
+                            <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700; color: #0F172A;">
+                                <input type="checkbox" id="newAccessGateEnabled" checked style="width: 17px; height: 17px; accent-color: #8B5CF6;">
+                                Require 1-Time Verification
+                            </label>
+                        </div>
+                        <p style="margin: 0 0 0.65rem 0; font-size: 0.76rem; color: #64748B;">
+                            New visitors must enter Name, Mobile, Email &amp; PIN on their first visit. Captured data is saved for marketing.
+                        </p>
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <div>
+                                <label style="font-size: 0.72rem; color: #64748B; display: block; font-weight: 700; margin-bottom: 0.2rem;">Access PIN</label>
+                                <input type="text" id="newAccessPin" value="1234" maxlength="8" class="form-input" style="height: 38px; width: 130px; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 6px; padding: 0 0.65rem; font-family: monospace; font-weight: 800; font-size: 1.05rem; letter-spacing: 2px;">
+                            </div>
+                            <span style="font-size: 0.72rem; color: #64748B; margin-top: 1rem;">Default: 1234</span>
+                        </div>
+                    </div>
+
                     <button type="submit" id="btnCreateTenant" class="btn-primary" style="background: #8B5CF6; height: 44px; padding: 0 1.5rem; font-weight: 800; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">
                         <i class="fas fa-plus"></i> Create &amp; Provision Clinic Tenant
                     </button>
@@ -420,26 +453,109 @@
                 </div>
             </div>
 
-            <!-- Login History Card -->
+            <!-- VISITOR COUNT & ROUTE-WISE TRAFFIC ANALYTICS CARD -->
             <div class="sa-card">
                 <div class="sa-card-header">
-                    <h2><i class="fas fa-user-clock" style="color: #8B5CF6;"></i> Recent Admin Login History</h2>
-                    <span style="font-size: 0.8rem; color: #64748B;">Audit trail of logins</span>
+                    <div>
+                        <h2><i class="fas fa-chart-line" style="color: #8B5CF6;"></i> Visitor &amp; Route-Wise Traffic Analytics</h2>
+                        <span style="font-size: 0.8rem; color: #64748B;">Live breakdown of visitor traffic and route/section click frequency</span>
+                    </div>
+                    <button onclick="loadAnalyticsDashboard()" class="btn-portal-back" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; cursor: pointer;">
+                        <i class="fas fa-sync-alt"></i> Refresh Analytics
+                    </button>
                 </div>
-                <div style="overflow-x: auto;">
+
+                <div id="saRouteAnalyticsContainer" style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid #E2E8F0; color: #64748B;">
+                                <th style="padding: 10px 12px; width: 60px;">Rank</th>
+                                <th style="padding: 10px 12px;">Route / Page / Section</th>
+                                <th style="padding: 10px 12px;">Clinic Tenant</th>
+                                <th style="padding: 10px 12px; text-align: right;">Total Clicks</th>
+                                <th style="padding: 10px 12px; width: 220px;">Traffic Share</th>
+                                <th style="padding: 10px 12px;">Last Clicked</th>
+                            </tr>
+                        </thead>
+                        <tbody id="saRouteAnalyticsTableBody">
+                            <tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Loading route analytics...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- System Activity Logs & Captured Marketing Leads Card -->
+            <div class="sa-card">
+                <div class="sa-card-header">
+                    <div>
+                        <h2><i class="fas fa-user-check" style="color: #8B5CF6;"></i> User Logins &amp; Marketing Leads Hub</h2>
+                        <span style="font-size: 0.8rem; color: #64748B;">Audit trail of all logged-in staff and visitors captured via first-time gate</span>
+                    </div>
+                    <!-- Tab Switcher -->
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button type="button" id="tabBtnLogs" onclick="switchLogsTab('logs')" class="btn-portal-back" style="font-size: 0.8rem; font-weight: 800; padding: 0.4rem 0.85rem; cursor: pointer; background: #8B5CF6; color: white; border-color: #8B5CF6;">
+                            <i class="fas fa-list"></i> Activity Logs
+                        </button>
+                        <button type="button" id="tabBtnLeads" onclick="switchLogsTab('leads')" class="btn-portal-back" style="font-size: 0.8rem; font-weight: 800; padding: 0.4rem 0.85rem; cursor: pointer; background: #F8FAFC; color: #475569;">
+                            <i class="fas fa-bullhorn"></i> Marketing Leads (<span id="leadsBadgeCount">0</span>)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- VIEW A: ACTIVITY & LOGIN LOGS TABLE -->
+                <div id="viewActivityLogs" style="overflow-x: auto;">
                     <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
                         <thead>
                             <tr style="border-bottom: 2px solid #E2E8F0; color: #64748B;">
                                 <th style="padding: 8px 10px;">Date &amp; Time</th>
+                                <th style="padding: 8px 10px;">Clinic Tenant</th>
+                                <th style="padding: 8px 10px;">Name</th>
+                                <th style="padding: 8px 10px;">Mobile</th>
+                                <th style="padding: 8px 10px;">Email / User</th>
+                                <th style="padding: 8px 10px;">Event Type</th>
                                 <th style="padding: 8px 10px;">IP Address</th>
-                                <th style="padding: 8px 10px;">User Account</th>
                             </tr>
                         </thead>
                         <tbody id="saLoginLogsTableBody">
-                            <tr><td colspan="3" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Loading security logs...</td></tr>
+                            <tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Loading security &amp; access logs...</td></tr>
                         </tbody>
                     </table>
                 </div>
+
+                <!-- VIEW B: CAPTURED MARKETING LEADS TABLE -->
+                <div id="viewMarketingLeads" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; background: #F8FAFC; padding: 0.75rem 1rem; border-radius: 10px; border: 1px solid #E2E8F0;">
+                        <span style="font-size: 0.82rem; color: #475569; font-weight: 700;">
+                            <i class="fas fa-users" style="color: #8B5CF6;"></i> Captured Patient &amp; Visitor Leads
+                        </span>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="button" onclick="copyAllLeadsPhoneNumbers()" class="btn-portal-back" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; cursor: pointer; color: #15803D; border-color: #86EFAC; background: #DCFCE7;">
+                                <i class="fas fa-copy"></i> Copy All Mobiles
+                            </button>
+                            <button type="button" onclick="exportMarketingLeadsCSV()" class="btn-portal-back" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; cursor: pointer; color: #4338CA; border-color: #C7D2FE; background: #EEF2FF;">
+                                <i class="fas fa-file-csv"></i> Export CSV
+                            </button>
+                        </div>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                            <thead>
+                                <tr style="border-bottom: 2px solid #E2E8F0; color: #64748B;">
+                                    <th style="padding: 8px 10px;">Captured Date</th>
+                                    <th style="padding: 8px 10px;">Clinic Tenant</th>
+                                    <th style="padding: 8px 10px;">Full Name</th>
+                                    <th style="padding: 8px 10px;">Mobile Number</th>
+                                    <th style="padding: 8px 10px;">Email</th>
+                                    <th style="padding: 8px 10px;">Source</th>
+                                </tr>
+                            </thead>
+                            <tbody id="saMarketingLeadsTableBody">
+                                <tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Loading marketing leads...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
         </div>
@@ -513,6 +629,29 @@
                         </div>
                     </div>
 
+                    <!-- First-Time Visitor Access Gate Settings -->
+                    <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 1rem; margin-bottom: 1.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; flex-wrap: wrap; gap: 0.5rem;">
+                            <span style="font-weight: 800; font-size: 0.75rem; color: #475569; text-transform: uppercase;">
+                                <i class="fas fa-user-shield" style="color: #8B5CF6;"></i> First-Time Visitor Gate &amp; PIN
+                            </span>
+                            <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 700; color: #0F172A;">
+                                <input type="checkbox" id="editAccessGateEnabled" style="width: 17px; height: 17px; accent-color: #8B5CF6;">
+                                Gate Active
+                            </label>
+                        </div>
+                        <p style="margin: 0 0 0.65rem 0; font-size: 0.74rem; color: #64748B;">
+                            New visitors must enter Name, Mobile, Email &amp; this PIN once. You can change this PIN or disable the gate anytime.
+                        </p>
+                        <div style="display: flex; gap: 0.75rem; align-items: center;">
+                            <div>
+                                <label style="font-size: 0.72rem; color: #64748B; display: block; font-weight: 700; margin-bottom: 0.2rem;">Access PIN</label>
+                                <input type="text" id="editAccessPin" required class="form-input" style="height: 38px; width: 130px; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 6px; padding: 0 0.65rem; font-family: monospace; font-weight: 800; font-size: 1.05rem; letter-spacing: 2px;">
+                            </div>
+                            <span style="font-size: 0.72rem; color: #64748B; margin-top: 1rem;">Provide to patients for entry</span>
+                        </div>
+                    </div>
+
                     <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
                         <button type="button" onclick="closeEditTenantModal()" style="background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; border-radius: 8px; padding: 0.65rem 1.25rem; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
                             Cancel
@@ -538,6 +677,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="phoneUtils.js"></script>
+    <script src="emailTemplates.js?v=44"></script>
     <script src="db-api.js?v=44"></script>
 
     <!-- SuperAdmin Logic Script -->
@@ -578,6 +718,7 @@
                 logoutBtn.style.display = 'inline-flex';
                 loadAllTenants();
                 loadSecurityLogs();
+                loadAnalyticsDashboard();
             } else {
                 loginView.style.display = 'block';
                 dashView.style.display = 'none';
@@ -760,6 +901,11 @@
             document.getElementById('editAdminUser').value = tenant.admin_user || (tenant.id === 'default' ? 'admin' : (tenant.id + 'admin'));
             document.getElementById('editAdminPass').value = tenant.admin_pass || "admin";
 
+            const gateCheck = document.getElementById('editAccessGateEnabled');
+            const pinVal = document.getElementById('editAccessPin');
+            if (gateCheck) gateCheck.checked = (tenant.access_gate_enabled !== false);
+            if (pinVal) pinVal.value = tenant.access_pin || '1234';
+
             const color = tenant.primary_color || "#0D9488";
             syncEditColor(color);
 
@@ -780,6 +926,8 @@
             const color = document.getElementById('editColorHex').value.trim() || '#0D9488';
             const adminUser = document.getElementById('editAdminUser').value.trim();
             const adminPass = document.getElementById('editAdminPass').value;
+            const gateEnabled = document.getElementById('editAccessGateEnabled') ? document.getElementById('editAccessGateEnabled').checked : true;
+            const accessPin = document.getElementById('editAccessPin') ? document.getElementById('editAccessPin').value.trim() : '1234';
             const btn = document.getElementById('btnSaveTenantEdit');
 
             if (!name) {
@@ -801,6 +949,9 @@
                         primary_color: color,
                         admin_user: adminUser,
                         admin_pass: adminPass,
+                        access_gate_enabled: gateEnabled,
+                        pin_required: false,
+                        access_pin: accessPin,
                         updatedAt: new Date().toISOString()
                     }, { merge: true });
 
@@ -811,7 +962,10 @@
                         doctor_name: subtitle,
                         primary_color: color,
                         admin_user: adminUser,
-                        admin_pass: adminPass
+                        admin_pass: adminPass,
+                        access_gate_enabled: gateEnabled,
+                        pin_required: false,
+                        access_pin: accessPin
                     }, { merge: true });
 
                     // 3. Update staff login record
@@ -833,6 +987,9 @@
                     existing.primary_color = color;
                     existing.admin_user = adminUser;
                     existing.admin_pass = adminPass;
+                    existing.access_gate_enabled = gateEnabled;
+                    existing.pin_required = false;
+                    existing.access_pin = accessPin;
                     localStorage.setItem(cacheKey, JSON.stringify(existing));
                 } catch(err){}
 
@@ -855,6 +1012,8 @@
             const name = document.getElementById('newName').value.trim();
             const subtitle = document.getElementById('newSubtitle').value.trim();
             const color = document.getElementById('newColorPicker').value || document.getElementById('newColorHex').value || '#0D9488';
+            const gateEnabled = document.getElementById('newAccessGateEnabled') ? document.getElementById('newAccessGateEnabled').checked : true;
+            const accessPin = (document.getElementById('newAccessPin') ? document.getElementById('newAccessPin').value.trim() : '') || '1234';
             const btn = document.getElementById('btnCreateTenant');
 
             if (!slug || !name) {
@@ -876,6 +1035,9 @@
                         primary_color: color,
                         admin_user: slug + 'admin',
                         admin_pass: 'admin',
+                        access_gate_enabled: gateEnabled,
+                        pin_required: false,
+                        access_pin: accessPin,
                         createdAt: new Date().toISOString()
                     }, { merge: true });
 
@@ -894,7 +1056,10 @@
                         doctor_name: subtitle,
                         primary_color: color,
                         admin_user: slug + 'admin',
-                        admin_pass: 'admin'
+                        admin_pass: 'admin',
+                        access_gate_enabled: gateEnabled,
+                        pin_required: false,
+                        access_pin: accessPin
                     }, { merge: true });
                 }
 
@@ -930,36 +1095,219 @@
             }
         }
 
-        async function loadSecurityLogs() {
-            const tbody = document.getElementById('saLoginLogsTableBody');
+        // --- VISITOR & ROUTE-WISE TRAFFIC ANALYTICS DASHBOARD ---
+        async function loadAnalyticsDashboard() {
+            const tbody = document.getElementById('saRouteAnalyticsTableBody');
             if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;"><i class="fas fa-spinner fa-spin"></i> Loading live analytics...</td></tr>';
 
             try {
-                let logs = [];
-                if (window.dbAPI && typeof window.dbAPI.getAdminLoginHistory === 'function') {
-                    logs = await window.dbAPI.getAdminLoginHistory();
+                let summary = { totalVisitors: 0, totalRouteHits: 0, routeStats: [] };
+                if (window.dbAPI && typeof window.dbAPI.getAnalyticsSummary === 'function') {
+                    summary = await window.dbAPI.getAnalyticsSummary();
                 }
 
-                if (!logs || logs.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: #94A3B8;">No recent login logs found.</td></tr>';
+                // Update metric counters
+                const visitorsEl = document.getElementById('statVisitorsCount');
+                const hitsEl = document.getElementById('statRouteHitsCount');
+                if (visitorsEl) visitorsEl.innerText = (summary.totalVisitors || 0).toLocaleString();
+                if (hitsEl) hitsEl.innerText = (summary.totalRouteHits || 0).toLocaleString();
+
+                const stats = summary.routeStats || [];
+                if (stats.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No route navigation clicks recorded yet. Clicks will appear in real-time as users browse clinics.</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = logs.slice(0, 15).map(l => {
-                    const dateStr = l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A';
+                const totalHits = summary.totalRouteHits || 1;
+
+                tbody.innerHTML = stats.map((item, index) => {
+                    const count = item.count || 0;
+                    const pct = Math.min(100, Math.round((count / totalHits) * 100));
+                    const dateStr = item.lastVisited ? new Date(item.lastVisited).toLocaleString() : 'Recent';
+                    const rankBadge = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index + 1}`));
+
                     return `
                         <tr style="border-bottom: 1px solid #F1F5F9;">
-                            <td style="padding: 8px 10px; color: #0F172A; font-weight: 600;">${dateStr}</td>
-                            <td style="padding: 8px 10px; color: #64748B; font-family: monospace;">${l.ipAddress || 'Unknown'}</td>
-                            <td style="padding: 8px 10px;"><span style="background: #EDE9FE; color: #6D28D9; font-weight: 700; padding: 2px 7px; border-radius: 99px; font-size: 0.75rem;">${l.email || 'Admin'}</span></td>
+                            <td style="padding: 10px 12px; font-weight: 800; color: #0F172A;">${rankBadge}</td>
+                            <td style="padding: 10px 12px;">
+                                <strong style="color: #0F172A; font-size: 0.9rem;">${item.route}</strong>
+                            </td>
+                            <td style="padding: 10px 12px;">
+                                <span style="background: #EDE9FE; color: #6D28D9; font-weight: 700; font-size: 0.75rem; padding: 2px 8px; border-radius: 99px;">
+                                    ${item.tenant_id}
+                                </span>
+                            </td>
+                            <td style="padding: 10px 12px; text-align: right; font-weight: 800; color: #0F172A; font-size: 0.95rem;">
+                                ${count.toLocaleString()}
+                            </td>
+                            <td style="padding: 10px 12px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="flex: 1; height: 8px; background: #E2E8F0; border-radius: 99px; overflow: hidden;">
+                                        <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #8B5CF6, #0D9488); border-radius: 99px;"></div>
+                                    </div>
+                                    <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; width: 34px; text-align: right;">${pct}%</span>
+                                </div>
+                            </td>
+                            <td style="padding: 10px 12px; font-size: 0.78rem; color: #64748B;">
+                                ${dateStr}
+                            </td>
                         </tr>
                     `;
                 }).join('');
 
             } catch (err) {
-                console.warn('Failed to load logs:', err);
-                tbody.innerHTML = '<tr><td colspan="3" style="padding: 1rem; text-align: center; color: #94A3B8;">Could not load logs.</td></tr>';
+                console.error('Analytics load error:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #EF4444;">Failed to load analytics.</td></tr>';
             }
+        }
+
+        // --- SECURITY / ACCESS LOGS & MARKETING LEADS HUB ---
+        window.allMarketingLeads = [];
+
+        function switchLogsTab(tab) {
+            const btnLogs = document.getElementById('tabBtnLogs');
+            const btnLeads = document.getElementById('tabBtnLeads');
+            const viewLogs = document.getElementById('viewActivityLogs');
+            const viewLeads = document.getElementById('viewMarketingLeads');
+
+            if (tab === 'logs') {
+                if (btnLogs) { btnLogs.style.background = '#8B5CF6'; btnLogs.style.color = '#FFFFFF'; btnLogs.style.borderColor = '#8B5CF6'; }
+                if (btnLeads) { btnLeads.style.background = '#F8FAFC'; btnLeads.style.color = '#475569'; btnLeads.style.borderColor = '#CBD5E1'; }
+                if (viewLogs) viewLogs.style.display = 'block';
+                if (viewLeads) viewLeads.style.display = 'none';
+            } else {
+                if (btnLeads) { btnLeads.style.background = '#8B5CF6'; btnLeads.style.color = '#FFFFFF'; btnLeads.style.borderColor = '#8B5CF6'; }
+                if (btnLogs) { btnLogs.style.background = '#F8FAFC'; btnLogs.style.color = '#475569'; btnLogs.style.borderColor = '#CBD5E1'; }
+                if (viewLogs) viewLogs.style.display = 'none';
+                if (viewLeads) viewLeads.style.display = 'block';
+            }
+        }
+
+        async function loadSecurityLogs() {
+            const logTbody = document.getElementById('saLoginLogsTableBody');
+            const leadTbody = document.getElementById('saMarketingLeadsTableBody');
+
+            // 1. Fetch & Render Activity / Login Logs
+            try {
+                let logs = [];
+                if (window.dbAPI && typeof window.dbAPI.getSuperAdminLogs === 'function') {
+                    logs = await window.dbAPI.getSuperAdminLogs();
+                } else if (window.dbAPI && typeof window.dbAPI.getAdminLoginHistory === 'function') {
+                    logs = await window.dbAPI.getAdminLoginHistory();
+                }
+
+                if (logTbody) {
+                    if (!logs || logs.length === 0) {
+                        logTbody.innerHTML = '<tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No access logs recorded yet.</td></tr>';
+                    } else {
+                        logTbody.innerHTML = logs.slice(0, 50).map(l => {
+                            const dateStr = l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A';
+                            const tenant = l.tenant_id || l.clinic_slug || 'default';
+                            const name = l.name || 'Admin / Visitor';
+                            const mobile = l.mobile || '-';
+                            const email = l.email || '-';
+                            const eventType = l.type || (l.role === 'Visitor' || l.role === 'Google Visitor' ? 'Google 1-Tap Access' : 'Staff Login');
+                            const ip = l.ipAddress || 'Unknown';
+
+                            return `
+                                <tr style="border-bottom: 1px solid #F1F5F9;">
+                                    <td style="padding: 8px 10px; color: #0F172A; font-weight: 600;">${dateStr}</td>
+                                    <td style="padding: 8px 10px;"><span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tenant}</span></td>
+                                    <td style="padding: 8px 10px; font-weight: 700; color: #0F172A;">${name}</td>
+                                    <td style="padding: 8px 10px; color: #475569; font-family: monospace;">${mobile}</td>
+                                    <td style="padding: 8px 10px; color: #2563EB;">${email}</td>
+                                    <td style="padding: 8px 10px;"><span style="background: ${eventType.includes('Google') ? '#DCFCE7' : '#EDE9FE'}; color: ${eventType.includes('Google') ? '#15803D' : '#6D28D9'}; font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">${eventType}</span></td>
+                                    <td style="padding: 8px 10px; color: #94A3B8; font-family: monospace; font-size: 0.75rem;">${ip}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                }
+            } catch (err) {
+                console.warn('Logs render notice:', err);
+            }
+
+            // 2. Fetch & Render Captured Marketing Leads
+            try {
+                let leads = [];
+                if (window.dbAPI && typeof window.dbAPI.getMarketingLeads === 'function') {
+                    leads = await window.dbAPI.getMarketingLeads();
+                }
+
+                window.allMarketingLeads = leads || [];
+                const badge = document.getElementById('leadsBadgeCount');
+                if (badge) badge.innerText = (leads || []).length;
+
+                if (leadTbody) {
+                    if (!leads || leads.length === 0) {
+                        leadTbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No visitor marketing leads captured yet.</td></tr>';
+                    } else {
+                        leadTbody.innerHTML = leads.map(c => {
+                            const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'Recent';
+                            const tenant = c.tenant_id || c.clinic_slug || 'default';
+                            return `
+                                <tr style="border-bottom: 1px solid #F1F5F9;">
+                                    <td style="padding: 8px 10px; color: #0F172A; font-weight: 600;">${dateStr}</td>
+                                    <td style="padding: 8px 10px;"><span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tenant}</span></td>
+                                    <td style="padding: 8px 10px; font-weight: 700; color: #0F172A;">${c.name || 'Visitor'}</td>
+                                    <td style="padding: 8px 10px; color: #16A34A; font-family: monospace; font-weight: 700;">${c.mobile || c.phone || 'Pending Profile'}</td>
+                                    <td style="padding: 8px 10px; color: #2563EB;">${c.email || '-'}</td>
+                                    <td style="padding: 8px 10px;"><span style="background: #FEF3C7; color: #D97706; font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">${c.source || 'Google 1-Tap Access'}</span></td>
+                                </tr>
+                            `;
+                        }).join('');
+                    }
+                }
+            } catch(err) {
+                console.warn('Leads render notice:', err);
+            }
+        }
+
+        function copyAllLeadsPhoneNumbers() {
+            const leads = window.allMarketingLeads || [];
+            const validMobiles = [...new Set(leads.map(l => (l.mobile || l.phone || '').trim()).filter(m => m.length >= 8))];
+
+            if (validMobiles.length === 0) {
+                alert('No mobile phone numbers available to copy yet.');
+                return;
+            }
+
+            const textToCopy = validMobiles.join(', ');
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                alert(`📋 Successfully copied ${validMobiles.length} unique phone number(s) to clipboard!\n\n${textToCopy.slice(0, 100)}...`);
+            }).catch(err => {
+                prompt('Copy phone numbers below:', textToCopy);
+            });
+        }
+
+        function exportMarketingLeadsCSV() {
+            const leads = window.allMarketingLeads || [];
+            if (leads.length === 0) {
+                alert('No leads available to export.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,Date,Tenant,Full Name,Mobile Number,Email,Source\n";
+            leads.forEach(l => {
+                const row = [
+                    `"${l.createdAt || ''}"`,
+                    `"${l.tenant_id || 'default'}"`,
+                    `"${(l.name || '').replace(/"/g, '""')}"`,
+                    `"${l.mobile || l.phone || ''}"`,
+                    `"${l.email || ''}"`,
+                    `"${l.source || 'Visitor'}"`
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `clinic_marketing_leads_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Initialize on page load
