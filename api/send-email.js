@@ -74,40 +74,32 @@ module.exports = async (req, res) => {
 
     try {
         if (type === 'welcome') {
-            finalSubject = finalSubject || `Welcome to ${tenantInfo.clinic_name}! Your Patient Portal is Ready`;
-            if (emailTemplates && typeof emailTemplates.getWelcomeTemplate === 'function') {
-                finalHtml = emailTemplates.getWelcomeTemplate({
-                    patientName: name || 'Valued Patient',
-                    patientEmail: to,
-                    tenant: tenantInfo
-                });
+            const tpl = (emailTemplates.getWelcomeEmail || emailTemplates.getWelcomeTemplate);
+            if (tpl) {
+                const res = tpl({ patientName: name || 'Valued Patient', patientEmail: to, tenant: tenantInfo });
+                finalHtml = typeof res === 'object' ? res.html : res;
+                finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Welcome to ${tenantInfo.clinic_name}!`;
             }
         } else if (type === 'confirmation') {
-            finalSubject = finalSubject || `Confirmed: Appointment with ${tenantInfo.clinic_name}`;
-            if (emailTemplates && typeof emailTemplates.getAppointmentConfirmationTemplate === 'function') {
-                finalHtml = emailTemplates.getAppointmentConfirmationTemplate({
-                    patientName: name || 'Valued Patient',
-                    appointment: appointmentData || {},
-                    tenant: tenantInfo
-                });
+            const tpl = (emailTemplates.getAppointmentConfirmationEmail || emailTemplates.getAppointmentConfirmationTemplate);
+            if (tpl) {
+                const res = tpl({ patientName: name || 'Valued Patient', appointment: appointmentData || {}, tenant: tenantInfo });
+                finalHtml = typeof res === 'object' ? res.html : res;
+                finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Confirmed: Appointment with ${tenantInfo.clinic_name}`;
             }
         } else if (type === 'reminder') {
-            finalSubject = finalSubject || `Friendly Reminder: Upcoming Dental Visit at ${tenantInfo.clinic_name}`;
-            if (emailTemplates && typeof emailTemplates.getAppointmentReminderTemplate === 'function') {
-                finalHtml = emailTemplates.getAppointmentReminderTemplate({
-                    patientName: name || 'Valued Patient',
-                    appointment: appointmentData || {},
-                    tenant: tenantInfo
-                });
+            const tpl = (emailTemplates.getAppointmentReminderEmail || emailTemplates.getAppointmentReminderTemplate);
+            if (tpl) {
+                const res = tpl({ patientName: name || 'Valued Patient', appointment: appointmentData || {}, tenant: tenantInfo });
+                finalHtml = typeof res === 'object' ? res.html : res;
+                finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Friendly Reminder: Appointment at ${tenantInfo.clinic_name}`;
             }
         } else if (type === 'prescription') {
-            finalSubject = finalSubject || `Digital Prescription & Care Instructions - ${tenantInfo.clinic_name}`;
-            if (emailTemplates && typeof emailTemplates.getPrescriptionTemplate === 'function') {
-                finalHtml = emailTemplates.getPrescriptionTemplate({
-                    patientName: name || 'Valued Patient',
-                    prescription: prescriptionData || {},
-                    tenant: tenantInfo
-                });
+            const tpl = (emailTemplates.getPrescriptionEmail || emailTemplates.getPrescriptionTemplate);
+            if (tpl) {
+                const res = tpl({ patientName: name || 'Valued Patient', prescription: prescriptionData || {}, tenant: tenantInfo });
+                finalHtml = typeof res === 'object' ? res.html : res;
+                finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Digital Prescription - ${tenantInfo.clinic_name}`;
             }
         }
 
