@@ -51,18 +51,23 @@
             <!-- Mobile-first Right Controls Group (Guarantees clean 1-row layout) -->
             <div class="header-right-actions">
                 <!-- Navbar Role-Based Desk Switcher Trigger (Mobile-responsive, triggers centered modal) -->
-                <button type="button" id="navDeskSwitcherBtn" onclick="openDeskSwitcherModal()" aria-label="Switch Clinical Desk" style="display: inline-flex; align-items: center; gap: 5px; background: #F8FAFC; border: 1.5px solid #CBD5E1; color: #0F172A; font-weight: 700; font-size: 0.82rem; padding: 5px 11px; border-radius: 20px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.05); white-space: nowrap;">
+                <button type="button" id="navDeskSwitcherBtn" onclick="openDeskSwitcherModal()" aria-label="Switch Clinical Desk" style="display: inline-flex; align-items: center; gap: 4px; background: #F8FAFC; border: 1.5px solid #CBD5E1; color: #0F172A; font-weight: 800; font-size: 0.76rem; padding: 5px 8px; border-radius: 20px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.05); white-space: nowrap;">
                     <span id="navRoleIcon">👨‍⚕️</span>
                     <span id="navRoleText">Doctor</span>
-                    <i class="fas fa-chevron-down" style="font-size: 0.65rem; color: #64748B; margin-left: 2px;"></i>
+                    <i class="fas fa-chevron-down" style="font-size: 0.6rem; color: #64748B; margin-left: 1px;"></i>
                 </button>
 
+                <!-- 1-Click PWA App Install Button -->
+                <button type="button" id="headerPwaInstallBtn" onclick="triggerPWAInstall()" aria-label="Install App" title="Install App to Home Screen" class="nav-install-btn" style="display: inline-flex; align-items: center; gap: 4px; background: var(--primary-light, #CCFBF1); border: 1.5px solid var(--primary, #0D9488); color: var(--primary, #0D9488); font-weight: 800; font-size: 0.74rem; padding: 5px 9px; border-radius: 20px; cursor: pointer; white-space: nowrap;">
+                    <i class="fas fa-download"></i> <span class="hide-on-tiny">Install</span>
+                </button>
+
+                <!-- Compact Language Selector without broken glyph -->
                 <div class="lang-selector-container">
-                    <i class="fas fa-globe" style="color: var(--primary); margin-right: 6px; font-size: 0.9rem;"></i>
-                    <select id="langSelect" onchange="changeLanguage(this.value)" class="lang-select">
+                    <select id="langSelect" onchange="changeLanguage(this.value)" class="lang-select" aria-label="Language">
                         <option value="en">EN</option>
-                        <option value="hi">हिंदी</option>
-                        <option value="gu">ગુજરાતી</option>
+                        <option value="hi">HI</option>
+                        <option value="gu">GU</option>
                     </select>
                 </div>
 
@@ -90,16 +95,75 @@
     <main>
         <section id="home" class="section">
             <!-- Booking Form Section (Now at the absolute top) -->
-            <div class="container booking-form-wrapper" style="margin-top: 15px;">
-                <!-- Dynamic Tenant Personalized Hero Card -->
-                <div class="tenant-hero-card" id="tenantHeroBanner">
-                    <div class="tenant-hero-badge" id="heroMonogramBadge">
-                        <span id="heroMonogramText">MD</span>
+            <div class="container booking-form-wrapper" style="margin-top: 10px;">
+                <!-- Professional Personalized Clinic Showcase Hero (Extreme Branding & Personalization) -->
+                <div class="clinic-showcase-hero" id="tenantShowcaseHero">
+                    <div class="hero-trust-badge-row">
+                        <span class="hero-trust-pill">
+                            <i class="fas fa-shield-alt"></i> Verified Healthcare Practice
+                        </span>
+                        <span class="hero-rating-pill">
+                            <i class="fas fa-star" style="color: #F59E0B;"></i> 4.9 &bull; Advanced Oral Care
+                        </span>
                     </div>
-                    <div class="tenant-hero-info">
-                        <div class="tenant-verified-pill"><i class="fas fa-check-circle"></i> Verified Clinical Practice</div>
-                        <h1 class="tenant-hero-title" id="heroClinicName">MY DENTAL CLINIC</h1>
-                        <p class="tenant-hero-subtitle" id="heroClinicDoctor">Dental &amp; Cosmetic Clinic</p>
+
+                    <h1 class="hero-main-heading">
+                        Precision Dental Care &amp; Modern Aesthetic Dentistry
+                    </h1>
+
+                    <div class="hero-doctor-badge">
+                        <div class="doctor-badge-avatar">
+                            <i class="fas fa-user-md"></i>
+                        </div>
+                        <div class="doctor-badge-info">
+                            <div class="doctor-lead-text">Clinical Lead</div>
+                            <strong id="heroDoctorNameDisplay">Chief Dental Specialist</strong>
+                            <span id="heroDoctorSpecialty">Aesthetic &amp; Restorative Dentistry</span>
+                        </div>
+                    </div>
+
+                    <!-- Core Clinic USPs - Highlighting Interactive Charting as USP #1 -->
+                    <div class="hero-usp-strip">
+                        <div class="hero-usp-item highlight-usp">
+                            <div class="usp-icon-box" style="background: rgba(var(--primary-rgb, 13, 148, 136), 0.15); color: var(--primary, #0D9488);">
+                                <i class="fas fa-tooth"></i>
+                            </div>
+                            <div class="usp-text-content">
+                                <strong>Interactive Visual Charting</strong>
+                                <span>Precision Odontogram &amp; Pediatric Mapping (USP)</span>
+                            </div>
+                        </div>
+                        <div class="hero-usp-item">
+                            <div class="usp-icon-box" style="background: rgba(2, 132, 199, 0.15); color: #0284C7;">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </div>
+                            <div class="usp-text-content">
+                                <strong>Digital Prescriptions &amp; Transparent Cost</strong>
+                                <span>Itemized Treatment Plans &amp; Step-by-Step Milestones</span>
+                            </div>
+                        </div>
+                        <div class="hero-usp-item">
+                            <div class="usp-icon-box" style="background: rgba(245, 158, 11, 0.15); color: #D97706;">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="usp-text-content">
+                                <strong>Priority Same-Day Scheduling</strong>
+                                <span>Instant Confirmation &amp; Direct WhatsApp Support</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Action Buttons -->
+                    <div class="hero-action-buttons">
+                        <button type="button" onclick="scrollToBookingForm()" class="btn-hero-book">
+                            <i class="fas fa-calendar-alt"></i> Book Priority Visit
+                        </button>
+                        <button type="button" onclick="triggerPWAInstall()" class="btn-hero-pwa" id="heroPwaInstallBtn">
+                            <i class="fas fa-download"></i> Install App
+                        </button>
+                        <button type="button" onclick="quickWhatsAppClinic()" class="btn-hero-chat">
+                            <i class="fab fa-whatsapp"></i> Chat Reception
+                        </button>
                     </div>
                 </div>
 
@@ -348,24 +412,7 @@
                     </div>
                 </div>
 
-                <!-- Clinical Role Switcher (Doctor, Compounder, Receptionist) -->
-                <div id="roleSwitcherBar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; background: #FFFFFF; padding: 0.6rem 1rem; border-radius: 14px; border: 1px solid #E2E8F0; margin-bottom: 1.5rem; box-shadow: var(--shadow-sm);">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 0.75rem; font-weight: 800; color: #64748B; text-transform: uppercase; letter-spacing: 0.5px;">Active Role View:</span>
-                        <span id="currentRoleBadge" style="font-size: 0.75rem; font-weight: 800; background: #DCFCE7; color: #15803D; padding: 2px 10px; border-radius: 99px; text-transform: uppercase;">Doctor</span>
-                    </div>
-                    <div style="display: flex; gap: 6px; background: #F1F5F9; padding: 3px; border-radius: 10px;">
-                        <button type="button" id="roleBtnDoctor" onclick="switchActiveStaffRole('doctor')" style="border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: var(--primary, #0D9488); color: white; display: flex; align-items: center; gap: 6px;">
-                            <i class="fas fa-user-md"></i> Doctor
-                        </button>
-                        <button type="button" id="roleBtnCompounder" onclick="switchActiveStaffRole('compounder')" style="border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569; display: flex; align-items: center; gap: 6px;">
-                            <i class="fas fa-mortar-pestle"></i> Compounder
-                        </button>
-                        <button type="button" id="roleBtnRecep" onclick="switchActiveStaffRole('receptionist')" style="border: none; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.2s; background: transparent; color: #475569; display: flex; align-items: center; gap: 6px;">
-                            <i class="fas fa-concierge-bell"></i> Receptionist
-                        </button>
-                    </div>
-                </div>
+
 
                 <div class="stats-row">
                     <div class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 1rem;">
@@ -891,16 +938,48 @@
                 </div>
             </div>
             <div class="tab-container" style="overflow-x: auto; white-space: nowrap; padding-bottom: 4px;">
-                <button class="profile-tab-btn active" onclick="switchProfileTab('timeline')"><i class="fas fa-history"></i> History</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')"><i class="fas fa-calendar-check"></i> Next Visit</button>
+                <button class="profile-tab-btn active" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> 🦷 Dental Charting (USP)</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('prescriptions')"><i class="fas fa-prescription"></i> Digital Rx</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('treatment-plans')"><i class="fas fa-clipboard-list"></i> Treatment Plan</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('timeline')"><i class="fas fa-history"></i> History</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')"><i class="fas fa-calendar-check"></i> Next Visit</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('diagnoses')"><i class="fas fa-stethoscope"></i> Diagnostic</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('finances')"><i class="fas fa-rupee-sign"></i> Finance</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> Charting</button>
             </div>
             <div class="profile-content">
-                <div id="profileTimelineSection">
+                <!-- Visual Interactive Dental Charting & Consent (Clinic USP - Tab 1) -->
+                <div id="profileChartingSection" style="display: block;">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+                        <!-- Interactive Visual Dental Charting -->
+                        <div class="dashboard-card" style="padding: 1.5rem; text-align: center; border-radius: 14px; border: 1.5px solid var(--primary-light, #CCFBF1); background: #FFFFFF; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
+                            <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(var(--primary-rgb, 13, 148, 136), 0.12); color: var(--primary, #0D9488); font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; margin-bottom: 8px;">
+                                <i class="fas fa-crown"></i> Core Clinical USP
+                            </div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--secondary, #0F172A); font-size: 1.25rem;"><i class="fas fa-tooth" style="color: var(--primary);"></i> Interactive 3D/Visual Dental Charting</h3>
+                            <p style="color: var(--text-muted); margin-bottom: 1.25rem; font-size: 0.85rem;">Click on any tooth to mark healthy, cavity (red), or crown (amber).</p>
+                            <div id="interactiveTeethChart" style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
+                                <!-- SVG teeth injected via JS -->
+                            </div>
+                            <div id="toothStatusText" style="font-weight: 800; color: var(--secondary); min-height: 24px;"></div>
+                        </div>
+
+                        <!-- Digital E-Signature Pad -->
+                        <div class="dashboard-card" style="padding: 1.5rem; border-radius: 14px; border: 1px solid #E2E8F0; background: #FFFFFF;">
+                            <h3 style="margin: 0 0 0.5rem 0; color: var(--secondary, #0F172A); font-size: 1.15rem;"><i class="fas fa-file-signature" style="color: var(--primary);"></i> Patient Consent E-Signature Pad</h3>
+                            <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.85rem;">Sign below to record digital patient consent for charted procedures.</p>
+                            <div style="border: 2px dashed #CBD5E1; border-radius: 10px; background: #F8FAFC; margin-bottom: 1rem; position: relative;">
+                                <canvas id="signaturePad" width="400" height="150" style="width: 100%; touch-action: none; cursor: crosshair;"></canvas>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                                <button type="button" class="btn-primary" style="background: #94A3B8; padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="clearSignature()"><i class="fas fa-eraser"></i> Clear</button>
+                                <button type="button" class="btn-primary" style="background: var(--success, #16A34A); padding: 0.5rem 1.25rem; font-size: 0.85rem;" onclick="saveSignature()"><i class="fas fa-check"></i> Save Signature</button>
+                            </div>
+                            <div id="signatureSuccessMessage" style="color: var(--success, #16A34A); font-weight: 800; display: none; margin-top: 0.75rem; text-align: center;"><i class="fas fa-check-circle"></i> Signature Saved Successfully!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="profileTimelineSection" style="display: none;">
                     <div id="patientTimeline" class="timeline" style="margin-left: 1rem;"></div>
                 </div>
 
@@ -1175,34 +1254,6 @@
                     <div class="dashboard-card" style="padding: 1rem; border-radius: 12px; border: 1px solid #E2E8F0; background: white;">
                         <h4 style="margin-bottom: 0.85rem; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-file-medical" style="color: var(--primary);"></i> Diagnosis History</h4>
                         <div id="diagnosisList" style="display: flex; flex-direction: column; gap: 0.65rem;"></div>
-                    </div>
-                </div>
-                <!-- New Charting & Consent Section -->
-                <div id="profileChartingSection" style="display: none;">
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 2rem;">
-                        <!-- Interactive Visual Dental Charting -->
-                        <div class="dashboard-card" style="padding: 1.5rem; text-align: center;">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary);"><i class="fas fa-tooth"></i> Interactive 3D/Visual Dental Charting</h3>
-                            <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">Click on a tooth to simulate marking a cavity or crown.</p>
-                            <div id="interactiveTeethChart" style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem;">
-                                <!-- SVG teeth injected via JS -->
-                            </div>
-                            <div id="toothStatusText" style="font-weight: 800; color: var(--secondary); min-height: 24px;"></div>
-                        </div>
-
-                        <!-- Digital E-Signature Pad -->
-                        <div class="dashboard-card" style="padding: 1.5rem;">
-                            <h3 style="margin-bottom: 1rem; color: var(--primary);"><i class="fas fa-file-signature"></i> Digital E-Signature Pad</h3>
-                            <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;">Sign below to consent to the simulated treatment plan.</p>
-                            <div style="border: 2px dashed var(--border-light); border-radius: 8px; background: #fff; margin-bottom: 1rem; position: relative;">
-                                <canvas id="signaturePad" width="400" height="150" style="width: 100%; touch-action: none; cursor: crosshair;"></canvas>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <button class="btn-primary" style="background: var(--text-muted);" onclick="clearSignature()"><i class="fas fa-eraser"></i> Clear</button>
-                                <button class="btn-primary" style="background: var(--success);" onclick="saveSignature()"><i class="fas fa-check"></i> Save Signature</button>
-                            </div>
-                            <div id="signatureSuccessMessage" style="color: var(--success); font-weight: 800; display: none; margin-top: 1rem; text-align: center;"><i class="fas fa-check-circle"></i> Signature Saved Successfully!</div>
-                        </div>
                     </div>
                 </div>
                 <div id="profileFinanceSection" style="display: none;">

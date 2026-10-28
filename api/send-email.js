@@ -80,7 +80,17 @@ module.exports = async (req, res) => {
     // --- BULK MARKETING BLAST DISPATCH ---
     if (isBulk) {
         const cleanRecipients = recipients
-            .map(r => typeof r === 'string' ? { email: r.trim(), name: 'Valued Patient' } : { email: (r.email || '').trim(), name: r.name || 'Valued Patient' })
+            .map(r => {
+                if (typeof r === 'string') {
+                    return { email: r.trim(), name: 'Valued Patient', tenant: tenantInfo };
+                }
+                return {
+                    email: (r.email || '').trim(),
+                    name: r.name || 'Valued Patient',
+                    tenant_id: r.tenant_id,
+                    tenant: r.tenant || null
+                };
+            })
             .filter(r => r.email && r.email.includes('@'));
 
         if (cleanRecipients.length === 0) {
@@ -92,7 +102,46 @@ module.exports = async (req, res) => {
 
         for (const recipient of cleanRecipients) {
             try {
+                // Ensure strictly tenant-specific metadata per recipient
+                const rTenant = recipient.tenant || {};
+                const recClinicName = rTenant.clinic_name || rTenant.name || tenantInfo.clinic_name || 'My Dental Clinic';
+                const recDoctorName = rTenant.doctor_name || rTenant.subtitle || tenantInfo.doctor_name || 'Dental Specialist';
+                const recPrimaryColor = rTenant.primary_color || rTenant.primaryColor || tenantInfo.primary_color || '#0D9488';
+                const recPhone = rTenant.phone || tenantInfo.phone || '+91 98765 43210';
+                const recAddress = rTenant.address || tenantInfo.address || 'Main Clinic Road';
+                const recSlug = rTenant.slug || rTenant.id || recipient.tenant_id || tenantInfo.slug || 'default';
+                const recPortalUrl = rTenant.portal_url || rTenant.clinicUrl || tenantInfo.portal_url || ((recSlug && recSlug !== 'default') ? `https://mydentalclinic01.vercel.app/${recSlug}` : `https://mydentalclinic01.vercel.app/`);
+
+                const resolvedTenant = {
+                    clinic_name: recClinicName,
+                    name: recClinicName,
+                    doctor_name: recDoctorName,
+                    subtitle: recDoctorName,
+                    primary_color: recPrimaryColor,
+                    primaryColor: recPrimaryColor,
+                    phone: recPhone,
+                    address: recAddress,
+                    slug: recSlug,
+                    portal_url: recPortalUrl,
+                    clinicUrl: recPortalUrl
+                };
+
                 let recSubject = subject;
+                // Generate or adapt subject specifically for this recipient's tenant
+                if (!recSubject || recSubject.includes('My Dental Clinic') || (tenantInfo.clinic_name && recSubject.includes(tenantInfo.clinic_name))) {
+                    if (templateKey === 'daily_care') {
+                        recSubject = `🌟 Daily Oral Care Guide & Checkup Reminder from ${recClinicName}`;
+                    } else if (templateKey === 'checkup_offer') {
+                        recSubject = `🎁 Exclusive Privilege: Routine Dental Checkup at ${recClinicName}`;
+                    } else if (templateKey === 'portal_reminder') {
+                        recSubject = `📱 Your Digital Dental Portal & Records are Ready | ${recClinicName}`;
+                    } else if (subject && tenantInfo.clinic_name) {
+                        recSubject = subject.replace(new RegExp(tenantInfo.clinic_name, 'g'), recClinicName);
+                    } else {
+                        recSubject = `Important Notice from ${recClinicName}`;
+                    }
+                }
+
                 let recHtml = html;
 
                 if (type === 'marketing' || type === 'marketing_engagement' || templateKey) {
@@ -100,11 +149,11 @@ module.exports = async (req, res) => {
                     if (tpl) {
                         const resTpl = tpl({
                             patientName: recipient.name,
-                            tenant: tenantInfo,
+                            tenant: resolvedTenant,
                             templateKey: templateKey || 'daily_care',
-                            customSubject: subject,
+                            customSubject: recSubject,
                             customMessage: customMessage || text,
-                            clinicUrl: clinicUrl || 'https://mydentalclinic01.vercel.app'
+                            clinicUrl: recPortalUrl
                         });
                         recHtml = resTpl.html;
                         recSubject = resTpl.subject;
@@ -112,18 +161,26 @@ module.exports = async (req, res) => {
                 }
 
                 if (!recHtml) {
-                    recHtml = `<div style="font-family: Arial, sans-serif; padding: 20px;">
-                        <h2 style="color: ${tenantInfo.primary_color};">${tenantInfo.clinic_name}</h2>
-                        <p>Hello ${recipient.name},</p>
-                        <p>${text || customMessage || 'Thank you for connecting with our clinic.'}</p>
-                    </div>`;
+                    recHtml = (emailTemplates.wrapEmailBoilerplate)
+                        ? emailTemplates.wrapEmailBoilerplate(`
+                            <h2 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0 0 12px 0;">Notice from ${recClinicName}</h2>
+                            <p style="font-size: 15px; color: #334155; margin: 0 0 14px 0;">Hello <strong>${recipient.name}</strong>,</p>
+                            <div style="font-size: 14px; line-height: 1.6; color: #475569; margin: 16px 0;">
+                                ${(text || customMessage || 'Thank you for connecting with our clinic. We are committed to your dental wellness.').replace(/\n/g, '<br>')}
+                            </div>
+                        `, resolvedTenant)
+                        : `<div style="font-family: Arial, sans-serif; padding: 20px;">
+                            <h2 style="color: ${recPrimaryColor};">${recClinicName}</h2>
+                            <p>Hello ${recipient.name},</p>
+                            <p>${text || customMessage || 'Thank you for connecting with our clinic.'}</p>
+                        </div>`;
                 }
 
                 const mailOptions = {
-                    from: `"${tenantInfo.clinic_name}" <${smtpUser}>`,
+                    from: `"${recClinicName}" <${smtpUser}>`,
                     to: recipient.email,
                     replyTo: smtpUser,
-                    subject: recSubject || `Oral Care Update from ${tenantInfo.clinic_name}`,
+                    subject: recSubject || `Oral Care Update from ${recClinicName}`,
                     html: recHtml
                 };
 

@@ -296,6 +296,8 @@ async function openPatientProfile(patient) {
         if (typeof renderPatientMedicalAlerts === 'function') await renderPatientMedicalAlerts(patient.mobile);
         document.body.classList.add('profile-modal-open');
         modal.style.display = 'flex';
+        // Open with Interactive Dental Charting (Clinic USP) as Tab 1
+        switchProfileTab('charting');
     }
 }
 
@@ -1813,16 +1815,16 @@ function loadClinicSettings() {
         const subEl = document.getElementById('mainClinicSubtitle');
         const footerNameEl = document.getElementById('footerClinicName');
         const footerDoctorEl = document.getElementById('footerClinicDoctor');
-        const heroNameEl = document.getElementById('heroClinicName');
-        const heroDoctorEl = document.getElementById('heroClinicDoctor');
+        const heroDoctorNameEl = document.getElementById('heroDoctorNameDisplay');
+        const heroDoctorSpecialtyEl = document.getElementById('heroDoctorSpecialty');
         const dashTitleEl = document.getElementById('dashHeaderClinicTitle');
 
         if (nameEl) nameEl.innerText = clinicName;
         if (subEl) subEl.innerText = subtitle;
         if (footerNameEl) footerNameEl.innerText = clinicName;
         if (footerDoctorEl) footerDoctorEl.innerText = doctorName;
-        if (heroNameEl) heroNameEl.innerText = clinicName;
-        if (heroDoctorEl) heroDoctorEl.innerText = `${doctorName} • Comprehensive Care`;
+        if (heroDoctorNameEl) heroDoctorNameEl.innerText = doctorName;
+        if (heroDoctorSpecialtyEl) heroDoctorSpecialtyEl.innerText = `${clinicName} • Comprehensive Oral Care`;
         if (dashTitleEl) dashTitleEl.innerText = `${clinicName} Explorer`;
 
         // Update all dynamic 2-character monogram badges across the app
@@ -4655,3 +4657,76 @@ function handleMobileNav(target) {
         }
     }
 }
+
+// --- LANDING PAGE SMOOTH ACTIONS ---
+function scrollToBookingForm() {
+    const el = document.getElementById('bookingForm') || document.querySelector('.appointment-form');
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const nameInput = document.getElementById('name');
+        if (nameInput) setTimeout(() => nameInput.focus(), 400);
+    }
+}
+window.scrollToBookingForm = scrollToBookingForm;
+
+function quickWhatsAppClinic() {
+    const s = window.currentClinicSettings || {};
+    const phone = (s.phone || '+91 98765 43210').replace(/[^0-9]/g, '');
+    const clinicName = s.clinic_name || s.name || 'the clinic';
+    const msg = encodeURIComponent(`Hello ${clinicName}, I would like to inquire about appointments and dental consultation.`);
+    window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+}
+window.quickWhatsAppClinic = quickWhatsAppClinic;
+
+// --- ROBUST PWA APP INSTALLATION ENGINE ---
+let deferredPWAInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPWAInstallPrompt = e;
+    console.log('✅ PWA beforeinstallprompt captured and ready');
+    const btns = [
+        document.getElementById('headerPwaInstallBtn'),
+        document.getElementById('heroPwaInstallBtn'),
+        document.getElementById('pwaInstallBtn')
+    ];
+    btns.forEach(b => {
+        if (b) b.style.display = 'inline-flex';
+    });
+});
+
+window.addEventListener('appinstalled', () => {
+    console.log('🎉 PWA installed successfully on device');
+    deferredPWAInstallPrompt = null;
+    const toast = document.getElementById('toast');
+    if (toast) {
+        toast.innerText = '🎉 App installed successfully! Access it directly from your home screen.';
+        toast.className = 'toast show';
+        setTimeout(() => toast.className = 'toast', 4000);
+    }
+});
+
+async function triggerPWAInstall() {
+    if (deferredPWAInstallPrompt) {
+        deferredPWAInstallPrompt.prompt();
+        const choice = await deferredPWAInstallPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+            console.log('User accepted PWA installation');
+        } else {
+            console.log('User dismissed PWA installation');
+        }
+        deferredPWAInstallPrompt = null;
+    } else {
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+        
+        if (isStandalone) {
+            alert('✨ The clinic app is already installed and running on your device!');
+        } else if (isIOS) {
+            alert('📱 To install this app on your iPhone / iPad:\n\n1. Tap the Share button in Safari (square with up arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" in the top-right corner to finish!');
+        } else {
+            alert('📲 To install this app on your phone:\n\n1. Tap the three dots (⋮) menu in Chrome\n2. Select "Install App" or "Add to Home Screen"\n\nEnjoy 1-tap priority clinical access!');
+        }
+    }
+}
+window.triggerPWAInstall = triggerPWAInstall;

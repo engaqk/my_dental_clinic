@@ -1564,11 +1564,16 @@
         function handleCampaignTenantChange(tenantId) {
             const tplSelect = document.getElementById('campaignTemplateSelect');
             if (tplSelect) handleCampaignTemplateChange(tplSelect.value);
-            // Optionally filter audience if desired
+            // Filter audience strictly to selected tenant or all
             if (tenantId && tenantId !== 'all') {
                 loadCampaignAudience(tenantId);
             } else {
                 loadCampaignAudience('all');
+            }
+            // If preview modal open, live update preview
+            const modal = document.getElementById('saEmailPreviewModal');
+            if (modal && modal.style.display === 'flex') {
+                renderCampaignPreviewHtml();
             }
         }
 
@@ -1580,10 +1585,12 @@
                 tenant = {
                     id: 'default',
                     name: 'My Dental Clinic',
+                    clinic_name: 'My Dental Clinic',
                     subtitle: 'Dental & Cosmetic Clinic',
                     doctor_name: 'Chief Physician',
-                    primary_color: '#0D9488',
-                    phone: '+91 98765 43210'
+                    primary_color: '#10B981',
+                    phone: '+91 98765 43210',
+                    address: 'Main Clinic Road'
                 };
             }
             return tenant;
@@ -1611,21 +1618,26 @@
 
             if (subjDisplay) subjDisplay.innerText = subject;
 
+            const origin = (window.location.protocol === 'file:') ? 'index.html' : window.location.origin;
+            const portalUrl = origin + (tenant.id === 'default' ? '/' : ('/' + tenant.id));
+
             if (window.emailTemplates && typeof window.emailTemplates.getMarketingEngagementTemplate === 'function') {
                 const res = window.emailTemplates.getMarketingEngagementTemplate({
                     patientName: 'John Doe (Preview)',
                     tenant: {
-                        clinic_name: tenant.name || 'My Dental Clinic',
-                        doctor_name: tenant.subtitle || 'Dental Specialist',
+                        clinic_name: tenant.name || tenant.clinic_name || 'My Dental Clinic',
+                        doctor_name: tenant.subtitle || tenant.doctor_name || 'Dental Specialist',
                         primary_color: tenant.primary_color || '#0D9488',
                         phone: tenant.phone || '+91 98765 43210',
                         address: tenant.address || 'Main Clinic Road',
-                        slug: tenant.id || 'default'
+                        slug: tenant.id || 'default',
+                        portal_url: portalUrl,
+                        clinicUrl: portalUrl
                     },
                     templateKey: tplKey,
                     customSubject: subject,
                     customMessage: customMessage,
-                    clinicUrl: (window.location.protocol === 'file:') ? 'index.html' : window.location.origin
+                    clinicUrl: portalUrl
                 });
                 if (container) container.innerHTML = res.html;
             } else {
@@ -1650,10 +1662,41 @@
                 return;
             }
 
-            const recipients = checkedBoxes.map(b => ({
-                email: b.getAttribute('data-email'),
-                name: b.getAttribute('data-name') || 'Valued Patient'
-            }));
+            const origin = (window.location.protocol === 'file:') ? 'index.html' : window.location.origin;
+
+            const recipients = checkedBoxes.map(b => {
+                const tId = b.getAttribute('data-tenant') || tenant.id || 'default';
+                let recTenant = (window.allLoadedTenants || []).find(t => t.id === tId) || tenant;
+                if (!recTenant || tId === 'default') {
+                    recTenant = {
+                        id: 'default',
+                        name: 'My Dental Clinic',
+                        clinic_name: 'My Dental Clinic',
+                        subtitle: 'Dental & Cosmetic Clinic',
+                        doctor_name: 'Chief Physician',
+                        primary_color: '#10B981',
+                        phone: '+91 98765 43210',
+                        address: 'Main Clinic Road'
+                    };
+                }
+                const portalUrl = origin + (recTenant.id === 'default' ? '/' : ('/' + recTenant.id));
+                return {
+                    email: b.getAttribute('data-email'),
+                    name: b.getAttribute('data-name') || 'Valued Patient',
+                    tenant_id: recTenant.id || tId,
+                    tenant: {
+                        id: recTenant.id || tId,
+                        clinic_name: recTenant.name || recTenant.clinic_name || 'My Dental Clinic',
+                        doctor_name: recTenant.subtitle || recTenant.doctor_name || 'Dental Specialist',
+                        primary_color: recTenant.primary_color || '#0D9488',
+                        phone: recTenant.phone || '+91 98765 43210',
+                        address: recTenant.address || 'Main Clinic Road',
+                        slug: recTenant.id || tId,
+                        portal_url: portalUrl,
+                        clinicUrl: portalUrl
+                    }
+                };
+            });
 
             const btn = document.getElementById('btnExecuteCampaignBlast');
             const progressBox = document.getElementById('campaignProgressBox');
@@ -1677,7 +1720,7 @@
                         templateKey: tplKey,
                         subject: subject,
                         customMessage: customMessage,
-                        clinicUrl: window.location.origin,
+                        clinicUrl: origin + (tenant.id === 'default' ? '/' : ('/' + tenant.id)),
                         tenantId: tenant.id || 'default',
                         clinicName: tenant.name || 'My Dental Clinic',
                         doctorName: tenant.subtitle || 'Dental Specialist',

@@ -1,6 +1,7 @@
 const admin = require('firebase-admin');
 const nodemailer = require('nodemailer');
 const axios = require('axios');
+const emailTemplates = require('../emailTemplates');
 
 // Initialize Firebase Admin SDK safely
 let db = null;
@@ -110,83 +111,42 @@ module.exports = async (req, res) => {
             console.error("Admin email failed:", err.message);
         }
 
-        // 2. Patient Confirmation Email (Premium & Stunning template)
+        // 2. Patient Confirmation Email (Dynamic Tenant-Theme Specific with Monogram Badge)
         let patientEmailSent = false;
         if (email) {
+            let patientHtml = '';
+            let patientSubject = `✨ Appointment Confirmed - ${clinic.clinic_name}`;
+
+            if (emailTemplates && emailTemplates.getAppointmentConfirmationEmail) {
+                const resTpl = emailTemplates.getAppointmentConfirmationEmail({
+                    patientName: name,
+                    appointment: {
+                        name: name,
+                        date: date,
+                        appointmentDate: date,
+                        time: time,
+                        appointmentTime: time,
+                        reason: reason
+                    },
+                    tenant: {
+                        clinic_name: clinic.clinic_name || clinicName || 'My Dental Clinic',
+                        doctor_name: clinic.doctor_name || clinic.subtitle || 'Dental Specialist',
+                        primary_color: clinic.primary_color || '#0D9488',
+                        phone: clinic.phone || '+91 98765 43210',
+                        address: clinic.address || 'Main Clinic Road',
+                        portal_url: appUrl,
+                        slug: tenantId || 'default'
+                    }
+                });
+                patientHtml = resTpl.html;
+                patientSubject = resTpl.subject;
+            }
+
             const patientMailOptions = {
                 from: `"${clinic.clinic_name}" <${smtpUser}>`,
                 to: email,
-                subject: `✨ Appointment Confirmed - ${clinic.clinic_name}`,
-                html: `
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <meta charset="utf-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <title>Appointment Confirmed</title>
-                        <style>
-                            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #F8FAFC; margin: 0; padding: 0; }
-                            .email-container { max-width: 600px; margin: 30px auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-                            .header { background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%); padding: 40px 20px; text-align: center; color: white; border-bottom: 4px solid #10B981; }
-                            .header h1 { margin: 0; font-size: 26px; font-weight: 800; letter-spacing: 0.5px; color: white; }
-                            .header p { margin: 8px 0 0; font-size: 14px; color: #10B981; text-transform: uppercase; font-weight: 600; letter-spacing: 1px; }
-                            .content { padding: 40px 35px; }
-                            .welcome { font-size: 18px; font-weight: 700; color: #0F172A; margin-top: 0; }
-                            .body-text { color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 25px; }
-                            .card { background-color: #F1F5F9; border: 1px solid #E2E8F0; border-radius: 12px; padding: 25px; margin-bottom: 30px; border-left: 4px solid #10B981; }
-                            .card-title { color: #0F172A; font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; display: flex; align-items: center; }
-                            .detail-row { display: flex; margin-bottom: 12px; font-size: 14px; }
-                            .detail-label { width: 30%; color: #64748B; font-weight: bold; }
-                            .detail-value { width: 70%; color: #0F172A; font-weight: 700; }
-                            .btn { display: inline-block; background-color: #10B981; color: white !important; font-weight: bold; text-decoration: none; padding: 14px 30px; border-radius: 10px; font-size: 14px; text-align: center; transition: background-color 0.2s; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2); }
-                            .footer { background-color: #F8FAFC; padding: 25px; text-align: center; border-top: 1px solid #F1F5F9; font-size: 12px; color: #94A3B8; }
-                            .footer a { color: #10B981; text-decoration: none; font-weight: bold; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="email-container">
-                            <div class="header">
-                                <h1>${clinic.clinic_name.toUpperCase()}</h1>
-                                <p>Excellence in Every Smile</p>
-                            </div>
-                            <div class="content">
-                                <h3 class="welcome">Hi ${name},</h3>
-                                <p class="body-text">We are delighted to confirm that your priority consultation appointment has been successfully scheduled. Our specialist clinical team is prepared for your visit.</p>
-                                
-                                <div class="card">
-                                    <div class="card-title">
-                                        <span style="color: #10B981; margin-right: 8px; font-size: 16px;">📅</span> APPOINTMENT DETAILS
-                                    </div>
-                                    <div class="detail-row">
-                                        <div class="detail-label">Procedure:</div>
-                                        <div class="detail-value">${reason}</div>
-                                    </div>
-                                    <div class="detail-row">
-                                        <div class="detail-label">Date:</div>
-                                        <div class="detail-value">${date}</div>
-                                    </div>
-                                    <div class="detail-row">
-                                        <div class="detail-label">Time:</div>
-                                        <div class="detail-value">${time}</div>
-                                    </div>
-                                    <div class="detail-row" style="margin-bottom: 0;">
-                                        <div class="detail-label">Clinic:</div>
-                                        <div class="detail-value">${clinic.clinic_name}</div>
-                                    </div>
-                                </div>
-                                
-                                <div style="text-align: center; margin-top: 30px; margin-bottom: 10px;">
-                                    <a href="${appUrl}" class="btn">Go to Patient Portal</a>
-                                </div>
-                            </div>
-                            <div class="footer">
-                                <p>If you need to reschedule or cancel, please contact our helpline or reply directly to this email.</p>
-                                <p style="margin-top: 15px;">© 2026 ${clinic.clinic_name}. All rights reserved.</p>
-                            </div>
-                        </div>
-                    </body>
-                    </html>
-                `
+                subject: patientSubject,
+                html: patientHtml
             };
 
             try {
