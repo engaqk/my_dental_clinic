@@ -68,25 +68,42 @@ module.exports = async (req, res) => {
 
     const reqTenant = req.body?.tenant || {};
     const tenantInfo = {
-        clinic_name: clinicName || reqTenant.clinic_name || reqTenant.name || 'My Dental Clinic',
-        doctor_name: doctorName || reqTenant.doctor_name || reqTenant.subtitle || 'Dental Specialist',
-        phone: phone || reqTenant.phone || '+91 98765 43210',
-        address: address || reqTenant.address || 'Main Clinic Road',
+        clinic_name: clinicName || reqTenant.clinic_name || reqTenant.name || '',
+        doctor_name: doctorName || reqTenant.doctor_name || reqTenant.subtitle || '',
+        phone: phone || reqTenant.phone || reqTenant.doctor_phone || reqTenant.mobile || '',
+        address: address || reqTenant.address || reqTenant.city || '',
         primary_color: primaryColor || reqTenant.primary_color || reqTenant.primaryColor || '#0D9488',
         slug: tenantId || reqTenant.slug || reqTenant.id || 'default',
         portal_url: clinicUrl || reqTenant.portal_url || reqTenant.clinicUrl || ''
     };
+
+    // Helper to extract clean human name from email if name is missing or dummy
+    function cleanRecipientName(rawName, email) {
+        if (rawName && typeof rawName === 'string') {
+            const trimmed = rawName.trim();
+            if (trimmed && !trimmed.toLowerCase().includes('valued patient')) return trimmed;
+        }
+        if (email && typeof email === 'string') {
+            const prefix = email.split('@')[0].replace(/[._-]/g, ' ').trim();
+            if (prefix.length > 2 && !prefix.includes('admin') && !prefix.includes('test')) {
+                return prefix.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            }
+        }
+        return '';
+    }
 
     // --- BULK MARKETING BLAST DISPATCH ---
     if (isBulk) {
         const cleanRecipients = recipients
             .map(r => {
                 if (typeof r === 'string') {
-                    return { email: r.trim(), name: 'Valued Patient', tenant: tenantInfo };
+                    const em = r.trim();
+                    return { email: em, name: cleanRecipientName('', em), tenant: tenantInfo };
                 }
+                const em = (r.email || '').trim();
                 return {
-                    email: (r.email || '').trim(),
-                    name: r.name || 'Valued Patient',
+                    email: em,
+                    name: cleanRecipientName(r.name, em),
                     tenant_id: r.tenant_id,
                     tenant: r.tenant || null
                 };
@@ -104,11 +121,11 @@ module.exports = async (req, res) => {
             try {
                 // Ensure strictly tenant-specific metadata per recipient
                 const rTenant = recipient.tenant || {};
-                const recClinicName = rTenant.clinic_name || rTenant.name || tenantInfo.clinic_name || 'My Dental Clinic';
-                const recDoctorName = rTenant.doctor_name || rTenant.subtitle || tenantInfo.doctor_name || 'Dental Specialist';
+                const recClinicName = (rTenant.clinic_name || rTenant.name || tenantInfo.clinic_name || 'Dental Clinic').trim();
+                const recDoctorName = (rTenant.doctor_name || rTenant.subtitle || tenantInfo.doctor_name || '').trim();
                 const recPrimaryColor = rTenant.primary_color || rTenant.primaryColor || tenantInfo.primary_color || '#0D9488';
-                const recPhone = rTenant.phone || tenantInfo.phone || '+91 98765 43210';
-                const recAddress = rTenant.address || tenantInfo.address || 'Main Clinic Road';
+                const recPhone = (rTenant.phone || rTenant.doctor_phone || tenantInfo.phone || '').trim();
+                const recAddress = (rTenant.address || tenantInfo.address || '').trim();
                 const recSlug = rTenant.slug || rTenant.id || recipient.tenant_id || tenantInfo.slug || 'default';
                 const recPortalUrl = rTenant.portal_url || rTenant.clinicUrl || tenantInfo.portal_url || ((recSlug && recSlug !== 'default') ? `https://mydentalclinic01.vercel.app/${recSlug}` : `https://mydentalclinic01.vercel.app/`);
 
@@ -211,38 +228,40 @@ module.exports = async (req, res) => {
     let finalHtml = html;
 
     try {
+        const effectiveRecipientName = cleanRecipientName(name, to);
+
         if (type === 'welcome') {
             const tpl = (emailTemplates.getWelcomeEmail || emailTemplates.getWelcomeTemplate);
             if (tpl) {
-                const res = tpl({ patientName: name || 'Valued Patient', patientEmail: to, tenant: tenantInfo });
+                const res = tpl({ patientName: effectiveRecipientName, patientEmail: to, tenant: tenantInfo });
                 finalHtml = typeof res === 'object' ? res.html : res;
                 finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Welcome to ${tenantInfo.clinic_name}!`;
             }
         } else if (type === 'confirmation') {
             const tpl = (emailTemplates.getAppointmentConfirmationEmail || emailTemplates.getAppointmentConfirmationTemplate);
             if (tpl) {
-                const res = tpl({ patientName: name || 'Valued Patient', appointment: appointmentData || {}, tenant: tenantInfo });
+                const res = tpl({ patientName: effectiveRecipientName, appointment: appointmentData || {}, tenant: tenantInfo });
                 finalHtml = typeof res === 'object' ? res.html : res;
                 finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Confirmed: Appointment with ${tenantInfo.clinic_name}`;
             }
         } else if (type === 'reminder') {
             const tpl = (emailTemplates.getAppointmentReminderEmail || emailTemplates.getAppointmentReminderTemplate);
             if (tpl) {
-                const res = tpl({ patientName: name || 'Valued Patient', appointment: appointmentData || {}, tenant: tenantInfo });
+                const res = tpl({ patientName: effectiveRecipientName, appointment: appointmentData || {}, tenant: tenantInfo });
                 finalHtml = typeof res === 'object' ? res.html : res;
                 finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Friendly Reminder: Appointment at ${tenantInfo.clinic_name}`;
             }
         } else if (type === 'prescription') {
             const tpl = (emailTemplates.getPrescriptionEmail || emailTemplates.getPrescriptionTemplate);
             if (tpl) {
-                const res = tpl({ patientName: name || 'Valued Patient', prescription: prescriptionData || {}, tenant: tenantInfo });
+                const res = tpl({ patientName: effectiveRecipientName, prescription: prescriptionData || {}, tenant: tenantInfo });
                 finalHtml = typeof res === 'object' ? res.html : res;
                 finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Digital Prescription - ${tenantInfo.clinic_name}`;
             }
         } else if (type === 'treatment_plan' || type === 'treatment') {
             const tpl = (emailTemplates.getTreatmentPlanEmail || emailTemplates.getTreatmentPlanTemplate);
             if (tpl) {
-                const res = tpl({ patientName: name || 'Valued Patient', treatmentPlan: req.body?.treatmentPlan || req.body?.plan || {}, tenant: tenantInfo });
+                const res = tpl({ patientName: effectiveRecipientName, treatmentPlan: req.body?.treatmentPlan || req.body?.plan || {}, tenant: tenantInfo });
                 finalHtml = typeof res === 'object' ? res.html : res;
                 finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Treatment Plan & Cost Quotation | ${tenantInfo.clinic_name}`;
             }
@@ -250,7 +269,7 @@ module.exports = async (req, res) => {
             const tpl = emailTemplates.getMarketingEngagementTemplate;
             if (tpl) {
                 const res = tpl({
-                    patientName: name || 'Valued Patient',
+                    patientName: effectiveRecipientName,
                     tenant: tenantInfo,
                     templateKey: templateKey || 'daily_care',
                     customSubject: subject,
@@ -264,9 +283,11 @@ module.exports = async (req, res) => {
 
         // Fallback default content wrapped in dynamic tenant theme boilerplate if no html generated
         if (!finalHtml) {
+            const cleanGreeting = cleanRecipientName(name, to);
+            const greetingLine = cleanGreeting ? `<p style="font-size: 15px; color: #334155; margin: 0 0 14px 0;">Hello <strong>${cleanGreeting}</strong>,</p>` : '<p style="font-size: 15px; color: #334155; margin: 0 0 14px 0;">Hello,</p>';
             const fallbackBody = `
                 <h2 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0 0 12px 0;">Notice from ${tenantInfo.clinic_name}</h2>
-                <p style="font-size: 15px; color: #334155; margin: 0 0 14px 0;">Hello <strong>${name || 'Valued Patient'}</strong>,</p>
+                ${greetingLine}
                 <div style="font-size: 14px; line-height: 1.6; color: #475569; margin: 16px 0;">
                     ${(text || customMessage || 'Thank you for connecting with our clinic. We are committed to your dental health and wellness.').replace(/\n/g, '<br>')}
                 </div>

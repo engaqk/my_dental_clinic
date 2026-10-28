@@ -2276,9 +2276,6 @@ body.modal-open .mobile-bottom-nav,
         justify-content: center;
         min-width: 100px;
     }
-}
-        border-radius: 15px;
-    }
     .tenant-hero-badge {
         width: 44px;
         height: 44px;
@@ -2293,6 +2290,624 @@ body.modal-open .mobile-bottom-nav,
         font-size: 0.76rem;
     }
 }
+
+/* ==========================================================================
+   FDI TWO-DIGIT ODONTOGRAM & CLINICAL PROCEDURE LINKING STYLES
+   ========================================================================== */
+
+.fdi-chart-card {
+    padding: 1.25rem !important;
+    border-radius: 16px !important;
+    border: 1.5px solid var(--primary-light, #CCFBF1) !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.fdi-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.fdi-usp-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(var(--primary-rgb, 13, 148, 136), 0.12);
+    color: var(--primary, #0D9488);
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 99px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.fdi-title {
+    margin: 0 0 0.2rem 0;
+    color: var(--secondary, #0F172A);
+    font-size: 1.25rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.fdi-subtitle {
+    margin: 0;
+    color: var(--text-muted, #64748B);
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+.dentition-switcher {
+    display: inline-flex;
+    background: #F1F5F9;
+    padding: 3px;
+    border-radius: 10px;
+    gap: 4px;
+}
+
+.btn-dentition {
+    border: none;
+    background: transparent;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted, #64748B);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-dentition.active {
+    background: #FFFFFF;
+    color: var(--primary, #0D9488);
+    font-weight: 800;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+/* Quick Quadrant Jump on Mobile */
+.fdi-quadrant-quicknav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 4px 0 8px 0;
+    margin-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.quicknav-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--text-muted, #64748B);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.btn-quicknav {
+    border: 1px solid #CBD5E1;
+    background: #FFFFFF;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--secondary, #0F172A);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-quicknav.active {
+    background: var(--secondary, #0F172A);
+    color: #FFFFFF;
+    border-color: var(--secondary, #0F172A);
+}
+
+/* 1-Tap Condition Palette */
+.fdi-palette-container {
+    background: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 12px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.palette-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 0.5rem;
+}
+
+.palette-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--text-muted, #64748B);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.palette-tip {
+    font-size: 0.75rem;
+    color: var(--primary, #0D9488);
+    font-weight: 600;
+}
+
+.fdi-palette-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.fdi-tool-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1.5px solid #CBD5E1;
+    background: #FFFFFF;
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--secondary, #0F172A);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    min-height: 34px;
+}
+
+.fdi-tool-btn:hover {
+    border-color: var(--primary, #0D9488);
+    transform: translateY(-1px);
+}
+
+.fdi-tool-btn.active {
+    border-color: var(--primary, #0D9488) !important;
+    background: rgba(13, 148, 136, 0.08) !important;
+    color: var(--primary, #0D9488) !important;
+    font-weight: 800;
+    box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+/* Color indicator dots */
+.color-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.dot-cavity { background: #EF4444; }
+.dot-filling { background: #2563EB; }
+.dot-crown { background: #F59E0B; }
+.dot-rct { background: #8B5CF6; }
+.dot-missing { background: #64748B; }
+.dot-implant { background: #0D9488; }
+.dot-healthy { background: #FFFFFF; border: 1.5px solid #94A3B8; }
+
+/* Real-Time Metrics Summary Bar */
+.fdi-metrics-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 0.75rem;
+}
+
+.metric-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #F1F5F9;
+    color: var(--secondary, #0F172A);
+}
+
+.fdi-scroll-hint {
+    display: none;
+    font-size: 0.7rem;
+    color: var(--text-muted, #64748B);
+    text-align: center;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+/* Odontogram Arch Canvas */
+.fdi-chart-scrollable {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.5rem 0;
+    box-sizing: border-box;
+}
+
+.fdi-arch-canvas {
+    min-width: 660px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.fdi-arch-section {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.fdi-arch-label-row {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 10px;
+    box-sizing: border-box;
+}
+
+.fdi-side-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--text-muted, #64748B);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.fdi-arch-name {
+    font-size: 0.74rem;
+    font-weight: 900;
+    color: var(--secondary, #0F172A);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.fdi-arch-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+}
+
+.fdi-quadrant {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.fdi-midline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    height: 64px;
+    border-left: 2px dashed #CBD5E1;
+    margin: 0 2px;
+}
+
+.midline-text {
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+    font-size: 0.55rem;
+    font-weight: 800;
+    color: #94A3B8;
+    letter-spacing: 1px;
+}
+
+.fdi-occlusal-plane {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    gap: 10px;
+    margin: 4px 0;
+}
+
+.occlusal-line {
+    flex: 1;
+    height: 1.5px;
+    background: #E2E8F0;
+}
+
+.occlusal-badge {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #F8FAFC;
+    padding: 2px 10px;
+    border-radius: 99px;
+    border: 1px solid #E2E8F0;
+}
+
+/* Individual Tooth Card */
+.tooth-card {
+    min-width: 34px;
+    max-width: 40px;
+    padding: 4px 2px 3px 2px;
+    border-radius: 8px;
+    border: 1.5px solid #E2E8F0;
+    background: #FFFFFF;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.tooth-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    border-color: var(--primary, #0D9488);
+}
+
+.tooth-svg-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 48px;
+}
+
+.tooth-svg {
+    display: block;
+    overflow: visible;
+}
+
+.tooth-number {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--secondary, #0F172A);
+    margin-top: 2px;
+    line-height: 1;
+}
+
+.tooth-state-badge-wrap {
+    min-height: 12px;
+    margin-top: 2px;
+    display: flex;
+    justify-content: center;
+}
+
+.t-badge {
+    display: inline-block;
+    font-size: 0.52rem;
+    font-weight: 800;
+    padding: 0 4px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    line-height: 1.2;
+}
+
+.t-badge-sound { color: #CBD5E1; }
+.t-badge-cavity { background: #EF4444; color: #FFFFFF; }
+.t-badge-filling { background: #2563EB; color: #FFFFFF; }
+.t-badge-crown { background: #F59E0B; color: #FFFFFF; }
+.t-badge-rct { background: #8B5CF6; color: #FFFFFF; }
+.t-badge-missing { background: #64748B; color: #FFFFFF; }
+.t-badge-implant { background: #0D9488; color: #FFFFFF; }
+
+/* Visual Tooth Card States */
+.tooth-card.state-cavity { background: #FEF2F2 !important; border-color: #F87171 !important; }
+.tooth-card.state-filling { background: #EFF6FF !important; border-color: #60A5FA !important; }
+.tooth-card.state-crown { background: #FFFBEB !important; border-color: #FBBF24 !important; }
+.tooth-card.state-rct { background: #FAF5FF !important; border-color: #C084FC !important; }
+.tooth-card.state-missing { background: #F8FAFC !important; border-color: #94A3B8 !important; border-style: dashed !important; }
+.tooth-card.state-implant { background: #F0FDFA !important; border-color: #2DD4BF !important; }
+
+/* Feedback Bar */
+.fdi-feedback-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #E2E8F0;
+}
+
+.fdi-status-text {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--secondary, #0F172A);
+    flex: 1;
+    min-width: 220px;
+}
+
+.fdi-chart-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.btn-fdi-action {
+    border: none;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-link-all {
+    background: var(--primary, #0D9488);
+    color: #FFFFFF;
+}
+.btn-link-all:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.btn-clear-chart {
+    background: #F1F5F9;
+    color: var(--text-muted, #64748B);
+    border: 1px solid #CBD5E1;
+}
+
+/* Modal: Tooth Procedure Linking */
+.tooth-condition-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 6px;
+}
+
+.btn-cond-pill {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1.5px solid #CBD5E1;
+    background: #FFFFFF;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--secondary, #0F172A);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-cond-pill.active {
+    border-color: var(--primary, #0D9488);
+    background: rgba(13, 148, 136, 0.08);
+    color: var(--primary, #0D9488);
+    font-weight: 800;
+}
+
+.tooth-proc-shortcuts {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.btn-proc-shortcut {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    border: 1.5px solid #E2E8F0;
+    background: #FFFFFF;
+    border-radius: 10px;
+    padding: 8px 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-proc-shortcut:hover {
+    border-color: var(--primary, #0D9488);
+    background: #F0FDFA;
+    transform: translateX(2px);
+}
+
+.proc-shortcut-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.proc-shortcut-name {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--secondary, #0F172A);
+}
+
+.proc-shortcut-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    background: #F1F5F9;
+    color: var(--text-muted, #64748B);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.proc-shortcut-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.proc-shortcut-cost {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--primary, #0D9488);
+}
+
+.proc-shortcut-sittings {
+    font-size: 0.7rem;
+    color: var(--text-muted, #64748B);
+}
+
+.custom-proc-inputs {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+/* Mobile Responsiveness for Odontogram */
+@media (max-width: 767px) {
+    .fdi-scroll-hint {
+        display: block !important;
+    }
+    .fdi-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.6rem;
+    }
+    .dentition-switcher {
+        width: 100%;
+        display: flex;
+    }
+    .btn-dentition {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+    }
+    .custom-proc-inputs {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem;
+    }
+    .custom-proc-inputs button {
+        grid-column: span 2;
+    }
+    .tooth-modal-sheet {
+        border-radius: 20px 20px 0 0 !important;
+        max-height: 90vh !important;
+        overflow-y: auto !important;
+        padding: 1.25rem 1rem !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+}
+
 
 /* Mobile Inputs 16px to prevent iOS auto-zoom */
 @media (max-width: 767px) {

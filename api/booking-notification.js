@@ -129,11 +129,11 @@ module.exports = async (req, res) => {
                         reason: reason
                     },
                     tenant: {
-                        clinic_name: clinic.clinic_name || clinicName || 'My Dental Clinic',
-                        doctor_name: clinic.doctor_name || clinic.subtitle || 'Dental Specialist',
+                        clinic_name: clinic.clinic_name || clinicName || 'Dental Clinic',
+                        doctor_name: clinic.doctor_name || clinic.subtitle || '',
                         primary_color: clinic.primary_color || '#0D9488',
-                        phone: clinic.phone || '+91 98765 43210',
-                        address: clinic.address || 'Main Clinic Road',
+                        phone: clinic.phone || clinic.doctor_phone || '',
+                        address: clinic.address || '',
                         portal_url: appUrl,
                         slug: tenantId || 'default'
                     }

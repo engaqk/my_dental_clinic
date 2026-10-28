@@ -208,6 +208,18 @@ class DatabaseAPI {
             const newAppointment = { ...payload, id: Date.now() };
             appointments.unshift(newAppointment);
             this.setLocalData('dentalAppointments', appointments);
+            
+            // Log activity
+            this.logActivity('appointment', 'Appointment Booked', `Booked appointment for ${payload.name} (${payload.reason || 'Dental Consultation'}) on ${payload.appointmentDate || payload.date} at ${payload.appointmentTime || 'Selected Slot'}${payload.mobile ? ` • Tel: ${payload.mobile}` : ''}`, {
+                patientName: payload.name,
+                mobile: payload.mobile,
+                email: payload.email,
+                date: payload.appointmentDate || payload.date,
+                timeSlot: payload.appointmentTime,
+                treatment: payload.reason,
+                fee: payload.fee
+            });
+
             return newAppointment;
         }
 
@@ -230,6 +242,18 @@ class DatabaseAPI {
             localList.unshift(savedAppt);
             this.setLocalData('dentalAppointments', localList);
 
+            // Log activity
+            this.logActivity('appointment', 'Appointment Booked', `Booked appointment for ${payload.name} (${payload.reason || 'Dental Consultation'}) on ${payload.appointmentDate || payload.date} at ${payload.appointmentTime || 'Selected Slot'}${payload.mobile ? ` • Tel: ${payload.mobile}` : ''}`, {
+                patientName: payload.name,
+                mobile: payload.mobile,
+                email: payload.email,
+                date: payload.appointmentDate || payload.date,
+                timeSlot: payload.appointmentTime,
+                treatment: payload.reason,
+                fee: payload.fee,
+                docId: docRef.id
+            });
+
             return savedAppt;
         } catch (error) {
             console.error(`CRITICAL: Booking failed for tenant [${this.tenantId}]!`, error);
@@ -237,18 +261,30 @@ class DatabaseAPI {
             const fallbackAppt = { ...payload, id: Date.now() };
             appointments.unshift(fallbackAppt);
             this.setLocalData('dentalAppointments', appointments);
+
+            this.logActivity('appointment', 'Appointment Booked (Local)', `Offline booking for ${payload.name} on ${payload.appointmentDate || payload.date}`, {
+                patientName: payload.name,
+                mobile: payload.mobile,
+                treatment: payload.reason
+            });
+
             return fallbackAppt;
         }
     }
 
     // Update appointment
     async updateAppointment(id, updates) {
+        const statusChange = updates.status ? `Status updated to "${updates.status}"` : 'Details updated';
         if (!this.useFirebase) {
             let appointments = this.getLocalData('dentalAppointments', []);
             const index = appointments.findIndex(a => a.id.toString() === id.toString() || a.docId === id);
             if (index !== -1) {
                 appointments[index] = { ...appointments[index], ...updates };
                 this.setLocalData('dentalAppointments', appointments);
+                this.logActivity('appointment', updates.status ? `Appointment ${updates.status}` : 'Appointment Updated', `${statusChange} for appointment #${id}${updates.appointmentDate ? ` (${updates.appointmentDate})` : ''}`, {
+                    appointmentId: id,
+                    ...updates
+                });
                 return appointments[index];
             }
             return null;
@@ -286,6 +322,11 @@ class DatabaseAPI {
                 }
             } catch(e){}
 
+            this.logActivity('appointment', updates.status ? `Appointment ${updates.status}` : 'Appointment Updated', `${statusChange} for appointment #${id}${updates.appointmentDate ? ` (${updates.appointmentDate})` : ''}`, {
+                appointmentId: id,
+                ...updates
+            });
+
             return { id, ...updates };
         } catch (error) {
             console.error('Firebase error updating appointment:', error);
@@ -295,6 +336,9 @@ class DatabaseAPI {
 
     // Delete appointment
     async deleteAppointment(id) {
+        this.logActivity('appointment', 'Appointment Deleted', `Appointment #${id} was deleted/cancelled`, {
+            appointmentId: id
+        });
         if (!this.useFirebase) {
             let appointments = this.getLocalData('dentalAppointments', []);
             appointments = appointments.filter(a => a.id.toString() !== id.toString() && a.docId !== id);
@@ -499,26 +543,42 @@ class DatabaseAPI {
             extraData = email;
             email = extraData.email || extraData.username || '';
         }
-        let ip = 'Unknown';
+        let ip = window.cachedUserIP || 'Unknown';
         try {
-            const res = await fetch('https://api.ipify.org?format=json');
-            const data = await res.json();
-            ip = data.ip;
+            if (ip === 'Unknown') {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                ip = data.ip;
+                window.cachedUserIP = ip;
+            }
         } catch (e) {
             console.warn('Could not fetch IP address', e);
         }
 
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        const role = extraData.role || (email === 'superadmin' ? 'super_admin' : 'admin');
+        const eventType = extraData.type || (extraData.role === 'Visitor' ? 'Visitor Gate' : 'Staff Login');
+        const name = extraData.name || (email === 'superadmin' ? 'Super Admin' : (email ? email.split('@')[0] : 'Admin User'));
+
         const logEntry = {
+            id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
             tenant_id: extraData.tenant_id || this.tenantId,
             clinic_slug: extraData.clinic_slug || this.tenantId,
             email: email || extraData.email || 'N/A',
-            name: extraData.name || (email === 'superadmin' ? 'Super Admin' : (email || 'Admin User')),
+            name: name,
+            actor: name,
             mobile: extraData.mobile || '',
-            role: extraData.role || (email === 'superadmin' ? 'super_admin' : 'admin'),
-            type: extraData.type || (extraData.role === 'Visitor' ? 'Visitor Gate' : 'Staff Login'),
+            role: role,
+            category: 'auth',
+            type: eventType,
+            details: `${name} authenticated successfully via ${eventType}`,
             ipAddress: ip,
-            device: navigator.userAgent || 'Web Browser',
-            timestamp: new Date().toISOString()
+            device: navigator.userAgent ? (navigator.userAgent.includes('Mobile') ? 'Mobile Device' : 'Desktop Browser') : 'Web Browser',
+            dateStr: dateStr,
+            timeStr: timeStr,
+            timestamp: now.toISOString()
         };
 
         if (this.useFirebase && this.db) {
@@ -540,8 +600,78 @@ class DatabaseAPI {
         try {
             const globalLogs = JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
             globalLogs.unshift(logEntry);
-            localStorage.setItem('superadmin_logs_cache', JSON.stringify(globalLogs.slice(0, 100)));
+            localStorage.setItem('superadmin_logs_cache', JSON.stringify(globalLogs.slice(0, 300)));
         } catch(e){}
+    }
+
+    // --- COMPREHENSIVE MULTI-TENANT ACTIVITY AUDIT LOGGING ---
+    async logActivity(category, type, details, meta = {}) {
+        const tenantId = meta.tenantId || meta.tenant_id || this.tenantId || 'default';
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+
+        let actor = meta.actor || meta.name || '';
+        let role = meta.role || '';
+        let email = meta.email || '';
+        let mobile = meta.mobile || meta.phone || '';
+
+        try {
+            if (!actor || !role) {
+                const staffStr = sessionStorage.getItem('staffUser') || localStorage.getItem('clinic_current_user');
+                if (staffStr) {
+                    const u = JSON.parse(staffStr);
+                    actor = actor || u.name || u.displayName || u.username || u.email || 'Staff';
+                    role = role || u.role || 'staff';
+                    email = email || u.email || '';
+                    mobile = mobile || u.mobile || u.phone || '';
+                }
+            }
+        } catch(e) {}
+
+        const logEntry = {
+            id: 'act_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+            category: category || 'general', // 'auth', 'clinical', 'appointment', 'billing', 'navigation', 'settings', 'campaign'
+            type: type || 'Activity',
+            details: details || '',
+            tenant_id: tenantId,
+            clinic_slug: tenantId,
+            actor: actor || 'Visitor / System',
+            role: role || (category === 'auth' ? 'user' : 'staff'),
+            name: actor || meta.name || 'User',
+            email: email,
+            mobile: mobile,
+            dateStr: dateStr,
+            timeStr: timeStr,
+            timestamp: now.toISOString(),
+            ipAddress: meta.ipAddress || (window.cachedUserIP || '127.0.0.1'),
+            device: meta.device || (navigator.userAgent ? (navigator.userAgent.includes('Mobile') ? 'Mobile Device' : 'Desktop Browser') : 'Web Browser'),
+            meta: meta
+        };
+
+        if (this.useFirebase && this.db) {
+            try {
+                // 1. Tenant-scoped activity collection for strict multi-tenant isolation
+                await this.getCollection('activity_logs').add(logEntry);
+                // 2. Global SuperAdmin activity audit log
+                await this.db.collection('superadmin_logs').add(logEntry);
+            } catch (err) {
+                console.warn('Failed to log activity to Firestore:', err);
+            }
+        }
+
+        // Local cache (both tenant-scoped and global)
+        try {
+            const tenantLogs = this.getLocalData('tenantActivityLogs', []);
+            tenantLogs.unshift(logEntry);
+            this.setLocalData('tenantActivityLogs', tenantLogs.slice(0, 100));
+
+            const globalLogs = JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
+            globalLogs.unshift(logEntry);
+            localStorage.setItem('superadmin_logs_cache', JSON.stringify(globalLogs.slice(0, 300)));
+        } catch(e) {}
+
+        return logEntry;
     }
 
     // Record Visitor First-Time Access & Capture Marketing Lead
@@ -611,12 +741,12 @@ class DatabaseAPI {
         }
     }
 
-    // Get SuperAdmin All Logs (Logins & Visitor Entries across all clinics)
+    // Get SuperAdmin All Logs (Activities, Logins & Visitor Entries across all clinics)
     async getSuperAdminLogs() {
         let logs = [];
         if (this.useFirebase && this.db) {
             try {
-                const snap = await this.db.collection('superadmin_logs').orderBy('timestamp', 'desc').limit(150).get();
+                const snap = await this.db.collection('superadmin_logs').orderBy('timestamp', 'desc').limit(300).get();
                 if (!snap.empty) {
                     logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 }
@@ -628,12 +758,13 @@ class DatabaseAPI {
         // Merge with local cached logs
         try {
             const local = JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
+            const tenantLogs = this.getLocalData('tenantActivityLogs', []);
             const legacy = this.getLocalData('adminLoginLogs', []);
-            const combined = [...logs, ...local, ...legacy];
-            // Deduplicate by timestamp + email
+            const combined = [...logs, ...local, ...tenantLogs, ...legacy];
+            // Deduplicate by id or timestamp + type + actor
             const seen = new Set();
             logs = combined.filter(l => {
-                const key = `${l.timestamp || ''}_${l.email || ''}_${l.type || ''}`;
+                const key = l.id || `${l.timestamp || ''}_${l.type || ''}_${l.actor || l.email || ''}`;
                 if (seen.has(key)) return false;
                 seen.add(key);
                 return true;
@@ -863,7 +994,7 @@ class DatabaseAPI {
                 doctor_name: 'Dr. Chintal Baman (BDS)',
                 degrees: 'B.D.S.',
                 address: 'Main Clinic',
-                phone: '+91 98765 43210',
+                phone: '',
                 access_gate_enabled: true,
                 pin_required: false,
                 access_pin: '1234'
@@ -879,7 +1010,7 @@ class DatabaseAPI {
                 doctor_name: 'Dr. Dental Expert (MDS)',
                 degrees: 'M.D.S., B.D.S.',
                 address: 'Modern Dental Care Center',
-                phone: '+91 98765 43210',
+                phone: '',
                 access_gate_enabled: true,
                 pin_required: false,
                 access_pin: '1234'
@@ -1379,6 +1510,15 @@ class DatabaseAPI {
             local[mobile] = chartData;
             this.setLocalData('dentalCharts', local);
         } catch(e){}
+
+        const toothCount = (chartData && chartData.teeth) ? Object.keys(chartData.teeth).length : 0;
+        const teethKeys = (chartData && chartData.teeth) ? Object.keys(chartData.teeth).slice(0, 8).join(', ') : 'None';
+        this.logActivity('clinical', 'Dental Charting', `Saved odontogram chart for patient ${mobile} (${toothCount} teeth charted: ${teethKeys}${toothCount > 8 ? '...' : ''})`, {
+            patientMobile: mobile,
+            mobile: mobile,
+            toothCount: toothCount,
+            dentition: chartData ? chartData.dentition : 'permanent'
+        });
     }
 
     async getPatientChart(mobile) {
@@ -1418,6 +1558,11 @@ class DatabaseAPI {
             local[mobile] = signatureBase64;
             this.setLocalData('dentalSignatures', local);
         } catch(e){}
+
+        this.logActivity('clinical', 'Consent E-Signature', `Captured digital consent signature for patient ${mobile}`, {
+            patientMobile: mobile,
+            mobile: mobile
+        });
     }
 
     async getPatientSignature(mobile) {
@@ -1450,6 +1595,15 @@ class DatabaseAPI {
             local.unshift({ ...payload, id: Date.now() });
             this.setLocalData('dentalPrescriptions', local);
         } catch(e) {}
+
+        const rxCount = (rxData.medicines || []).length;
+        const ptName = rxData.patientName || rxData.name || rxData.mobile || 'Patient';
+        this.logActivity('clinical', 'Prescription (Rx)', `Generated e-prescription for ${ptName} (${rxCount} medications prescribed)`, {
+            patientName: ptName,
+            patientMobile: rxData.mobile,
+            mobile: rxData.mobile,
+            medicineCount: rxCount
+        });
 
         if (this.useFirebase && this.db) {
             try {
@@ -1501,6 +1655,17 @@ class DatabaseAPI {
             local.unshift({ ...payload, id: Date.now() });
             this.setLocalData('dentalTreatmentPlans', local);
         } catch(e) {}
+
+        const procCount = (planData.procedures || []).length;
+        const total = planData.grandTotal || planData.total || 0;
+        const ptName = planData.patientName || planData.name || planData.mobile || 'Patient';
+        this.logActivity('clinical', 'Treatment Plan', `Saved treatment plan for ${ptName}: ${procCount} procedures • Grand Total ₹${total}`, {
+            patientName: ptName,
+            patientMobile: planData.mobile,
+            mobile: planData.mobile,
+            procedureCount: procCount,
+            total: total
+        });
 
         if (this.useFirebase && this.db) {
             try {
@@ -1554,6 +1719,14 @@ class DatabaseAPI {
             local[mobile] = { alerts, notes, tenant_id: this.tenantId };
             this.setLocalData('dentalMedicalAlerts', local);
         } catch(e) {}
+
+        const alertList = (alerts || []).join(', ') || 'No critical alerts';
+        this.logActivity('clinical', 'Medical Alerts Updated', `Updated medical intake alerts for patient ${mobile}: ${alertList}`, {
+            patientMobile: mobile,
+            mobile: mobile,
+            alerts: alerts,
+            notes: notes
+        });
 
         if (this.useFirebase && this.db) {
             try {

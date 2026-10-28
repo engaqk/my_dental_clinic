@@ -23,7 +23,7 @@
             } catch(e){}
         })();
     </script>
-    <link rel="stylesheet" href="style.css?v=43">
+    <link rel="stylesheet" href="style.css?v=45.8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -79,7 +79,6 @@
             <nav id="mainNav">
                 <ul class="nav-links" id="navLinks">
                     <li><a href="#" onclick="showSection('home')" id="home-nav" class="active">Home</a></li>
-                    <li><a href="#" onclick="scrollToTour()" id="tour-nav">Portal Tour</a></li>
                     <li><a href="#" onclick="scrollToBooking()">Book Appointment</a></li>
                     <li id="patient-nav-item" style="display: none;"><a href="javascript:void(0)" onclick="openPatientProfileView()" style="display: inline-flex; align-items: center; gap: 7px; font-weight: 700; color: var(--primary);"><img id="patientNavAvatar" src="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none;"> <span id="patientNavName">My Profile</span></a></li>
                     <li id="patient-login-item"><a href="javascript:void(0)" onclick="triggerGoogleSignInPrompt()" style="font-weight: 700; color: #475569;"><i class="fab fa-google" style="color: #4285F4;"></i> Sign In</a></li>
@@ -116,9 +115,9 @@
                             <i class="fas fa-user-md"></i>
                         </div>
                         <div class="doctor-badge-info">
-                            <div class="doctor-lead-text">Clinical Lead</div>
-                            <strong id="heroDoctorNameDisplay">Chief Dental Specialist</strong>
-                            <span id="heroDoctorSpecialty">Aesthetic &amp; Restorative Dentistry</span>
+                            <div class="doctor-clinic-label" id="heroClinicTag">MY DENTAL CLINIC</div>
+                            <strong id="heroDoctorNameDisplay">Clinic Specialist</strong>
+                            <span id="heroDoctorSpecialty">Comprehensive Oral Healthcare</span>
                         </div>
                     </div>
 
@@ -161,7 +160,7 @@
                         <button type="button" onclick="triggerPWAInstall()" class="btn-hero-pwa" id="heroPwaInstallBtn">
                             <i class="fas fa-download"></i> Install App
                         </button>
-                        <button type="button" onclick="quickWhatsAppClinic()" class="btn-hero-chat">
+                        <button type="button" id="heroChatReceptionBtn" onclick="quickWhatsAppClinic()" class="btn-hero-chat" style="display: none;">
                             <i class="fab fa-whatsapp"></i> Chat Reception
                         </button>
                     </div>
@@ -274,83 +273,6 @@
                             <i class="fas fa-check-circle"></i> REQUEST APPOINTMENT
                         </button>
                     </form>
-                </div>
-            </div>
-
-            <!-- APP PREVIEW SHOWCASE CAROUSEL (Now follows the booking form) -->
-            <div class="container carousel-wrapper" id="portal-tour" style="margin-top: 40px; margin-bottom: 60px;">
-                <div style="text-align: center; margin-bottom: 3.5rem;">
-                    <span class="hero-label" style="margin-bottom: 1rem;">PORTAL TOUR</span>
-                    <h2 class="section-title" style="margin-bottom: 0;">Interactive Portal Tour</h2>
-                    <p style="color: var(--text-muted); margin-top: 1rem;">Take a visual tour of our dental clinic management platform features.</p>
-                </div>
-
-                <!-- Browser Frame -->
-                <div class="mock-browser-frame">
-                    <div class="mock-browser-header">
-                        <div class="browser-dots">
-                            <span class="dot dot-red"></span>
-                            <span class="dot dot-amber"></span>
-                            <span class="dot dot-green"></span>
-                        </div>
-                        <div class="browser-address-bar">
-                            <i class="fas fa-lock" style="color: var(--success); font-size: 0.75rem;"></i>
-                            <span id="browserUrl">portal.mydentalclinic.com/home</span>
-                        </div>
-                    </div>
-
-                    <!-- Slide Display -->
-                    <div class="mock-browser-content">
-                        <div class="mock-carousel-track" id="mockCarouselTrack">
-                            <div class="mock-carousel-slide">
-                                <div class="carousel-slide-overlay">
-                                    <h3>Home &amp; Booking Terminal</h3>
-                                </div>
-                                <img src="screenshot-home.png" alt="Home Landing Page" onerror="this.src='hero-bg.png'">
-                            </div>
-                            <div class="mock-carousel-slide">
-                                <div class="carousel-slide-overlay">
-                                    <h3>Specialized Services</h3>
-                                </div>
-                                <img src="screenshot-services.png" alt="Services Overview" onerror="this.src='logo-blue.png'">
-                            </div>
-                            <div class="mock-carousel-slide">
-                                <div class="carousel-slide-overlay">
-                                    <h3>Clinical Explorer Dashboard</h3>
-                                </div>
-                                <img src="screenshot-dashboard.png" alt="Clinical Explorer Portal" onerror="this.src='logo-green.png'">
-                            </div>
-                            <div class="mock-carousel-slide">
-                                <div class="carousel-slide-overlay">
-                                    <h3>Patient Profiles &amp; Treatment History</h3>
-                                </div>
-                                <img src="screenshot-profile.png" alt="Patient Profile &amp; Financial Ledger" onerror="this.src='app-icon.png'">
-                            </div>
-                            <div class="mock-carousel-slide">
-                                <div class="carousel-slide-overlay">
-                                    <h3>Branded PDF Statements Generator</h3>
-                                </div>
-                                <img src="screenshot-bill.png" alt="Generated PDF Invoice" onerror="this.src='logo-blue.png'">
-                            </div>
-                            <div class="mock-carousel-slide">
-                                <div class="carousel-slide-overlay">
-                                    <h3>Multi-Language Support (हिंदी / ગુજરાતી)</h3>
-                                </div>
-                                <img src="screenshot-multilingual.png" alt="Multilingual Portal Demo" onerror="this.src='hero-bg.png'">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Slider Footer & Controls -->
-                    <div class="mock-browser-footer">
-                        <button class="carousel-control-btn prev" onclick="moveMockCarousel(-1)" aria-label="Previous view">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <div class="carousel-dots-container" id="mockCarouselDots"></div>
-                        <button class="carousel-control-btn next" onclick="moveMockCarousel(1)" aria-label="Next view">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
                 </div>
             </div>
         </section>
@@ -949,18 +871,112 @@
             <div class="profile-content">
                 <!-- Visual Interactive Dental Charting & Consent (Clinic USP - Tab 1) -->
                 <div id="profileChartingSection" style="display: block;">
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
-                        <!-- Interactive Visual Dental Charting -->
-                        <div class="dashboard-card" style="padding: 1.5rem; text-align: center; border-radius: 14px; border: 1.5px solid var(--primary-light, #CCFBF1); background: #FFFFFF; box-shadow: 0 4px 14px rgba(0,0,0,0.04);">
-                            <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(var(--primary-rgb, 13, 148, 136), 0.12); color: var(--primary, #0D9488); font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; margin-bottom: 8px;">
-                                <i class="fas fa-crown"></i> Core Clinical USP
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
+                        <!-- FDI Interactive Dental Charting (Odontogram) -->
+                        <div class="dashboard-card fdi-chart-card">
+                            <!-- Top Badge & Title Row -->
+                            <div class="fdi-header-row">
+                                <div class="fdi-title-block">
+                                    <div class="fdi-usp-pill">
+                                        <i class="fas fa-crown"></i> CORE CLINICAL USP &bull; FDI TWO-DIGIT STANDARD
+                                    </div>
+                                    <h3 class="fdi-title">
+                                        <i class="fas fa-tooth" style="color: var(--primary, #0D9488);"></i> Interactive Anatomical Odontogram
+                                    </h3>
+                                    <p class="fdi-subtitle">International FDI 2-Digit notation. 1-tap chairside diagnostic charting and procedure estimation.</p>
+                                </div>
+                                <!-- Dentition Switcher -->
+                                <div class="dentition-switcher">
+                                    <button type="button" id="btnDentitionAdult" class="btn-dentition active" onclick="setOdontogramDentition('adult')">
+                                        <i class="fas fa-tooth"></i> Adult (32)
+                                    </button>
+                                    <button type="button" id="btnDentitionPediatric" class="btn-dentition" onclick="setOdontogramDentition('pediatric')">
+                                        <i class="fas fa-baby"></i> Pediatric (20)
+                                    </button>
+                                </div>
                             </div>
-                            <h3 style="margin: 0 0 0.5rem 0; color: var(--secondary, #0F172A); font-size: 1.25rem;"><i class="fas fa-tooth" style="color: var(--primary);"></i> Interactive 3D/Visual Dental Charting</h3>
-                            <p style="color: var(--text-muted); margin-bottom: 1.25rem; font-size: 0.85rem;">Click on any tooth to mark healthy, cavity (red), or crown (amber).</p>
-                            <div id="interactiveTeethChart" style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.25rem;">
-                                <!-- SVG teeth injected via JS -->
+
+                            <!-- Mobile Quadrant Quick Jump Pills -->
+                            <div class="fdi-quadrant-quicknav" id="fdiQuadrantQuickNav">
+                                <span class="quicknav-label"><i class="fas fa-compass"></i> Jump:</span>
+                                <button type="button" class="btn-quicknav active" onclick="jumpToQuadrant('all')">All Arches</button>
+                                <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q1')">Q1 (Upper R)</button>
+                                <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q2')">Q2 (Upper L)</button>
+                                <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q4')">Q4 (Lower R)</button>
+                                <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q3')">Q3 (Lower L)</button>
                             </div>
-                            <div id="toothStatusText" style="font-weight: 800; color: var(--secondary); min-height: 24px;"></div>
+
+                            <!-- 1-Tap Condition Palette Bar -->
+                            <div class="fdi-palette-container">
+                                <div class="palette-header">
+                                    <span class="palette-label"><i class="fas fa-paint-brush"></i> 1-TAP CONDITION PALETTE:</span>
+                                    <span class="palette-tip" id="fdiPaletteTip">Active: <strong>Inspect &amp; Plan</strong> (Tap tooth for procedure options &amp; costs)</span>
+                                </div>
+                                <div class="fdi-palette-buttons">
+                                    <button type="button" class="fdi-tool-btn active" data-tool="inspect" onclick="setOdontogramTool('inspect')">
+                                        <i class="fas fa-search-plus"></i> Inspect &amp; Plan
+                                    </button>
+                                    <button type="button" class="fdi-tool-btn tool-cavity" data-tool="cavity" onclick="setOdontogramTool('cavity')">
+                                        <span class="color-dot dot-cavity"></span> Caries / Cavity
+                                    </button>
+                                    <button type="button" class="fdi-tool-btn tool-filling" data-tool="filling" onclick="setOdontogramTool('filling')">
+                                        <span class="color-dot dot-filling"></span> Filling / Restored
+                                    </button>
+                                    <button type="button" class="fdi-tool-btn tool-crown" data-tool="crown" onclick="setOdontogramTool('crown')">
+                                        <span class="color-dot dot-crown"></span> Crown / Bridge
+                                    </button>
+                                    <button type="button" class="fdi-tool-btn tool-rct" data-tool="rct" onclick="setOdontogramTool('rct')">
+                                        <span class="color-dot dot-rct"></span> Root Canal (RCT)
+                                    </button>
+                                    <button type="button" class="fdi-tool-btn tool-missing" data-tool="missing" onclick="setOdontogramTool('missing')">
+                                        <span class="color-dot dot-missing"></span> Missing / Extracted
+                                    </button>
+                                    <button type="button" class="fdi-tool-btn tool-implant" data-tool="implant" onclick="setOdontogramTool('implant')">
+                                        <span class="color-dot dot-implant"></span> Implant
+                                    </button>
+                                    <button type="button" class="fdi-tool-btn tool-healthy" data-tool="healthy" onclick="setOdontogramTool('healthy')">
+                                        <span class="color-dot dot-healthy"></span> Sound / Healthy
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Live Summary Metrics Bar -->
+                            <div class="fdi-metrics-bar" id="fdiMetricsBar">
+                                <div class="metric-pill pill-sound"><i class="fas fa-check-circle"></i> Sound: <strong id="metricSoundCount">32</strong></div>
+                                <div class="metric-pill pill-cavity"><i class="fas fa-circle" style="color:#EF4444;"></i> Caries: <strong id="metricCavityCount">0</strong></div>
+                                <div class="metric-pill pill-filling"><i class="fas fa-circle" style="color:#2563EB;"></i> Filling: <strong id="metricFillingCount">0</strong></div>
+                                <div class="metric-pill pill-crown"><i class="fas fa-circle" style="color:#F59E0B;"></i> Crown: <strong id="metricCrownCount">0</strong></div>
+                                <div class="metric-pill pill-rct"><i class="fas fa-circle" style="color:#8B5CF6;"></i> RCT: <strong id="metricRctCount">0</strong></div>
+                                <div class="metric-pill pill-missing"><i class="fas fa-times-circle" style="color:#64748B;"></i> Missing: <strong id="metricMissingCount">0</strong></div>
+                                <div class="metric-pill pill-implant"><i class="fas fa-circle" style="color:#0D9488;"></i> Implant: <strong id="metricImplantCount">0</strong></div>
+                            </div>
+
+                            <!-- Mobile Scroll Guidance Notice -->
+                            <div class="fdi-scroll-hint">
+                                <i class="fas fa-arrows-alt-h"></i> Swipe horizontally to view full arch &bull; Tap tooth to inspect or paint
+                            </div>
+
+                            <!-- Odontogram Chart Canvas -->
+                            <div class="fdi-chart-scrollable" id="fdiChartScrollContainer">
+                                <div id="interactiveTeethChart" class="fdi-arch-canvas">
+                                    <!-- Dynamic FDI Anatomical Teeth Injected via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Live Feedback Bar -->
+                            <div class="fdi-feedback-bar">
+                                <div id="toothStatusText" class="fdi-status-text">
+                                    <i class="fas fa-info-circle"></i> Click any tooth to chart conditions or add procedures to Treatment Plan.
+                                </div>
+                                <div class="fdi-chart-actions">
+                                    <button type="button" class="btn-fdi-action btn-link-all" onclick="addAllChartedToTreatmentPlan()">
+                                        <i class="fas fa-bolt"></i> + Add Marked to Treatment Plan
+                                    </button>
+                                    <button type="button" class="btn-fdi-action btn-clear-chart" onclick="clearOdontogramChart()">
+                                        <i class="fas fa-undo"></i> Reset Chart
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Digital E-Signature Pad -->
@@ -1473,65 +1489,6 @@
     </div>
 
     <!-- Settings Modal -->
-    
-
-    <!-- Welcome Features Popup Modal -->
-    <div id="welcomeFeaturesModal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 500px; text-align: center; padding: 2rem 1.75rem; position: relative;">
-            <div style="display: flex; justify-content: flex-end; margin-bottom: 0.5rem;">
-                <span onclick="closeWelcomeModal()" style="font-size: 1.75rem; line-height: 1; cursor: pointer; color: var(--text-muted); font-weight: bold;" title="Dismiss">&times;</span>
-            </div>
-            <button onclick="closeWelcomeModal(); setTimeout(() => { const t = document.getElementById('portal-tour'); if(t) t.scrollIntoView({behavior:'smooth', block:'start'}); }, 300);" class="btn-primary" style="width: 100%; height: 48px; font-weight: 800; border-radius: 12px; justify-content: center; margin-bottom: 1.5rem;">🔍 EXPLORE PORTAL TOUR</button>
-            
-            <div style="margin-bottom: 1.5rem;">
-                <span class="hero-label">WELCOME PORTAL</span>
-                <h2 style="font-family: 'Outfit'; font-weight: 800; font-size: 2rem; margin-top: 0.5rem; color: var(--secondary);">Advanced Care Features</h2>
-                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">Experience our new, digital-first clinical features.</p>
-            </div>
-            
-            <div class="feature-popup-list" style="text-align: left; display: flex; flex-direction: column; gap: 1rem; margin: 1.5rem 0; background: var(--bg-soft); padding: 1.25rem; border-radius: var(--radius-lg); border: 1px solid var(--primary-light);">
-                <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                    <i class="fas fa-calendar-check" style="color: var(--primary); font-size: 1.25rem; margin-top: 2px; width: 20px; text-align: center;"></i>
-                    <div>
-                        <h4 style="font-size: 0.95rem; margin: 0; color: var(--secondary);">Priority Scheduling</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0;">Book appointments instantly with real-time slot availability.</p>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                    <i class="fas fa-file-invoice-dollar" style="color: var(--primary); font-size: 1.25rem; margin-top: 2px; width: 20px; text-align: center;"></i>
-                    <div>
-                        <h4 style="font-size: 0.95rem; margin: 0; color: var(--secondary);">Smart Invoicing</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0;">Download premium PDF receipts styled with clinic branding.</p>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                    <i class="fab fa-google" style="color: var(--accent); font-size: 1.25rem; margin-top: 2px; width: 20px; text-align: center;"></i>
-                    <div>
-                        <h4 style="font-size: 0.95rem; margin: 0; color: var(--secondary);">Google Calendar Sync</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0;">Add your bookings directly to your Google Calendar in one click.</p>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                    <i class="fas fa-mobile-alt" style="color: var(--primary); font-size: 1.25rem; margin-top: 2px; width: 20px; text-align: center;"></i>
-                    <div>
-                        <h4 style="font-size: 0.95rem; margin: 0; color: var(--secondary);">PWA App Installation</h4>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0;">Install the portal to your home screen and use it like an app.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Install app prompt inside welcome modal -->
-            <div id="pwaWelcomeInstallBox" style="display: block; margin-top: 1rem; border-top: 1px dashed #e2e8f0; padding-top: 1rem; margin-bottom: 1rem;">
-                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">Install the clinic app for fast offline access:</p>
-                <button onclick="triggerPWAInstall()" class="btn-primary" style="background: var(--primary); height: 40px; font-size: 0.85rem; padding: 0 1.5rem; width: auto; margin: 0 auto 0.75rem; display: flex; align-items: center; gap: 0.5rem; justify-content: center;">
-                    <i class="fas fa-download"></i> INSTALL APP NOW
-                </button>
-            </div>
-            <button onclick="closeWelcomeModal()" class="btn-primary" style="background: transparent; color: var(--text-muted); border: 1px solid #CBD5E1; width: 100%; height: 40px; font-size: 0.85rem; font-weight: 700; border-radius: 12px; justify-content: center;">
-                Dismiss &amp; Continue
-            </button>
-        </div>
-    </div>
 
     <!-- Booking Confirmation Modal -->
     <div id="bookingModal" class="modal">
@@ -1606,11 +1563,11 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=44"></script>
-    <script src="auth.js?v=44"></script>
-    <script src="emailTemplates.js?v=44"></script>
-    <script src="script.js?v=44"></script>
-    <script src="premium-features.js?v=44"></script>
+    <script src="db-api.js?v=45.8"></script>
+    <script src="auth.js?v=45.8"></script>
+    <script src="emailTemplates.js?v=45.8"></script>
+    <script src="script.js?v=45.8"></script>
+    <script src="premium-features.js?v=45.8"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {
@@ -1665,95 +1622,9 @@
         const appointmentDate = document.getElementById('appointmentDate');
         if (appointmentDate) appointmentDate.setAttribute('min', today);
 
-        // Mock Preview Carousel Logic
-        let currentMockSlide = 0;
-        const totalMockSlides = 6;
-        const mockUrls = [
-            'portal.mydentalclinic.com/home',
-            'portal.mydentalclinic.com/services',
-            'portal.mydentalclinic.com/dashboard',
-            'portal.mydentalclinic.com/patient-profile',
-            'portal.mydentalclinic.com/invoice',
-            'portal.mydentalclinic.com/multilingual'
-        ];
-
-        function initMockCarousel() {
-            const dotsContainer = document.getElementById('mockCarouselDots');
-            if (!dotsContainer) return;
-            dotsContainer.innerHTML = '';
-            for (let i = 0; i < totalMockSlides; i++) {
-                const dot = document.createElement('span');
-                dot.className = `carousel-dot ${i === 0 ? 'active' : ''}`;
-                dot.onclick = () => showMockSlide(i);
-                dotsContainer.appendChild(dot);
-            }
-        }
-
-        function showMockSlide(index) {
-            currentMockSlide = index;
-            if (currentMockSlide >= totalMockSlides) currentMockSlide = 0;
-            if (currentMockSlide < 0) currentMockSlide = totalMockSlides - 1;
-
-            const track = document.getElementById('mockCarouselTrack');
-            if (track) {
-                track.style.transform = `translateX(-${currentMockSlide * (100 / 6)}%)`;
-            }
-
-            const urlEl = document.getElementById('browserUrl');
-            if (urlEl) {
-                urlEl.innerText = mockUrls[currentMockSlide];
-            }
-
-            const dots = document.querySelectorAll('.carousel-dot');
-            dots.forEach((dot, i) => {
-                dot.classList.toggle('active', i === currentMockSlide);
-            });
-        }
-
-        function moveMockCarousel(direction) {
-            showMockSlide(currentMockSlide + direction);
-        }
-
-        // Auto slide
-        let mockInterval = setInterval(() => moveMockCarousel(1), 1000);
-        document.querySelector('.mock-browser-frame')?.addEventListener('mouseenter', () => clearInterval(mockInterval));
-        document.querySelector('.mock-browser-frame')?.addEventListener('mouseleave', () => {
-            clearInterval(mockInterval);
-            mockInterval = setInterval(() => moveMockCarousel(1), 1000);
-        });
-
-        // Initialize on load
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                initMockCarousel();
-                checkWelcomePopup();
-            });
-        } else {
-            initMockCarousel();
-            checkWelcomePopup();
-        }
-
-        // Welcome popup modal logic - ONLY shown on very first visit
-        function checkWelcomePopup() {
-            const hasSeen = localStorage.getItem('clinic_welcome_popup_shown') || localStorage.getItem('clinic_tour_completed');
-            if (hasSeen === 'true') {
-                return; // Do NOT show again
-            }
-            // Mark immediately so subsequent refreshes never pop up
-            localStorage.setItem('clinic_welcome_popup_shown', 'true');
-            localStorage.setItem('clinic_tour_completed', 'true');
-            setTimeout(() => {
-                const modal = document.getElementById('welcomeFeaturesModal');
-                if (modal) modal.style.display = 'flex';
-            }, 800);
-        }
-        
-        function closeWelcomeModal() {
-            const modal = document.getElementById('welcomeFeaturesModal');
-            if (modal) modal.style.display = 'none';
-            localStorage.setItem('clinic_welcome_popup_shown', 'true');
-            localStorage.setItem('clinic_tour_completed', 'true');
-        }
+        // Ensure tour and welcome popups are permanently suppressed for clean modern portal experience
+        localStorage.setItem('clinic_welcome_popup_shown', 'true');
+        localStorage.setItem('clinic_tour_completed', 'true');
 
         // PWA Startup & Install Logic
         let deferredPrompt = null;
@@ -1810,22 +1681,6 @@
             setTimeout(() => {
                 const form = document.querySelector('.appointment-form');
                 if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 100);
-            
-            // Close mobile menu if open
-            const mainNav = document.getElementById('mainNav');
-            if (mainNav && mainNav.classList.contains('active')) {
-                mainNav.classList.remove('active');
-                const btn = document.getElementById('mobileMenuBtn');
-                if (btn) btn.innerHTML = '<i class="fas fa-bars"></i>';
-            }
-        }
-
-        function scrollToTour() {
-            showSection('home');
-            setTimeout(() => {
-                const el = document.getElementById('portal-tour');
-                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 100);
             
             // Close mobile menu if open
@@ -1931,6 +1786,102 @@
             <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
                 <button onclick="closeEditMedicalAlertsModal()" class="btn-primary" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; height: 42px; font-weight: 700;">Cancel</button>
                 <button onclick="saveMedicalAlertsFromModal()" class="btn-primary" style="background: var(--primary); height: 42px; font-weight: 800;">Save Health Status</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooth Procedure & Treatment Plan Auto-Link Modal (Core Clinical USP) -->
+    <div id="toothProcedureModal" class="modal" style="display: none; z-index: 12000 !important;">
+        <div class="modal-content tooth-modal-sheet" style="max-width: 580px; padding: 1.5rem; border-radius: 20px; box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.35);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.75rem;">
+                <div>
+                    <div id="toothModalBadge" style="display: inline-flex; align-items: center; gap: 5px; background: rgba(13, 148, 136, 0.12); color: #0D9488; font-size: 0.72rem; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-transform: uppercase; margin-bottom: 4px;">
+                        QUADRANT 1 (MAXILLARY RIGHT) &bull; FDI #16
+                    </div>
+                    <h3 id="toothModalTitle" style="margin: 0; color: var(--secondary, #0F172A); font-size: 1.25rem; font-weight: 800;">
+                        🦷 Tooth #16 &bull; First Molar
+                    </h3>
+                </div>
+                <button type="button" onclick="closeToothProcedureModal()" style="border: none; background: #F1F5F9; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748B; font-size: 1.25rem;">&times;</button>
+            </div>
+
+            <!-- 1. Condition Selector -->
+            <div style="margin-bottom: 1.25rem;">
+                <label style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; margin-bottom: 0.4rem;">
+                    1. SET TOOTH CLINICAL CONDITION:
+                </label>
+                <div class="tooth-condition-grid" id="toothModalConditionGrid">
+                    <button type="button" class="btn-cond-pill" data-cond="healthy" onclick="setToothConditionFromModal('healthy')">
+                        <span class="color-dot dot-healthy"></span> Sound / Healthy
+                    </button>
+                    <button type="button" class="btn-cond-pill" data-cond="cavity" onclick="setToothConditionFromModal('cavity')">
+                        <span class="color-dot dot-cavity"></span> Caries / Cavity
+                    </button>
+                    <button type="button" class="btn-cond-pill" data-cond="filling" onclick="setToothConditionFromModal('filling')">
+                        <span class="color-dot dot-filling"></span> Existing Filling
+                    </button>
+                    <button type="button" class="btn-cond-pill" data-cond="crown" onclick="setToothConditionFromModal('crown')">
+                        <span class="color-dot dot-crown"></span> Crown / Bridge
+                    </button>
+                    <button type="button" class="btn-cond-pill" data-cond="rct" onclick="setToothConditionFromModal('rct')">
+                        <span class="color-dot dot-rct"></span> Root Canal (RCT)
+                    </button>
+                    <button type="button" class="btn-cond-pill" data-cond="missing" onclick="setToothConditionFromModal('missing')">
+                        <span class="color-dot dot-missing"></span> Missing / Extracted
+                    </button>
+                    <button type="button" class="btn-cond-pill" data-cond="implant" onclick="setToothConditionFromModal('implant')">
+                        <span class="color-dot dot-implant"></span> Dental Implant
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. 1-Tap Treatment Plan Linker -->
+            <div style="margin-bottom: 1.25rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                    <label style="font-size: 0.72rem; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; margin: 0;">
+                        2. ⚡ 1-TAP ADD TO TREATMENT PLAN (TAB 2):
+                    </label>
+                    <span style="font-size: 0.7rem; color: #0D9488; font-weight: 700;">Zero re-typing</span>
+                </div>
+                <div class="tooth-proc-shortcuts" id="toothModalProcShortcuts">
+                    <!-- Injected dynamically via JS based on condition -->
+                </div>
+            </div>
+
+            <!-- 3. Custom Procedure Adder -->
+            <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0.75rem; margin-bottom: 1rem;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: var(--secondary, #0F172A); margin-bottom: 0.4rem;">
+                    + Custom Procedure for this tooth:
+                </div>
+                <div class="custom-proc-inputs">
+                    <input type="text" id="customToothProcName" placeholder="Procedure Name (e.g. Veneer)" style="height: 36px; padding: 0 0.5rem; font-size: 0.8rem; border: 1px solid #CBD5E1; border-radius: 6px;">
+                    <input type="number" id="customToothProcCost" placeholder="₹ Fee" style="height: 36px; padding: 0 0.5rem; font-size: 0.8rem; border: 1px solid #CBD5E1; border-radius: 6px;">
+                    <input type="number" id="customToothProcSittings" value="1" min="1" max="10" placeholder="Visits" style="height: 36px; padding: 0 0.5rem; font-size: 0.8rem; border: 1px solid #CBD5E1; border-radius: 6px;">
+                    <button type="button" onclick="addCustomProcedureFromToothModal()" class="btn-primary" style="height: 36px; padding: 0 0.75rem; font-size: 0.75rem; white-space: nowrap;">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+
+            <!-- 4. Clinical Notes for Tooth -->
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-size: 0.72rem; font-weight: 800; color: var(--text-muted, #64748B); text-transform: uppercase; margin-bottom: 0.3rem;">
+                    3. CLINICAL NOTES FOR THIS TOOTH:
+                </label>
+                <input type="text" id="toothClinicalNotes" placeholder="e.g. Distal caries, tender to percussion, cold sensitive" style="width: 100%; height: 36px; padding: 0 0.6rem; font-size: 0.82rem; border: 1px solid #CBD5E1; border-radius: 8px;">
+            </div>
+
+            <!-- Instant Feedback Message -->
+            <div id="toothModalFeedback" style="display: none; background: #DCFCE7; border: 1px solid #86EFAC; color: #166534; padding: 0.6rem 0.85rem; border-radius: 8px; font-size: 0.82rem; margin-bottom: 1rem; text-align: center;"></div>
+
+            <!-- Modal Action Footer -->
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" onclick="closeToothProcedureModal()" class="btn-primary" style="background: #94A3B8; font-size: 0.85rem; padding: 0.55rem 1.1rem;">
+                    Done
+                </button>
+                <button type="button" onclick="goToTreatmentPlanFromToothModal()" class="btn-primary" style="background: var(--primary, #0D9488); font-size: 0.85rem; padding: 0.55rem 1.25rem;">
+                    <i class="fas fa-clipboard-list"></i> View in Treatment Plan Tab &rarr;
+                </button>
             </div>
         </div>
     </div>

@@ -9,7 +9,7 @@
             document.write('<base href="' + window.location.origin + '/">');
         }
     </script>
-    <link rel="stylesheet" href="style.css?v=43">
+    <link rel="stylesheet" href="style.css?v=45.8">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <meta name="theme-color" content="#8B5CF6">
@@ -504,15 +504,15 @@
 
             <!-- System Activity Logs & Captured Marketing Leads Card -->
             <div class="sa-card">
-                <div class="sa-card-header">
+                <div class="sa-card-header" style="flex-wrap: wrap; gap: 1rem;">
                     <div>
-                        <h2><i class="fas fa-user-check" style="color: #8B5CF6;"></i> User Logins &amp; Marketing Leads Hub</h2>
-                        <span style="font-size: 0.8rem; color: #64748B;">Audit trail of all logged-in staff and visitors captured via first-time gate</span>
+                        <h2><i class="fas fa-clipboard-list" style="color: #8B5CF6;"></i> Audit Trail &amp; Activity Logs Hub</h2>
+                        <span style="font-size: 0.8rem; color: #64748B;">Multi-tenant real-time audit trail of all staff logins, dental charting, prescriptions, treatment plans, appointments &amp; marketing campaigns with exact date &amp; timestamp.</span>
                     </div>
                     <!-- Tab Switcher -->
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                         <button type="button" id="tabBtnLogs" onclick="switchLogsTab('logs')" class="btn-portal-back" style="font-size: 0.8rem; font-weight: 800; padding: 0.4rem 0.85rem; cursor: pointer; background: #8B5CF6; color: white; border-color: #8B5CF6;">
-                            <i class="fas fa-list"></i> Activity Logs
+                            <i class="fas fa-list"></i> Activity Logs (<span id="countAllLogs">0</span>)
                         </button>
                         <button type="button" id="tabBtnLeads" onclick="switchLogsTab('leads')" class="btn-portal-back" style="font-size: 0.8rem; font-weight: 800; padding: 0.4rem 0.85rem; cursor: pointer; background: #F8FAFC; color: #475569;">
                             <i class="fas fa-bullhorn"></i> Marketing Leads (<span id="leadsBadgeCount">0</span>)
@@ -521,23 +521,67 @@
                 </div>
 
                 <!-- VIEW A: ACTIVITY & LOGIN LOGS TABLE -->
-                <div id="viewActivityLogs" style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid #E2E8F0; color: #64748B;">
-                                <th style="padding: 8px 10px;">Date &amp; Time</th>
-                                <th style="padding: 8px 10px;">Clinic Tenant</th>
-                                <th style="padding: 8px 10px;">Name</th>
-                                <th style="padding: 8px 10px;">Mobile</th>
-                                <th style="padding: 8px 10px;">Email / User</th>
-                                <th style="padding: 8px 10px;">Event Type</th>
-                                <th style="padding: 8px 10px;">IP Address</th>
-                            </tr>
-                        </thead>
-                        <tbody id="saLoginLogsTableBody">
-                            <tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Loading security &amp; access logs...</td></tr>
-                        </tbody>
-                    </table>
+                <div id="viewActivityLogs">
+                    <!-- Activity Filters, Live Search & Export Bar -->
+                    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0.75rem 1rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.65rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                            <!-- Category Filter Buttons -->
+                            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
+                                <button type="button" onclick="filterActivityLogsByCategory('all')" class="sa-cat-pill" data-cat="all" style="font-size: 0.78rem; font-weight: 800; padding: 0.35rem 0.75rem; border-radius: 99px; border: 1px solid #8B5CF6; background: #8B5CF6; color: #FFFFFF; cursor: pointer;">
+                                    All Activities
+                                </button>
+                                <button type="button" onclick="filterActivityLogsByCategory('clinical')" class="sa-cat-pill" data-cat="clinical" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 99px; border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569; cursor: pointer;">
+                                    🦷 Clinical (Chart/Rx/Plan)
+                                </button>
+                                <button type="button" onclick="filterActivityLogsByCategory('appointment')" class="sa-cat-pill" data-cat="appointment" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 99px; border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569; cursor: pointer;">
+                                    📅 Appointments
+                                </button>
+                                <button type="button" onclick="filterActivityLogsByCategory('auth')" class="sa-cat-pill" data-cat="auth" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 99px; border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569; cursor: pointer;">
+                                    🔐 Logins &amp; Gate
+                                </button>
+                                <button type="button" onclick="filterActivityLogsByCategory('navigation')" class="sa-cat-pill" data-cat="navigation" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 99px; border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569; cursor: pointer;">
+                                    🧭 Desks &amp; Routes
+                                </button>
+                                <button type="button" onclick="filterActivityLogsByCategory('campaign')" class="sa-cat-pill" data-cat="campaign" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 99px; border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569; cursor: pointer;">
+                                    📢 Campaigns
+                                </button>
+                            </div>
+                            <!-- Export and Refresh -->
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <button type="button" onclick="exportActivityLogsCSV()" class="btn-portal-back" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; cursor: pointer; color: #4338CA; border-color: #C7D2FE; background: #EEF2FF;">
+                                    <i class="fas fa-file-csv"></i> Export CSV
+                                </button>
+                                <button type="button" onclick="loadAnalyticsDashboard()" class="btn-portal-back" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; cursor: pointer; color: #0F172A; border-color: #CBD5E1; background: #FFFFFF;">
+                                    <i class="fas fa-sync-alt"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Live Search Input -->
+                        <div style="position: relative;">
+                            <input type="text" id="saActivitySearch" oninput="filterActivityLogsByCategory(window.currentLogCategory || 'all')" placeholder="🔎 Search activities, patient names, mobile numbers, event types, or clinic tenants..." style="width: 100%; height: 38px; padding: 0 1rem 0 2.2rem; font-size: 0.82rem; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #FFFFFF; outline: none;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: #94A3B8; font-size: 0.82rem;"></i>
+                        </div>
+                    </div>
+
+                    <!-- Responsive Activity Table Container -->
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #E2E8F0;">
+                        <table style="width: 100%; min-width: 900px; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
+                            <thead>
+                                <tr style="background: #F1F5F9; border-bottom: 2px solid #E2E8F0; color: #475569;">
+                                    <th style="padding: 10px 12px; white-space: nowrap;">Date &amp; Time</th>
+                                    <th style="padding: 10px 12px; white-space: nowrap;">Clinic Tenant</th>
+                                    <th style="padding: 10px 12px; white-space: nowrap;">Category &amp; Event</th>
+                                    <th style="padding: 10px 12px; white-space: nowrap;">Actor &amp; Role</th>
+                                    <th style="padding: 10px 12px; min-width: 250px;">Activity Details</th>
+                                    <th style="padding: 10px 12px; white-space: nowrap;">Contact</th>
+                                    <th style="padding: 10px 12px; white-space: nowrap;">Device &amp; IP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="saLoginLogsTableBody">
+                                <tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Loading security &amp; access logs...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
 
                 <!-- VIEW B: CAPTURED MARKETING LEADS TABLE -->
@@ -828,8 +872,8 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="phoneUtils.js"></script>
-    <script src="emailTemplates.js?v=44"></script>
-    <script src="db-api.js?v=44"></script>
+    <script src="emailTemplates.js?v=45.8"></script>
+    <script src="db-api.js?v=45.8"></script>
 
     <!-- SuperAdmin Logic Script -->
     <script>
@@ -1385,44 +1429,221 @@
             loadCampaignAudience();
         }
 
+        window.currentLogCategory = 'all';
+
+        function filterActivityLogsByCategory(category) {
+            window.currentLogCategory = category;
+            const pills = document.querySelectorAll('.sa-cat-pill');
+            pills.forEach(pill => {
+                const c = pill.getAttribute('data-cat');
+                if (c === category) {
+                    pill.style.background = '#8B5CF6';
+                    pill.style.color = '#FFFFFF';
+                    pill.style.borderColor = '#8B5CF6';
+                } else {
+                    pill.style.background = '#FFFFFF';
+                    pill.style.color = '#475569';
+                    pill.style.borderColor = '#E2E8F0';
+                }
+            });
+
+            const activeTenant = document.getElementById('saTenantFilter')?.value || 'all';
+            renderFilteredSecurityLogs(activeTenant);
+        }
+
         function renderFilteredSecurityLogs(tenantScope) {
             const logTbody = document.getElementById('saLoginLogsTableBody');
+            const countBadge = document.getElementById('countAllLogs');
             if (!logTbody) return;
 
             let logs = window.rawSecurityLogs || [];
+            if (countBadge) countBadge.innerText = logs.length;
+
+            // 1. Tenant filter
             if (tenantScope && tenantScope !== 'all') {
                 logs = logs.filter(l => (l.tenant_id || l.clinic_slug || 'default') === tenantScope);
             }
 
+            // 2. Category filter
+            const cat = window.currentLogCategory || 'all';
+            if (cat !== 'all') {
+                logs = logs.filter(l => {
+                    const lCat = (l.category || '').toLowerCase();
+                    const lType = (l.type || '').toLowerCase();
+                    if (cat === 'clinical') {
+                        return lCat === 'clinical' || lType.includes('chart') || lType.includes('rx') || lType.includes('prescription') || lType.includes('treatment') || lType.includes('signature') || lType.includes('alert');
+                    }
+                    if (cat === 'appointment') {
+                        return lCat === 'appointment' || lType.includes('appointment');
+                    }
+                    if (cat === 'auth') {
+                        return lCat === 'auth' || lType.includes('login') || lType.includes('access') || lType.includes('gate');
+                    }
+                    if (cat === 'navigation') {
+                        return lCat === 'navigation' || lType.includes('desk') || lType.includes('route');
+                    }
+                    if (cat === 'campaign') {
+                        return lCat === 'campaign' || lType.includes('campaign') || lType.includes('email');
+                    }
+                    return lCat === cat;
+                });
+            }
+
+            // 3. Search query filter
+            const searchInput = document.getElementById('saActivitySearch');
+            const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            if (query) {
+                logs = logs.filter(l => {
+                    const text = `${l.dateStr || ''} ${l.timeStr || ''} ${l.timestamp || ''} ${l.tenant_id || ''} ${l.clinic_slug || ''} ${l.name || ''} ${l.actor || ''} ${l.role || ''} ${l.mobile || ''} ${l.email || ''} ${l.type || ''} ${l.category || ''} ${l.details || ''} ${l.ipAddress || ''}`.toLowerCase();
+                    return text.includes(query);
+                });
+            }
+
+            window.filteredSecurityLogs = logs;
+
             if (!logs || logs.length === 0) {
-                logTbody.innerHTML = `<tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No access logs recorded yet for ${tenantScope === 'all' ? 'any clinic' : `clinic "${tenantScope}"`}.</td></tr>`;
+                logTbody.innerHTML = `<tr><td colspan="7" style="padding: 2rem; text-align: center; color: #94A3B8;">No activity logs found for the selected filter criteria.</td></tr>`;
                 return;
             }
 
-            logTbody.innerHTML = logs.slice(0, 100).map(l => {
-                const dateStr = l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A';
+            logTbody.innerHTML = logs.slice(0, 150).map(l => {
+                const dt = l.timestamp ? new Date(l.timestamp) : new Date();
+                const dateStr = l.dateStr || dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                const timeStr = l.timeStr || dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
                 const tenant = l.tenant_id || l.clinic_slug || 'default';
-                const name = l.name || 'Admin / Visitor';
+                const actor = l.actor || l.name || 'User';
+                const role = l.role || 'Staff';
                 const mobile = l.mobile || '-';
                 const email = l.email || '-';
-                const isGoogle = (l.type && l.type.toLowerCase().includes('google')) || (l.role && l.role.toLowerCase().includes('google'));
-                const eventType = l.type || (isGoogle ? 'Google 1-Tap Access' : 'Staff Login');
-                const ip = l.ipAddress || 'Unknown';
+                const details = l.details || (l.meta && l.meta.details) || `${l.type || 'Activity'} completed`;
+                const ip = l.ipAddress || '127.0.0.1';
+                const device = l.device || 'Browser';
+                const isGoogle = (l.type && l.type.toLowerCase().includes('google')) || (role.toLowerCase().includes('google'));
+
+                // Visual Category & Event Badge
+                let catIcon = 'fas fa-info-circle';
+                let catBadgeBg = '#EDE9FE';
+                let catBadgeColor = '#6D28D9';
+                const lTypeLow = (l.type || '').toLowerCase();
+                const lCatLow = (l.category || '').toLowerCase();
+
+                if (lCatLow === 'clinical' || lTypeLow.includes('chart') || lTypeLow.includes('rx') || lTypeLow.includes('treatment')) {
+                    catIcon = lTypeLow.includes('chart') ? 'fas fa-tooth' : (lTypeLow.includes('rx') ? 'fas fa-prescription' : 'fas fa-file-medical-alt');
+                    catBadgeBg = '#DCFCE7';
+                    catBadgeColor = '#15803D';
+                } else if (lCatLow === 'appointment' || lTypeLow.includes('appointment')) {
+                    catIcon = 'far fa-calendar-check';
+                    catBadgeBg = '#E0F2FE';
+                    catBadgeColor = '#0369A1';
+                } else if (lCatLow === 'auth' || lTypeLow.includes('login') || lTypeLow.includes('gate')) {
+                    catIcon = isGoogle ? 'fab fa-google' : 'fas fa-shield-alt';
+                    catBadgeBg = isGoogle ? '#FEF3C7' : '#F1F5F9';
+                    catBadgeColor = isGoogle ? '#B45309' : '#334155';
+                } else if (lCatLow === 'navigation' || lTypeLow.includes('desk')) {
+                    catIcon = 'fas fa-compass';
+                    catBadgeBg = '#F3E8FF';
+                    catBadgeColor = '#7E22CE';
+                } else if (lCatLow === 'campaign' || lTypeLow.includes('campaign')) {
+                    catIcon = 'fas fa-bullhorn';
+                    catBadgeBg = '#FCE7F3';
+                    catBadgeColor = '#BE185D';
+                }
+
+                // Role badge styling
+                let roleColor = '#475569';
+                let roleBg = '#F1F5F9';
+                if (role.toLowerCase().includes('doctor')) { roleColor = '#0D9488'; roleBg = '#CCFBF1'; }
+                else if (role.toLowerCase().includes('admin')) { roleColor = '#4338CA'; roleBg = '#EEF2FF'; }
+                else if (role.toLowerCase().includes('reception')) { roleColor = '#0284C7'; roleBg = '#E0F2FE'; }
+                else if (role.toLowerCase().includes('visitor') || role.toLowerCase().includes('patient')) { roleColor = '#D97706'; roleBg = '#FEF3C7'; }
 
                 return `
-                    <tr style="border-bottom: 1px solid #F1F5F9;">
-                        <td style="padding: 8px 10px; color: #0F172A; font-weight: 600;">${dateStr}</td>
-                        <td style="padding: 8px 10px;"><span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tenant}</span></td>
-                        <td style="padding: 8px 10px; font-weight: 700; color: #0F172A;">${name}</td>
-                        <td style="padding: 8px 10px; color: #475569; font-family: monospace;">${mobile}</td>
-                        <td style="padding: 8px 10px; color: #2563EB; font-weight: 600;">
-                            ${isGoogle ? '<i class="fab fa-google" style="color: #4285F4; margin-right: 4px;"></i>' : ''}${email}
+                    <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.15s ease;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'">
+                        <td style="padding: 10px 12px; white-space: nowrap;">
+                            <div style="font-weight: 800; color: #0F172A; font-size: 0.82rem;">
+                                <i class="far fa-calendar-alt" style="color: #8B5CF6; margin-right: 5px;"></i>${dateStr}
+                            </div>
+                            <div style="font-size: 0.72rem; color: #64748B; font-family: monospace; margin-top: 2px;">
+                                <i class="far fa-clock" style="margin-right: 4px;"></i>${timeStr}
+                            </div>
                         </td>
-                        <td style="padding: 8px 10px;"><span style="background: ${isGoogle ? '#DCFCE7' : '#EDE9FE'}; color: ${isGoogle ? '#15803D' : '#6D28D9'}; font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">${eventType}</span></td>
-                        <td style="padding: 8px 10px; color: #94A3B8; font-family: monospace; font-size: 0.75rem;">${ip}</td>
+                        <td style="padding: 10px 12px; white-space: nowrap;">
+                            <span style="background: #F1F5F9; color: #334155; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.74rem; border: 1px solid #E2E8F0;">
+                                ${tenant}
+                            </span>
+                        </td>
+                        <td style="padding: 10px 12px; white-space: nowrap;">
+                            <span style="display: inline-flex; align-items: center; gap: 5px; background: ${catBadgeBg}; color: ${catBadgeColor}; font-weight: 800; padding: 3px 9px; border-radius: 99px; font-size: 0.74rem;">
+                                <i class="${catIcon}"></i> ${l.type || 'Event'}
+                            </span>
+                        </td>
+                        <td style="padding: 10px 12px; white-space: nowrap;">
+                            <div style="font-weight: 800; color: #0F172A; font-size: 0.82rem;">${actor}</div>
+                            <span style="display: inline-block; background: ${roleBg}; color: ${roleColor}; font-weight: 700; padding: 1px 7px; border-radius: 99px; font-size: 0.68rem; margin-top: 2px;">
+                                ${role}
+                            </span>
+                        </td>
+                        <td style="padding: 10px 12px;">
+                            <div style="color: #334155; line-height: 1.45; font-size: 0.81rem;">
+                                ${details}
+                            </div>
+                        </td>
+                        <td style="padding: 10px 12px; white-space: nowrap;">
+                            ${mobile !== '-' ? `<div style="font-family: monospace; font-size: 0.76rem; color: #475569;"><i class="fas fa-phone-alt" style="color: #10B981; margin-right: 4px; font-size: 0.7rem;"></i>${mobile}</div>` : ''}
+                            ${email !== '-' ? `<div style="font-size: 0.75rem; color: #2563EB; font-weight: 600; overflow: hidden; text-overflow: ellipsis; max-width: 160px;"><i class="far fa-envelope" style="margin-right: 4px; font-size: 0.7rem;"></i>${email}</div>` : (mobile === '-' ? '<span style="color:#94A3B8;">-</span>' : '')}
+                        </td>
+                        <td style="padding: 10px 12px; white-space: nowrap;">
+                            <div style="font-size: 0.74rem; color: #64748B;">
+                                <i class="fas fa-laptop" style="margin-right: 4px; color: #94A3B8;"></i>${device}
+                            </div>
+                            <div style="font-size: 0.72rem; color: #94A3B8; font-family: monospace; margin-top: 2px;">
+                                ${ip}
+                            </div>
+                        </td>
                     </tr>
                 `;
             }).join('');
+        }
+
+        function exportActivityLogsCSV() {
+            const logs = window.filteredSecurityLogs || window.rawSecurityLogs || [];
+            if (!logs || logs.length === 0) {
+                alert('No activity logs available to export.');
+                return;
+            }
+
+            const headers = ['Date', 'Time', 'Timestamp', 'Tenant', 'Category', 'Event Type', 'Actor', 'Role', 'Activity Details', 'Mobile', 'Email', 'Device', 'IP Address'];
+            const rows = logs.map(l => {
+                const dt = l.timestamp ? new Date(l.timestamp) : new Date();
+                const dStr = l.dateStr || dt.toLocaleDateString('en-IN');
+                const tStr = l.timeStr || dt.toLocaleTimeString('en-IN');
+                const clean = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+
+                return [
+                    clean(dStr),
+                    clean(tStr),
+                    clean(l.timestamp || ''),
+                    clean(l.tenant_id || l.clinic_slug || 'default'),
+                    clean(l.category || 'general'),
+                    clean(l.type || 'Activity'),
+                    clean(l.actor || l.name || ''),
+                    clean(l.role || ''),
+                    clean(l.details || ''),
+                    clean(l.mobile || ''),
+                    clean(l.email || ''),
+                    clean(l.device || ''),
+                    clean(l.ipAddress || '')
+                ].join(',');
+            });
+
+            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `dental_clinic_activity_logs_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         function renderFilteredLeads(tenantScope) {
@@ -1666,31 +1887,33 @@
 
             const recipients = checkedBoxes.map(b => {
                 const tId = b.getAttribute('data-tenant') || tenant.id || 'default';
-                let recTenant = (window.allLoadedTenants || []).find(t => t.id === tId) || tenant;
-                if (!recTenant || tId === 'default') {
-                    recTenant = {
-                        id: 'default',
-                        name: 'My Dental Clinic',
-                        clinic_name: 'My Dental Clinic',
-                        subtitle: 'Dental & Cosmetic Clinic',
-                        doctor_name: 'Chief Physician',
-                        primary_color: '#10B981',
-                        phone: '+91 98765 43210',
-                        address: 'Main Clinic Road'
-                    };
+                let recTenant = (window.allLoadedTenants || []).find(t => t.id === tId) || tenant || {};
+                const portalUrl = origin + (recTenant.id === 'default' ? '/' : ('/' + (recTenant.id || '')));
+                const rawName = (b.getAttribute('data-name') || '').trim();
+                const em = (b.getAttribute('data-email') || '').trim();
+                let cleanName = '';
+                if (rawName && !rawName.toLowerCase().includes('valued patient')) {
+                    cleanName = rawName;
+                } else if (em) {
+                    const prefix = em.split('@')[0].replace(/[._-]/g, ' ').trim();
+                    if (prefix.length > 2 && !prefix.includes('admin') && !prefix.includes('test')) {
+                        cleanName = prefix.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    }
                 }
-                const portalUrl = origin + (recTenant.id === 'default' ? '/' : ('/' + recTenant.id));
+
                 return {
-                    email: b.getAttribute('data-email'),
-                    name: b.getAttribute('data-name') || 'Valued Patient',
+                    email: em,
+                    name: cleanName,
                     tenant_id: recTenant.id || tId,
                     tenant: {
                         id: recTenant.id || tId,
-                        clinic_name: recTenant.name || recTenant.clinic_name || 'My Dental Clinic',
-                        doctor_name: recTenant.subtitle || recTenant.doctor_name || 'Dental Specialist',
+                        clinic_name: recTenant.name || recTenant.clinic_name || 'Dental Clinic',
+                        name: recTenant.name || recTenant.clinic_name || 'Dental Clinic',
+                        doctor_name: recTenant.doctor_name || recTenant.subtitle || '',
+                        subtitle: recTenant.doctor_name || recTenant.subtitle || '',
                         primary_color: recTenant.primary_color || '#0D9488',
-                        phone: recTenant.phone || '+91 98765 43210',
-                        address: recTenant.address || 'Main Clinic Road',
+                        phone: recTenant.phone || recTenant.doctor_phone || '',
+                        address: recTenant.address || '',
                         slug: recTenant.id || tId,
                         portal_url: portalUrl,
                         clinicUrl: portalUrl
@@ -1720,12 +1943,12 @@
                         templateKey: tplKey,
                         subject: subject,
                         customMessage: customMessage,
-                        clinicUrl: origin + (tenant.id === 'default' ? '/' : ('/' + tenant.id)),
+                        clinicUrl: origin + (tenant.id === 'default' ? '/' : ('/' + (tenant.id || ''))),
                         tenantId: tenant.id || 'default',
-                        clinicName: tenant.name || 'My Dental Clinic',
-                        doctorName: tenant.subtitle || 'Dental Specialist',
+                        clinicName: tenant.name || tenant.clinic_name || 'Dental Clinic',
+                        doctorName: tenant.doctor_name || tenant.subtitle || '',
                         primaryColor: tenant.primary_color || '#0D9488',
-                        phone: tenant.phone || '+91 98765 43210',
+                        phone: tenant.phone || tenant.doctor_phone || '',
                         address: tenant.address || ''
                     })
                 });
@@ -1743,7 +1966,16 @@
                 if (progressPercent) progressPercent.innerText = '100%';
                 if (progressText) progressText.innerHTML = `<i class="fas fa-check-circle" style="color: #16A34A;"></i> Campaign Dispatched! ${result.sentCount} emails sent successfully.`;
 
-                // Log campaign event in Firestore
+                // Log campaign event in Firestore & SuperAdmin Activity Logs
+                if (window.dbAPI && typeof window.dbAPI.logActivity === 'function') {
+                    window.dbAPI.logActivity('campaign', 'Email Campaign Blast', `Dispatched "${tplKey}" blast to ${result.sentCount} recipients (Failed: ${result.failedCount || 0})`, {
+                        templateKey: tplKey,
+                        subject: subject,
+                        sentCount: result.sentCount,
+                        failedCount: result.failedCount,
+                        tenantScope: activeFilter
+                    });
+                }
                 if (window.dbAPI && window.dbAPI.db) {
                     window.dbAPI.db.collection('campaign_logs').add({
                         templateKey: tplKey,

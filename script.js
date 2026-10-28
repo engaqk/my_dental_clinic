@@ -1633,9 +1633,9 @@ async function dispatchPatientWelcomeEmail(user, settings) {
             body: JSON.stringify({
                 to: user.email,
                 type: 'welcome',
-                name: user.displayName || 'Valued Patient',
-                clinicName: s.clinic_name || 'My Dental Clinic',
-                doctorName: s.doctor_name || s.subtitle || 'Dental Specialist',
+                name: user.displayName || (user.email ? user.email.split('@')[0].replace(/[._]/g, ' ') : ''),
+                clinicName: s.clinic_name || s.name || 'Dental Clinic',
+                doctorName: s.doctor_name || s.clinic_name || '',
                 phone: s.phone || '',
                 address: s.address || '',
                 primaryColor: s.primary_color || '#0D9488'
@@ -1806,7 +1806,7 @@ function loadClinicSettings() {
         window.currentClinicSettings = settings || {};
         const clinicName = settings.clinic_name || settings.name || 'MY DENTAL CLINIC';
         const subtitle = settings.subtitle || 'Dental & Cosmetic Clinic';
-        const doctorName = settings.doctor_name || subtitle || 'Dental Specialist';
+        const doctorName = settings.doctor_name || clinicName;
         const themeColor = settings.primary_color || settings.primaryColor || '#0D9488';
         const monogram = getClinicMonogram(clinicName);
 
@@ -1818,6 +1818,7 @@ function loadClinicSettings() {
         const heroDoctorNameEl = document.getElementById('heroDoctorNameDisplay');
         const heroDoctorSpecialtyEl = document.getElementById('heroDoctorSpecialty');
         const dashTitleEl = document.getElementById('dashHeaderClinicTitle');
+        const heroClinicTagEl = document.getElementById('heroClinicTag');
 
         if (nameEl) nameEl.innerText = clinicName;
         if (subEl) subEl.innerText = subtitle;
@@ -1826,6 +1827,19 @@ function loadClinicSettings() {
         if (heroDoctorNameEl) heroDoctorNameEl.innerText = doctorName;
         if (heroDoctorSpecialtyEl) heroDoctorSpecialtyEl.innerText = `${clinicName} • Comprehensive Oral Care`;
         if (dashTitleEl) dashTitleEl.innerText = `${clinicName} Explorer`;
+        if (heroClinicTagEl) heroClinicTagEl.innerText = clinicName.toUpperCase();
+
+        // Chat Reception WhatsApp button visibility (only show if clinic / doctor phone number is available)
+        const rawDoctorPhone = settings.doctor_phone || settings.phone || settings.whatsapp || '';
+        const cleanPhoneDigits = (rawDoctorPhone || '').toString().replace(/[^0-9]/g, '');
+        const heroChatBtn = document.getElementById('heroChatReceptionBtn');
+        if (heroChatBtn) {
+            if (cleanPhoneDigits.length >= 7) {
+                heroChatBtn.style.display = 'inline-flex';
+            } else {
+                heroChatBtn.style.display = 'none';
+            }
+        }
 
         // Update all dynamic 2-character monogram badges across the app
         const monogramEls = [
@@ -3050,10 +3064,17 @@ function selectClinicalDesk(role) {
     // 7. Show toast confirmation
     showToastNotification(`${cfg.icon} Switched to ${cfg.name} (${cfg.title}) Desk`);
 
-    // 8. Track desk switch in analytics
+    // 8. Track desk switch in analytics and activity logs
     try {
         if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
             window.dbAPI.trackRouteVisit('clinical_desk:' + targetRole);
+        }
+        if (window.dbAPI && typeof window.dbAPI.logActivity === 'function') {
+            window.dbAPI.logActivity('navigation', 'Clinical Desk Selected', `Switched active clinical workspace to ${cfg.name} (${cfg.title}) Desk`, {
+                targetRole: targetRole,
+                roleName: cfg.name,
+                deskTitle: cfg.title
+            });
         }
     } catch(e) {}
 }
@@ -4671,7 +4692,12 @@ window.scrollToBookingForm = scrollToBookingForm;
 
 function quickWhatsAppClinic() {
     const s = window.currentClinicSettings || {};
-    const phone = (s.phone || '+91 98765 43210').replace(/[^0-9]/g, '');
+    const rawPhone = s.doctor_phone || s.phone || s.whatsapp || '';
+    const phone = rawPhone.toString().replace(/[^0-9]/g, '');
+    if (!phone || phone.length < 7) {
+        alert('Reception chat is currently unavailable because the clinic phone number is not configured in settings.');
+        return;
+    }
     const clinicName = s.clinic_name || s.name || 'the clinic';
     const msg = encodeURIComponent(`Hello ${clinicName}, I would like to inquire about appointments and dental consultation.`);
     window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
