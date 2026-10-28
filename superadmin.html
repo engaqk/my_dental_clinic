@@ -453,6 +453,24 @@
                 </div>
             </div>
 
+            <!-- Scope Analytics & Logs Filter Bar -->
+            <div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 1rem 1.4rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: #EDE9FE; color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
+                        <i class="fas fa-filter"></i>
+                    </div>
+                    <div>
+                        <strong style="font-size: 0.95rem; color: #0F172A; display: block;">Scope Analytics, Logs &amp; Campaigns</strong>
+                        <span style="font-size: 0.78rem; color: #64748B;">Filter route clicks and Google user authentication history</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <select id="saTenantFilter" onchange="filterSuperAdminAnalyticsAndLogs(this.value)" class="form-input" style="height: 40px; min-width: 250px; font-weight: 700; border-radius: 10px; border: 1.5px solid #CBD5E1; padding: 0 0.85rem; color: #0F172A; background: #F8FAFC; cursor: pointer;">
+                        <option value="all">🌐 All Clinics &amp; Tenants (Global)</option>
+                    </select>
+                </div>
+            </div>
+
             <!-- VISITOR COUNT & ROUTE-WISE TRAFFIC ANALYTICS CARD -->
             <div class="sa-card">
                 <div class="sa-card-header">
@@ -556,6 +574,139 @@
                     </div>
                 </div>
 
+            <!-- 1-CLICK DAILY PATIENT ENGAGEMENT & EMAIL MARKETING ENGINE -->
+            <div class="sa-card" id="cardEmailMarketingEngine" style="border: 2px solid #C4B5FD; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.15);">
+                <div class="sa-card-header" style="background: linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%);">
+                    <div>
+                        <h2><i class="fas fa-paper-plane" style="color: #8B5CF6;"></i> 1-Click Patient Engagement &amp; Email Marketing Hub</h2>
+                        <span style="font-size: 0.8rem; color: #64748B;">Automated engagement blasts to all logged-in Google users and registered clinic patients</span>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <span style="background: #EDE9FE; color: #6D28D9; font-size: 0.78rem; font-weight: 800; padding: 4px 12px; border-radius: 99px;">
+                            <i class="fas fa-users"></i> <span id="campaignAudienceCount">0</span> Verified Emails Ready
+                        </span>
+                        <button type="button" onclick="loadCampaignAudience()" class="btn-portal-back" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; cursor: pointer;">
+                            <i class="fas fa-sync-alt"></i> Refresh Users
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template & Campaign Setup Grid -->
+                <div style="background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 1.25rem; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                        <div>
+                            <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                                <i class="fas fa-magic" style="color: #8B5CF6;"></i> Select Ready Engagement Template
+                            </label>
+                            <select id="campaignTemplateSelect" onchange="handleCampaignTemplateChange(this.value)" class="form-input" style="height: 42px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem; font-weight: 700; color: #0F172A; background: #FFFFFF; cursor: pointer;">
+                                <option value="daily_care">🌟 Daily Oral Care &amp; Hygiene Guide (Daily Habit Reminder)</option>
+                                <option value="checkup_offer">🎁 Special Patient Privilege Dental Checkup &amp; Hygiene Assessment</option>
+                                <option value="portal_reminder">📱 Patient Portal &amp; Digital Dental Records Access Notice</option>
+                                <option value="custom">✍️ Custom Broadcast Announcement</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                                <i class="fas fa-hospital" style="color: #8B5CF6;"></i> Sender Clinic Brand &amp; Theme
+                            </label>
+                            <select id="campaignTenantSelect" onchange="handleCampaignTenantChange(this.value)" class="form-input" style="height: 42px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem; font-weight: 700; color: #0F172A; background: #FFFFFF; cursor: pointer;">
+                                <option value="all">🌐 All Clinics (Platform Broadcast)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                            Campaign Subject Line
+                        </label>
+                        <input type="text" id="campaignSubjectInput" class="form-input" style="height: 42px; width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0 0.85rem; font-weight: 700; font-size: 0.95rem; color: #0F172A; background: #FFFFFF;" value="🌟 Daily Oral Care Guide &amp; Checkup Reminder from My Dental Clinic">
+                    </div>
+
+                    <div id="campaignCustomMessageGroup" style="display: none; margin-bottom: 1rem;">
+                        <label style="display: block; font-weight: 800; font-size: 0.78rem; margin-bottom: 0.35rem; color: #475569; text-transform: uppercase;">
+                            Custom Announcement Body Text
+                        </label>
+                        <textarea id="campaignCustomMessage" rows="3" class="form-input" style="width: 100%; box-sizing: border-box; border: 1.5px solid #CBD5E1; border-radius: 8px; padding: 0.75rem 0.85rem; font-size: 0.9rem; color: #0F172A; background: #FFFFFF; font-family: inherit;" placeholder="Write your personalized announcement or update to patients here..."></textarea>
+                    </div>
+
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                        <button type="button" onclick="toggleEmailPreviewModal()" class="btn-portal-back" style="font-size: 0.82rem; font-weight: 700; cursor: pointer; color: #4338CA; border-color: #C7D2FE; background: #EEF2FF; padding: 0.5rem 1rem;">
+                            <i class="fas fa-eye"></i> Preview Responsive Email Template
+                        </button>
+                        <span style="font-size: 0.78rem; color: #64748B;">
+                            <i class="fas fa-shield-alt" style="color: #10B981;"></i> Sent securely via <code>mydentalapp77@gmail.com</code> (Gmail SMTP)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Audience Selection & 1-Click Send Bar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.75rem; background: #FFFFFF; padding: 0.85rem 1rem; border-radius: 12px; border: 1px solid #E2E8F0;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 800; color: #0F172A;">
+                            <input type="checkbox" id="selectAllRecipientsCheckbox" checked onchange="toggleSelectAllRecipients(this.checked)" style="width: 18px; height: 18px; accent-color: #8B5CF6; cursor: pointer;">
+                            Select All (<span id="selectedCountDisplay">0</span> recipients selected)
+                        </label>
+                    </div>
+
+                    <button type="button" id="btnExecuteCampaignBlast" onclick="execute1ClickEmailCampaign()" class="btn-primary" style="background: linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%); padding: 0.75rem 1.75rem; font-size: 0.95rem; font-weight: 900; border-radius: 12px; cursor: pointer; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35); display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-paper-plane"></i> SEND 1-CLICK ENGAGEMENT BLAST NOW
+                    </button>
+                </div>
+
+                <!-- Live Dispatch Status & Progress Bar -->
+                <div id="campaignProgressBox" style="display: none; background: #EEF2FF; border: 1.5px solid #C7D2FE; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <span id="campaignProgressText" style="font-weight: 800; font-size: 0.88rem; color: #3730A3;">
+                            <i class="fas fa-spinner fa-spin"></i> Dispatching emails in real-time...
+                        </span>
+                        <span id="campaignProgressPercent" style="font-weight: 800; font-size: 0.85rem; color: #4F46E5;">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: #C7D2FE; border-radius: 99px; overflow: hidden;">
+                        <div id="campaignProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #8B5CF6, #0D9488); border-radius: 99px; transition: width 0.2s ease;"></div>
+                    </div>
+                </div>
+
+                <!-- Recipient Audience List Table -->
+                <div style="overflow-x: auto; max-height: 400px; overflow-y: auto; border: 1px solid #E2E8F0; border-radius: 12px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                        <thead style="position: sticky; top: 0; background: #F8FAFC; z-index: 2;">
+                            <tr style="border-bottom: 2px solid #E2E8F0; color: #64748B;">
+                                <th style="padding: 10px 12px; width: 45px; text-align: center;"></th>
+                                <th style="padding: 10px 12px;">User / Patient Name</th>
+                                <th style="padding: 10px 12px;">Email Address</th>
+                                <th style="padding: 10px 12px;">Clinic Tenant</th>
+                                <th style="padding: 10px 12px;">Role &amp; Source</th>
+                                <th style="padding: 10px 12px;">Last Active</th>
+                            </tr>
+                        </thead>
+                        <tbody id="saCampaignRecipientsTableBody">
+                            <tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">Loading audience of logged-in Gmail users and clinic patients...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <!-- EMAIL PREVIEW MODAL -->
+            <div id="saEmailPreviewModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 100000; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box; backdrop-filter: blur(6px);">
+                <div style="background: white; border-radius: 20px; max-width: 680px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);">
+                    <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; background: #F8FAFC;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0F172A;">Interactive Email Preview</h3>
+                            <span id="previewModalSubject" style="font-size: 0.8rem; color: #64748B;">Subject line</span>
+                        </div>
+                        <button type="button" onclick="toggleEmailPreviewModal()" style="border: none; background: transparent; font-size: 1.4rem; color: #64748B; cursor: pointer;">&times;</button>
+                    </div>
+                    <div id="emailPreviewFrameContainer" style="flex: 1; overflow-y: auto; padding: 1.5rem; background: #F1F5F9;">
+                        <!-- Rendered HTML will be injected here -->
+                    </div>
+                    <div style="padding: 1rem 1.5rem; border-top: 1px solid #E2E8F0; display: flex; justify-content: flex-end; background: #FFFFFF;">
+                        <button type="button" onclick="toggleEmailPreviewModal()" class="btn-portal-back" style="font-size: 0.85rem; font-weight: 700; padding: 0.5rem 1.25rem; cursor: pointer;">
+                            Close Preview
+                        </button>
+                    </div>
+                </div>
             </div>
 
         </div>
@@ -818,6 +969,24 @@
 
                 // Update count stat
                 document.getElementById('statClinicsCount').innerText = tenants.length;
+
+                // Populate Scope Filter & Campaign Sender dropdowns
+                const filterSelect = document.getElementById('saTenantFilter');
+                const campTenantSelect = document.getElementById('campaignTenantSelect');
+                let optionsHtml = '<option value="all">🌐 All Clinics &amp; Tenants (Global Broadcast)</option>';
+                tenants.forEach(t => {
+                    optionsHtml += `<option value="${t.id}">${t.name || t.id} (${t.id})</option>`;
+                });
+                if (filterSelect) {
+                    const cur = filterSelect.value || 'all';
+                    filterSelect.innerHTML = optionsHtml;
+                    filterSelect.value = tenants.some(t => t.id === cur) ? cur : 'all';
+                }
+                if (campTenantSelect) {
+                    const curCamp = campTenantSelect.value || 'all';
+                    campTenantSelect.innerHTML = optionsHtml;
+                    campTenantSelect.value = tenants.some(t => t.id === curCamp) ? curCamp : 'all';
+                }
 
                 // Render list
                 container.innerHTML = tenants.map(t => {
@@ -1096,6 +1265,17 @@
         }
 
         // --- VISITOR & ROUTE-WISE TRAFFIC ANALYTICS DASHBOARD ---
+        window.rawAnalyticsSummary = { totalVisitors: 0, totalRouteHits: 0, routeStats: [] };
+        window.rawSecurityLogs = [];
+        window.allCampaignRecipients = [];
+
+        function filterSuperAdminAnalyticsAndLogs(tenantScope) {
+            renderFilteredAnalytics(tenantScope || 'all');
+            renderFilteredSecurityLogs(tenantScope || 'all');
+            renderFilteredLeads(tenantScope || 'all');
+            loadCampaignAudience(tenantScope || 'all');
+        }
+
         async function loadAnalyticsDashboard() {
             const tbody = document.getElementById('saRouteAnalyticsTableBody');
             if (!tbody) return;
@@ -1106,59 +1286,443 @@
                 if (window.dbAPI && typeof window.dbAPI.getAnalyticsSummary === 'function') {
                     summary = await window.dbAPI.getAnalyticsSummary();
                 }
+                window.rawAnalyticsSummary = summary;
+                const activeTenant = document.getElementById('saTenantFilter')?.value || 'all';
+                renderFilteredAnalytics(activeTenant);
+            } catch (err) {
+                console.error('Analytics load error:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #EF4444;">Failed to load analytics: ' + err.message + '</td></tr>';
+            }
+        }
 
-                // Update metric counters
-                const visitorsEl = document.getElementById('statVisitorsCount');
-                const hitsEl = document.getElementById('statRouteHitsCount');
-                if (visitorsEl) visitorsEl.innerText = (summary.totalVisitors || 0).toLocaleString();
-                if (hitsEl) hitsEl.innerText = (summary.totalRouteHits || 0).toLocaleString();
+        function renderFilteredAnalytics(tenantScope) {
+            const tbody = document.getElementById('saRouteAnalyticsTableBody');
+            if (!tbody) return;
 
-                const stats = summary.routeStats || [];
-                if (stats.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No route navigation clicks recorded yet. Clicks will appear in real-time as users browse clinics.</td></tr>';
+            const summary = window.rawAnalyticsSummary || { totalVisitors: 0, totalRouteHits: 0, routeStats: [] };
+            let allStats = summary.routeStats || [];
+            
+            if (tenantScope && tenantScope !== 'all') {
+                allStats = allStats.filter(item => (item.tenant_id || 'default') === tenantScope);
+            }
+
+            const totalHits = allStats.reduce((sum, item) => sum + (item.count || 0), 0);
+            const hitsEl = document.getElementById('statRouteHitsCount');
+            if (hitsEl) hitsEl.innerText = totalHits.toLocaleString();
+
+            if (allStats.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No route navigation clicks recorded yet for ${tenantScope === 'all' ? 'any clinic' : `clinic "${tenantScope}"`}.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = allStats.map((item, index) => {
+                const count = item.count || 0;
+                const pct = totalHits > 0 ? Math.min(100, Math.round((count / totalHits) * 100)) : 0;
+                const dateStr = item.lastVisited ? new Date(item.lastVisited).toLocaleString() : 'Recent';
+                const rankBadge = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index + 1}`));
+
+                return `
+                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                        <td style="padding: 10px 12px; font-weight: 800; color: #0F172A;">${rankBadge}</td>
+                        <td style="padding: 10px 12px;">
+                            <strong style="color: #0F172A; font-size: 0.9rem;"><i class="fas fa-compass" style="color: #8B5CF6; margin-right: 6px;"></i>${item.route}</strong>
+                        </td>
+                        <td style="padding: 10px 12px;">
+                            <span style="background: #EDE9FE; color: #6D28D9; font-weight: 700; font-size: 0.75rem; padding: 2px 8px; border-radius: 99px;">
+                                ${item.tenant_id || 'default'}
+                            </span>
+                        </td>
+                        <td style="padding: 10px 12px; text-align: right; font-weight: 800; color: #0F172A; font-size: 0.95rem;">
+                            ${count.toLocaleString()}
+                        </td>
+                        <td style="padding: 10px 12px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="flex: 1; height: 8px; background: #E2E8F0; border-radius: 99px; overflow: hidden;">
+                                    <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #8B5CF6, #0D9488); border-radius: 99px;"></div>
+                                </div>
+                                <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; width: 34px; text-align: right;">${pct}%</span>
+                            </div>
+                        </td>
+                        <td style="padding: 10px 12px; font-size: 0.78rem; color: #64748B;">
+                            ${dateStr}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function loadSecurityLogs() {
+            const logTbody = document.getElementById('saLoginLogsTableBody');
+            const leadTbody = document.getElementById('saMarketingLeadsTableBody');
+
+            try {
+                let logs = [];
+                if (window.dbAPI && typeof window.dbAPI.getSuperAdminLogs === 'function') {
+                    logs = await window.dbAPI.getSuperAdminLogs();
+                } else if (window.dbAPI && typeof window.dbAPI.getAdminLoginHistory === 'function') {
+                    logs = await window.dbAPI.getAdminLoginHistory();
+                }
+                window.rawSecurityLogs = logs || [];
+                const activeTenant = document.getElementById('saTenantFilter')?.value || 'all';
+                renderFilteredSecurityLogs(activeTenant);
+            } catch (err) {
+                console.warn('Logs render notice:', err);
+            }
+
+            try {
+                let leads = [];
+                if (window.dbAPI && typeof window.dbAPI.getMarketingLeads === 'function') {
+                    leads = await window.dbAPI.getMarketingLeads();
+                }
+                window.allMarketingLeads = leads || [];
+                const activeTenant = document.getElementById('saTenantFilter')?.value || 'all';
+                renderFilteredLeads(activeTenant);
+            } catch(err) {
+                console.warn('Leads render notice:', err);
+            }
+
+            // Also load Campaign Audience
+            loadCampaignAudience();
+        }
+
+        function renderFilteredSecurityLogs(tenantScope) {
+            const logTbody = document.getElementById('saLoginLogsTableBody');
+            if (!logTbody) return;
+
+            let logs = window.rawSecurityLogs || [];
+            if (tenantScope && tenantScope !== 'all') {
+                logs = logs.filter(l => (l.tenant_id || l.clinic_slug || 'default') === tenantScope);
+            }
+
+            if (!logs || logs.length === 0) {
+                logTbody.innerHTML = `<tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No access logs recorded yet for ${tenantScope === 'all' ? 'any clinic' : `clinic "${tenantScope}"`}.</td></tr>`;
+                return;
+            }
+
+            logTbody.innerHTML = logs.slice(0, 100).map(l => {
+                const dateStr = l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A';
+                const tenant = l.tenant_id || l.clinic_slug || 'default';
+                const name = l.name || 'Admin / Visitor';
+                const mobile = l.mobile || '-';
+                const email = l.email || '-';
+                const isGoogle = (l.type && l.type.toLowerCase().includes('google')) || (l.role && l.role.toLowerCase().includes('google'));
+                const eventType = l.type || (isGoogle ? 'Google 1-Tap Access' : 'Staff Login');
+                const ip = l.ipAddress || 'Unknown';
+
+                return `
+                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                        <td style="padding: 8px 10px; color: #0F172A; font-weight: 600;">${dateStr}</td>
+                        <td style="padding: 8px 10px;"><span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tenant}</span></td>
+                        <td style="padding: 8px 10px; font-weight: 700; color: #0F172A;">${name}</td>
+                        <td style="padding: 8px 10px; color: #475569; font-family: monospace;">${mobile}</td>
+                        <td style="padding: 8px 10px; color: #2563EB; font-weight: 600;">
+                            ${isGoogle ? '<i class="fab fa-google" style="color: #4285F4; margin-right: 4px;"></i>' : ''}${email}
+                        </td>
+                        <td style="padding: 8px 10px;"><span style="background: ${isGoogle ? '#DCFCE7' : '#EDE9FE'}; color: ${isGoogle ? '#15803D' : '#6D28D9'}; font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">${eventType}</span></td>
+                        <td style="padding: 8px 10px; color: #94A3B8; font-family: monospace; font-size: 0.75rem;">${ip}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderFilteredLeads(tenantScope) {
+            const leadTbody = document.getElementById('saMarketingLeadsTableBody');
+            const badge = document.getElementById('leadsBadgeCount');
+            const visitorsEl = document.getElementById('statVisitorsCount');
+            if (!leadTbody) return;
+
+            let leads = window.allMarketingLeads || [];
+            if (tenantScope && tenantScope !== 'all') {
+                leads = leads.filter(c => (c.tenant_id || c.clinic_slug || 'default') === tenantScope);
+            }
+
+            if (badge) badge.innerText = leads.length;
+            if (visitorsEl) visitorsEl.innerText = leads.length.toLocaleString();
+
+            if (leads.length === 0) {
+                leadTbody.innerHTML = `<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No visitor marketing leads captured yet for ${tenantScope === 'all' ? 'any clinic' : `clinic "${tenantScope}"`}.</td></tr>`;
+                return;
+            }
+
+            leadTbody.innerHTML = leads.map(c => {
+                const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'Recent';
+                const tenant = c.tenant_id || c.clinic_slug || 'default';
+                return `
+                    <tr style="border-bottom: 1px solid #F1F5F9;">
+                        <td style="padding: 8px 10px; color: #0F172A; font-weight: 600;">${dateStr}</td>
+                        <td style="padding: 8px 10px;"><span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tenant}</span></td>
+                        <td style="padding: 8px 10px; font-weight: 700; color: #0F172A;">${c.name || 'Visitor'}</td>
+                        <td style="padding: 8px 10px; color: #16A34A; font-family: monospace; font-weight: 700;">${c.mobile || c.phone || 'Pending Profile'}</td>
+                        <td style="padding: 8px 10px; color: #2563EB;">${c.email || '-'}</td>
+                        <td style="padding: 8px 10px;"><span style="background: #FEF3C7; color: #D97706; font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">${c.source || 'Google 1-Tap Access'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- 1-CLICK EMAIL MARKETING ENGINE CONTROLLER ---
+        async function loadCampaignAudience(tenantScope) {
+            const tbody = document.getElementById('saCampaignRecipientsTableBody');
+            const countBadge = document.getElementById('campaignAudienceCount');
+            const selectedDisplay = document.getElementById('selectedCountDisplay');
+            if (!tbody) return;
+
+            const scope = tenantScope || document.getElementById('saTenantFilter')?.value || 'all';
+
+            try {
+                let recipients = [];
+                if (window.dbAPI && typeof window.dbAPI.getAllEngagementEmailRecipients === 'function') {
+                    recipients = await window.dbAPI.getAllEngagementEmailRecipients(scope);
+                }
+
+                window.allCampaignRecipients = recipients;
+                if (countBadge) countBadge.innerText = recipients.length;
+                if (selectedDisplay) selectedDisplay.innerText = recipients.length;
+
+                if (recipients.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #94A3B8;">No logged-in user or patient emails recorded yet. They will appear here automatically when users sign in or register.</td></tr>';
                     return;
                 }
 
-                const totalHits = summary.totalRouteHits || 1;
-
-                tbody.innerHTML = stats.map((item, index) => {
-                    const count = item.count || 0;
-                    const pct = Math.min(100, Math.round((count / totalHits) * 100));
-                    const dateStr = item.lastVisited ? new Date(item.lastVisited).toLocaleString() : 'Recent';
-                    const rankBadge = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `#${index + 1}`));
+                tbody.innerHTML = recipients.map((r, i) => {
+                    const isGoogle = (r.source && r.source.toLowerCase().includes('google')) || (r.role && r.role.toLowerCase().includes('google'));
+                    const lastDate = r.lastActive ? new Date(r.lastActive).toLocaleDateString() : 'Recent';
 
                     return `
                         <tr style="border-bottom: 1px solid #F1F5F9;">
-                            <td style="padding: 10px 12px; font-weight: 800; color: #0F172A;">${rankBadge}</td>
-                            <td style="padding: 10px 12px;">
-                                <strong style="color: #0F172A; font-size: 0.9rem;">${item.route}</strong>
+                            <td style="padding: 10px 12px; text-align: center;">
+                                <input type="checkbox" class="campaign-recipient-check" checked data-email="${r.email}" data-name="${r.name}" data-tenant="${r.tenant_id}" onchange="updateSelectedRecipientsCount()" style="width: 17px; height: 17px; accent-color: #8B5CF6; cursor: pointer;">
+                            </td>
+                            <td style="padding: 10px 12px; font-weight: 700; color: #0F172A;">
+                                ${r.name || 'Valued Patient'}
+                            </td>
+                            <td style="padding: 10px 12px; color: #2563EB; font-weight: 600;">
+                                ${isGoogle ? '<i class="fab fa-google" style="color: #4285F4; margin-right: 5px;"></i>' : ''}${r.email}
                             </td>
                             <td style="padding: 10px 12px;">
                                 <span style="background: #EDE9FE; color: #6D28D9; font-weight: 700; font-size: 0.75rem; padding: 2px 8px; border-radius: 99px;">
-                                    ${item.tenant_id}
+                                    ${r.tenant_id || 'default'}
                                 </span>
                             </td>
-                            <td style="padding: 10px 12px; text-align: right; font-weight: 800; color: #0F172A; font-size: 0.95rem;">
-                                ${count.toLocaleString()}
-                            </td>
                             <td style="padding: 10px 12px;">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <div style="flex: 1; height: 8px; background: #E2E8F0; border-radius: 99px; overflow: hidden;">
-                                        <div style="height: 100%; width: ${pct}%; background: linear-gradient(90deg, #8B5CF6, #0D9488); border-radius: 99px;"></div>
-                                    </div>
-                                    <span style="font-size: 0.75rem; font-weight: 700; color: #64748B; width: 34px; text-align: right;">${pct}%</span>
-                                </div>
+                                <span style="background: ${isGoogle ? '#DCFCE7' : '#F1F5F9'}; color: ${isGoogle ? '#15803D' : '#475569'}; font-weight: 700; font-size: 0.72rem; padding: 2px 8px; border-radius: 99px;">
+                                    ${r.source || 'Patient'}
+                                </span>
                             </td>
                             <td style="padding: 10px 12px; font-size: 0.78rem; color: #64748B;">
-                                ${dateStr}
+                                ${lastDate}
                             </td>
                         </tr>
                     `;
                 }).join('');
 
             } catch (err) {
-                console.error('Analytics load error:', err);
-                tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #EF4444;">Failed to load analytics.</td></tr>';
+                console.warn('Error loading campaign audience:', err);
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #EF4444;">Failed to load email audience: ' + err.message + '</td></tr>';
+            }
+        }
+
+        function updateSelectedRecipientsCount() {
+            const checks = document.querySelectorAll('.campaign-recipient-check:checked');
+            const total = document.querySelectorAll('.campaign-recipient-check');
+            const disp = document.getElementById('selectedCountDisplay');
+            const selectAll = document.getElementById('selectAllRecipientsCheckbox');
+            if (disp) disp.innerText = checks.length;
+            if (selectAll) selectAll.checked = (checks.length > 0 && checks.length === total.length);
+        }
+
+        function toggleSelectAllRecipients(checked) {
+            document.querySelectorAll('.campaign-recipient-check').forEach(c => c.checked = checked);
+            updateSelectedRecipientsCount();
+        }
+
+        function handleCampaignTemplateChange(tplKey) {
+            const subjectInput = document.getElementById('campaignSubjectInput');
+            const customGroup = document.getElementById('campaignCustomMessageGroup');
+            const tenantSelect = document.getElementById('campaignTenantSelect');
+            const tenantId = tenantSelect ? tenantSelect.value : 'all';
+            const tenant = (window.allLoadedTenants || []).find(t => t.id === tenantId) || { name: 'My Dental Clinic' };
+            const clinicName = tenant.name || 'My Dental Clinic';
+
+            if (customGroup) {
+                customGroup.style.display = tplKey === 'custom' ? 'block' : 'none';
+            }
+
+            if (subjectInput) {
+                if (tplKey === 'daily_care') {
+                    subjectInput.value = `🌟 Daily Oral Care Guide & Checkup Reminder from ${clinicName}`;
+                } else if (tplKey === 'checkup_offer') {
+                    subjectInput.value = `🎁 Exclusive Privilege: Routine Dental Checkup at ${clinicName}`;
+                } else if (tplKey === 'portal_reminder') {
+                    subjectInput.value = `📱 Your Digital Dental Portal & Records are Ready | ${clinicName}`;
+                } else {
+                    subjectInput.value = `Important Clinical Notice from ${clinicName}`;
+                }
+            }
+        }
+
+        function handleCampaignTenantChange(tenantId) {
+            const tplSelect = document.getElementById('campaignTemplateSelect');
+            if (tplSelect) handleCampaignTemplateChange(tplSelect.value);
+            // Optionally filter audience if desired
+            if (tenantId && tenantId !== 'all') {
+                loadCampaignAudience(tenantId);
+            } else {
+                loadCampaignAudience('all');
+            }
+        }
+
+        function getActiveCampaignTenant() {
+            const tenantSelect = document.getElementById('campaignTenantSelect');
+            const tenantId = tenantSelect ? tenantSelect.value : 'all';
+            let tenant = (window.allLoadedTenants || []).find(t => t.id === tenantId);
+            if (!tenant || tenantId === 'all') {
+                tenant = {
+                    id: 'default',
+                    name: 'My Dental Clinic',
+                    subtitle: 'Dental & Cosmetic Clinic',
+                    doctor_name: 'Chief Physician',
+                    primary_color: '#0D9488',
+                    phone: '+91 98765 43210'
+                };
+            }
+            return tenant;
+        }
+
+        function toggleEmailPreviewModal() {
+            const modal = document.getElementById('saEmailPreviewModal');
+            if (!modal) return;
+            const isVisible = modal.style.display === 'flex';
+            if (isVisible) {
+                modal.style.display = 'none';
+            } else {
+                renderCampaignPreviewHtml();
+                modal.style.display = 'flex';
+            }
+        }
+
+        function renderCampaignPreviewHtml() {
+            const container = document.getElementById('emailPreviewFrameContainer');
+            const subjDisplay = document.getElementById('previewModalSubject');
+            const tplKey = document.getElementById('campaignTemplateSelect')?.value || 'daily_care';
+            const subject = document.getElementById('campaignSubjectInput')?.value || 'Daily Dental Care Notice';
+            const customMessage = document.getElementById('campaignCustomMessage')?.value || '';
+            const tenant = getActiveCampaignTenant();
+
+            if (subjDisplay) subjDisplay.innerText = subject;
+
+            if (window.emailTemplates && typeof window.emailTemplates.getMarketingEngagementTemplate === 'function') {
+                const res = window.emailTemplates.getMarketingEngagementTemplate({
+                    patientName: 'John Doe (Preview)',
+                    tenant: {
+                        clinic_name: tenant.name || 'My Dental Clinic',
+                        doctor_name: tenant.subtitle || 'Dental Specialist',
+                        primary_color: tenant.primary_color || '#0D9488',
+                        phone: tenant.phone || '+91 98765 43210',
+                        address: tenant.address || 'Main Clinic Road',
+                        slug: tenant.id || 'default'
+                    },
+                    templateKey: tplKey,
+                    customSubject: subject,
+                    customMessage: customMessage,
+                    clinicUrl: (window.location.protocol === 'file:') ? 'index.html' : window.location.origin
+                });
+                if (container) container.innerHTML = res.html;
+            } else {
+                if (container) container.innerHTML = `<div style="padding: 20px; text-align: center;">Previewing ${tplKey} for ${tenant.name}...</div>`;
+            }
+        }
+
+        async function execute1ClickEmailCampaign() {
+            const checkedBoxes = Array.from(document.querySelectorAll('.campaign-recipient-check:checked'));
+            if (checkedBoxes.length === 0) {
+                alert('Please select at least one recipient email address to send the campaign.');
+                return;
+            }
+
+            const tplKey = document.getElementById('campaignTemplateSelect')?.value || 'daily_care';
+            const subject = document.getElementById('campaignSubjectInput')?.value?.trim();
+            const customMessage = document.getElementById('campaignCustomMessage')?.value?.trim();
+            const tenant = getActiveCampaignTenant();
+            const recipientCount = checkedBoxes.length;
+
+            if (!confirm(`🚀 Are you ready to dispatch this 1-click email campaign to ${recipientCount} verified recipients?\n\nTemplate: ${tplKey}\nSubject: "${subject}"\nSender: ${tenant.name} via mydentalapp77@gmail.com`)) {
+                return;
+            }
+
+            const recipients = checkedBoxes.map(b => ({
+                email: b.getAttribute('data-email'),
+                name: b.getAttribute('data-name') || 'Valued Patient'
+            }));
+
+            const btn = document.getElementById('btnExecuteCampaignBlast');
+            const progressBox = document.getElementById('campaignProgressBox');
+            const progressText = document.getElementById('campaignProgressText');
+            const progressBar = document.getElementById('campaignProgressBar');
+            const progressPercent = document.getElementById('campaignProgressPercent');
+
+            if (btn) btn.disabled = true;
+            if (progressBox) progressBox.style.display = 'block';
+            if (progressText) progressText.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Dispatching campaign to ${recipients.length} recipients via Gmail SMTP...`;
+            if (progressBar) progressBar.style.width = '25%';
+            if (progressPercent) progressPercent.innerText = '25%';
+
+            try {
+                const response = await fetch('/api/send-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        recipients: recipients,
+                        type: 'marketing',
+                        templateKey: tplKey,
+                        subject: subject,
+                        customMessage: customMessage,
+                        clinicUrl: window.location.origin,
+                        tenantId: tenant.id || 'default',
+                        clinicName: tenant.name || 'My Dental Clinic',
+                        doctorName: tenant.subtitle || 'Dental Specialist',
+                        primaryColor: tenant.primary_color || '#0D9488',
+                        phone: tenant.phone || '+91 98765 43210',
+                        address: tenant.address || ''
+                    })
+                });
+
+                if (progressBar) progressBar.style.width = '80%';
+                if (progressPercent) progressPercent.innerText = '80%';
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to dispatch campaign via SMTP server.');
+                }
+
+                if (progressBar) progressBar.style.width = '100%';
+                if (progressPercent) progressPercent.innerText = '100%';
+                if (progressText) progressText.innerHTML = `<i class="fas fa-check-circle" style="color: #16A34A;"></i> Campaign Dispatched! ${result.sentCount} emails sent successfully.`;
+
+                // Log campaign event in Firestore
+                if (window.dbAPI && window.dbAPI.db) {
+                    window.dbAPI.db.collection('campaign_logs').add({
+                        templateKey: tplKey,
+                        subject: subject,
+                        recipientCount: result.sentCount,
+                        failedCount: result.failedCount,
+                        timestamp: new Date().toISOString()
+                    }).catch(console.warn);
+                }
+
+                alert(`🎉 1-Click Campaign Dispatched Successfully!\n\nSent: ${result.sentCount} emails\nFailed: ${result.failedCount || 0}\nSender: ${result.sender}\n\nAll recipients will now receive your daily engagement email without fail!`);
+
+                setTimeout(() => {
+                    if (progressBox) progressBox.style.display = 'none';
+                }, 4000);
+
+            } catch (err) {
+                console.error('Campaign dispatch error:', err);
+                alert('⚠️ Campaign dispatch encountered an error: ' + err.message);
+                if (progressText) progressText.innerHTML = `<i class="fas fa-exclamation-triangle" style="color: #DC2626;"></i> Failed: ${err.message}`;
+            } finally {
+                if (btn) btn.disabled = false;
             }
         }
 
@@ -1184,85 +1748,7 @@
             }
         }
 
-        async function loadSecurityLogs() {
-            const logTbody = document.getElementById('saLoginLogsTableBody');
-            const leadTbody = document.getElementById('saMarketingLeadsTableBody');
 
-            // 1. Fetch & Render Activity / Login Logs
-            try {
-                let logs = [];
-                if (window.dbAPI && typeof window.dbAPI.getSuperAdminLogs === 'function') {
-                    logs = await window.dbAPI.getSuperAdminLogs();
-                } else if (window.dbAPI && typeof window.dbAPI.getAdminLoginHistory === 'function') {
-                    logs = await window.dbAPI.getAdminLoginHistory();
-                }
-
-                if (logTbody) {
-                    if (!logs || logs.length === 0) {
-                        logTbody.innerHTML = '<tr><td colspan="7" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No access logs recorded yet.</td></tr>';
-                    } else {
-                        logTbody.innerHTML = logs.slice(0, 50).map(l => {
-                            const dateStr = l.timestamp ? new Date(l.timestamp).toLocaleString() : 'N/A';
-                            const tenant = l.tenant_id || l.clinic_slug || 'default';
-                            const name = l.name || 'Admin / Visitor';
-                            const mobile = l.mobile || '-';
-                            const email = l.email || '-';
-                            const eventType = l.type || (l.role === 'Visitor' || l.role === 'Google Visitor' ? 'Google 1-Tap Access' : 'Staff Login');
-                            const ip = l.ipAddress || 'Unknown';
-
-                            return `
-                                <tr style="border-bottom: 1px solid #F1F5F9;">
-                                    <td style="padding: 8px 10px; color: #0F172A; font-weight: 600;">${dateStr}</td>
-                                    <td style="padding: 8px 10px;"><span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tenant}</span></td>
-                                    <td style="padding: 8px 10px; font-weight: 700; color: #0F172A;">${name}</td>
-                                    <td style="padding: 8px 10px; color: #475569; font-family: monospace;">${mobile}</td>
-                                    <td style="padding: 8px 10px; color: #2563EB;">${email}</td>
-                                    <td style="padding: 8px 10px;"><span style="background: ${eventType.includes('Google') ? '#DCFCE7' : '#EDE9FE'}; color: ${eventType.includes('Google') ? '#15803D' : '#6D28D9'}; font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">${eventType}</span></td>
-                                    <td style="padding: 8px 10px; color: #94A3B8; font-family: monospace; font-size: 0.75rem;">${ip}</td>
-                                </tr>
-                            `;
-                        }).join('');
-                    }
-                }
-            } catch (err) {
-                console.warn('Logs render notice:', err);
-            }
-
-            // 2. Fetch & Render Captured Marketing Leads
-            try {
-                let leads = [];
-                if (window.dbAPI && typeof window.dbAPI.getMarketingLeads === 'function') {
-                    leads = await window.dbAPI.getMarketingLeads();
-                }
-
-                window.allMarketingLeads = leads || [];
-                const badge = document.getElementById('leadsBadgeCount');
-                if (badge) badge.innerText = (leads || []).length;
-
-                if (leadTbody) {
-                    if (!leads || leads.length === 0) {
-                        leadTbody.innerHTML = '<tr><td colspan="6" style="padding: 1.5rem; text-align: center; color: #94A3B8;">No visitor marketing leads captured yet.</td></tr>';
-                    } else {
-                        leadTbody.innerHTML = leads.map(c => {
-                            const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString() : 'Recent';
-                            const tenant = c.tenant_id || c.clinic_slug || 'default';
-                            return `
-                                <tr style="border-bottom: 1px solid #F1F5F9;">
-                                    <td style="padding: 8px 10px; color: #0F172A; font-weight: 600;">${dateStr}</td>
-                                    <td style="padding: 8px 10px;"><span style="background: #F1F5F9; color: #475569; font-weight: 700; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem;">${tenant}</span></td>
-                                    <td style="padding: 8px 10px; font-weight: 700; color: #0F172A;">${c.name || 'Visitor'}</td>
-                                    <td style="padding: 8px 10px; color: #16A34A; font-family: monospace; font-weight: 700;">${c.mobile || c.phone || 'Pending Profile'}</td>
-                                    <td style="padding: 8px 10px; color: #2563EB;">${c.email || '-'}</td>
-                                    <td style="padding: 8px 10px;"><span style="background: #FEF3C7; color: #D97706; font-weight: 700; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem;">${c.source || 'Google 1-Tap Access'}</span></td>
-                                </tr>
-                            `;
-                        }).join('');
-                    }
-                }
-            } catch(err) {
-                console.warn('Leads render notice:', err);
-            }
-        }
 
         function copyAllLeadsPhoneNumbers() {
             const leads = window.allMarketingLeads || [];

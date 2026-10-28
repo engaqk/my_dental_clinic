@@ -42,6 +42,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (window.dbAPI) {
+        if (typeof window.dbAPI.trackRouteVisit === 'function') {
+            const pathName = window.location.pathname.replace(/^\/+|\/+$/g, '') || 'home';
+            window.dbAPI.trackRouteVisit('visit:' + pathName);
+        }
         await refreshDashboard();
         loadClinicSettings();
         initQRCode();
@@ -1082,6 +1086,11 @@ function showDashboardTab(name) {
     if (name === 'settings') {
         populateSettingsForm();
     }
+    try {
+        if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
+            window.dbAPI.trackRouteVisit('dashboard:' + name);
+        }
+    } catch(e) {}
 }
 
 function initQRCode() {
@@ -1124,7 +1133,59 @@ function adjustColorBrightness(hex, percent) {
     }
 }
 
-function applyTenantTheme(colorHex) {
+// --- DYNAMIC 2-CHARACTER MONOGRAM GENERATOR ---
+function getClinicMonogram(name) {
+    if (!name || typeof name !== 'string') return 'MD';
+    // Clean string: remove non-alphanumeric except spaces
+    let clean = name.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
+    if (!clean) return 'MD';
+
+    let words = clean.split(/\s+/).filter(w => w.length > 0);
+    const ignoreWords = ['the', 'a', 'an', 'and', 'of', '&'];
+    let filtered = words.filter(w => !ignoreWords.includes(w.toLowerCase()));
+    if (filtered.length === 0) filtered = words;
+
+    // If first word is "Dr" or "Dr." and we have at least 2 other words, skip "Dr"
+    if (filtered.length >= 3 && /^dr\.?$/i.test(filtered[0])) {
+        filtered = filtered.slice(1);
+    }
+
+    if (filtered.length >= 2) {
+        return (filtered[0][0] + filtered[1][0]).toUpperCase();
+    } else if (filtered.length === 1) {
+        const single = filtered[0];
+        return (single.length >= 2 ? single.slice(0, 2) : single + 'C').toUpperCase();
+    }
+    return 'MD';
+}
+
+function updateDynamicFavicon(monogram, primaryColor, primaryDark) {
+    try {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${primaryColor}"/><stop offset="100%" stop-color="${primaryDark}"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#g)"/><text x="32" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">${monogram}</text></svg>`;
+        const faviconUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        
+        let iconLink = document.querySelector("link[rel*='icon']");
+        if (!iconLink) {
+            iconLink = document.createElement('link');
+            iconLink.rel = 'shortcut icon';
+            document.head.appendChild(iconLink);
+        }
+        iconLink.type = 'image/svg+xml';
+        iconLink.href = faviconUrl;
+
+        let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
+        if (!appleIcon) {
+            appleIcon = document.createElement('link');
+            appleIcon.rel = 'apple-touch-icon';
+            document.head.appendChild(appleIcon);
+        }
+        appleIcon.href = faviconUrl;
+    } catch (e) {
+        console.warn('Favicon update error:', e);
+    }
+}
+
+function applyTenantTheme(colorHex, monogram) {
     if (!colorHex || typeof colorHex !== 'string') return;
     let hex = colorHex.trim();
     if (!hex.startsWith('#')) hex = '#' + hex;
@@ -1143,6 +1204,10 @@ function applyTenantTheme(colorHex) {
     // Update meta theme-color for browser address/status bar
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) metaTheme.setAttribute('content', primary);
+
+    // Update dynamic SVG favicon with 2-character monogram
+    const activeMonogram = monogram || (window.currentClinicSettings ? getClinicMonogram(window.currentClinicSettings.clinic_name) : 'MD');
+    updateDynamicFavicon(activeMonogram, primary, primaryDark);
 
     // Update preview swatch in settings form if present
     const swatch = document.getElementById('settingThemePreviewSwatch');
@@ -1416,12 +1481,19 @@ function loginStaffAsDoctor(user) {
     sessionStorage.setItem('staffUser', JSON.stringify(staffData));
 
     if (window.dbAPI && typeof window.dbAPI.logAdminLogin === 'function') {
-        window.dbAPI.logAdminLogin({
-            username: user.email,
-            role: 'doctor',
+        window.dbAPI.logAdminLogin(user.email, {
+            name: user.displayName || 'Doctor',
+            email: user.email,
+            role: 'Doctor',
+            type: 'Google Staff Login',
             status: 'SUCCESS (Doctor Google Auth)',
+            tenant_id: window.dbAPI.tenantId || 'default',
             clinic: window.currentClinicSettings?.clinic_name || 'Clinic'
         });
+    }
+
+    if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
+        window.dbAPI.trackRouteVisit('auth:doctor_google_login');
     }
 
     if (typeof closeLoginModal === 'function') closeLoginModal();
@@ -1732,19 +1804,43 @@ function loadClinicSettings() {
         window.currentClinicSettings = settings || {};
         const clinicName = settings.clinic_name || settings.name || 'MY DENTAL CLINIC';
         const subtitle = settings.subtitle || 'Dental & Cosmetic Clinic';
+        const doctorName = settings.doctor_name || subtitle || 'Dental Specialist';
         const themeColor = settings.primary_color || settings.primaryColor || '#0D9488';
+        const monogram = getClinicMonogram(clinicName);
 
+        // Update all text elements
         const nameEl = document.getElementById('mainClinicName');
         const subEl = document.getElementById('mainClinicSubtitle');
         const footerNameEl = document.getElementById('footerClinicName');
+        const footerDoctorEl = document.getElementById('footerClinicDoctor');
+        const heroNameEl = document.getElementById('heroClinicName');
+        const heroDoctorEl = document.getElementById('heroClinicDoctor');
+        const dashTitleEl = document.getElementById('dashHeaderClinicTitle');
 
         if (nameEl) nameEl.innerText = clinicName;
         if (subEl) subEl.innerText = subtitle;
         if (footerNameEl) footerNameEl.innerText = clinicName;
+        if (footerDoctorEl) footerDoctorEl.innerText = doctorName;
+        if (heroNameEl) heroNameEl.innerText = clinicName;
+        if (heroDoctorEl) heroDoctorEl.innerText = `${doctorName} • Comprehensive Care`;
+        if (dashTitleEl) dashTitleEl.innerText = `${clinicName} Explorer`;
 
-        document.title = `${clinicName} | ${subtitle}`;
+        // Update all dynamic 2-character monogram badges across the app
+        const monogramEls = [
+            'mainClinicMonogramText',
+            'footerClinicMonogramText',
+            'heroMonogramText',
+            'dashClinicMonogramText',
+            'gateClinicMonogramText'
+        ];
+        monogramEls.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = monogram;
+        });
 
-        applyTenantTheme(themeColor);
+        document.title = `${clinicName} | ${doctorName}`;
+
+        applyTenantTheme(themeColor, monogram);
         updateTenantPWA(settings);
         populateSettingsForm(settings);
         checkFirstTimeAccessGate(settings);
@@ -2084,6 +2180,20 @@ async function loginPatientGoogle() {
             const result = await window.dbAPI.auth.signInWithPopup(provider);
             const user = result.user;
             if (user) {
+                if (window.dbAPI && typeof window.dbAPI.recordGoogleVisitor === 'function') {
+                    await window.dbAPI.recordGoogleVisitor(user);
+                }
+                if (window.dbAPI && typeof window.dbAPI.logAdminLogin === 'function') {
+                    await window.dbAPI.logAdminLogin(user.email, {
+                        name: user.displayName || 'Patient',
+                        role: 'Patient',
+                        type: 'Google Patient Login',
+                        tenant_id: window.dbAPI.tenantId || 'default'
+                    });
+                }
+                if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
+                    window.dbAPI.trackRouteVisit('auth:patient_google_login');
+                }
                 setupPatientDashboard(user.email, user.displayName || 'Patient');
             }
         }
@@ -2796,22 +2906,222 @@ function enforceRoleRestrictions() {
     }
 }
 
-function switchActiveStaffRole(newRole) {
-    let staffUser = {};
-    try {
-        staffUser = JSON.parse(sessionStorage.getItem('staffUser')) || {};
-    } catch(e) {
-        staffUser = {};
+// --- ROLE-BASED CLINICAL DESK SWITCHER ---
+const CLINICAL_DESK_CONFIG = {
+    doctor: {
+        id: 'doctor',
+        name: 'Doctor',
+        title: 'Chief Physician',
+        icon: '👨‍⚕️',
+        defaultView: 'consult',
+        color: '#0D9488',
+        bg: '#F0FDFA'
+    },
+    compounder: {
+        id: 'compounder',
+        name: 'Compounder',
+        title: 'Dispensary',
+        icon: '💊',
+        defaultView: 'dispensary',
+        color: '#7C3AED',
+        bg: '#F5F3FF'
+    },
+    receptionist: {
+        id: 'receptionist',
+        name: 'Receptionist',
+        title: 'OPD Desk',
+        icon: '📋',
+        defaultView: 'queue',
+        color: '#0284C7',
+        bg: '#F0F9FF'
     }
+};
 
-    staffUser.role = newRole;
-    sessionStorage.setItem('staffUser', JSON.stringify(staffUser));
-    enforceRoleRestrictions();
-    console.log('💎 Clinical role view switched to:', newRole);
+function openDeskSwitcherModal() {
+    const modal = document.getElementById('deskSwitcherModal');
+    if (!modal) return;
+
+    // Sync currently selected card
+    const currentRole = getActiveClinicalRole();
+    updateDeskModalSelectionUI(currentRole);
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
 }
 
-// Call restrictions after loading dashboard
+function closeDeskSwitcherModal() {
+    const modal = document.getElementById('deskSwitcherModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+function handleDeskSwitcherBackdropClick(event) {
+    if (event.target && event.target.id === 'deskSwitcherModal') {
+        closeDeskSwitcherModal();
+    }
+}
+
+function getActiveClinicalRole() {
+    let role = localStorage.getItem('activeClinicalDesk');
+    if (!role) {
+        try {
+            const staffUser = JSON.parse(sessionStorage.getItem('staffUser') || '{}');
+            role = staffUser.role;
+        } catch(e) {}
+    }
+    return (role && CLINICAL_DESK_CONFIG[role.toLowerCase()]) ? role.toLowerCase() : 'doctor';
+}
+
+function updateDeskModalSelectionUI(activeRole) {
+    ['doctor', 'compounder', 'receptionist'].forEach(r => {
+        const card = document.getElementById(`deskCard-${r}`);
+        const check = document.getElementById(`deskCheck-${r}`);
+        const isActive = r === activeRole;
+
+        if (card) {
+            if (isActive) {
+                card.style.borderColor = CLINICAL_DESK_CONFIG[r].color;
+                card.style.background = CLINICAL_DESK_CONFIG[r].bg;
+            } else {
+                card.style.borderColor = '#E2E8F0';
+                card.style.background = '#FFFFFF';
+            }
+        }
+        if (check) {
+            check.style.display = isActive ? 'flex' : 'none';
+        }
+    });
+}
+
+function updateNavbarRoleBadge(role) {
+    const cfg = CLINICAL_DESK_CONFIG[role] || CLINICAL_DESK_CONFIG.doctor;
+    const iconEl = document.getElementById('navRoleIcon');
+    const textEl = document.getElementById('navRoleText');
+    const btn = document.getElementById('navDeskSwitcherBtn');
+
+    if (iconEl) iconEl.innerText = cfg.icon;
+    if (textEl) textEl.innerText = cfg.name;
+    if (btn) {
+        btn.setAttribute('title', `Active Workstation: ${cfg.name} (${cfg.title})`);
+    }
+
+    // Also update dashboard badge if present
+    const badge = document.getElementById('currentRoleBadge');
+    if (badge) {
+        badge.innerText = cfg.name.toUpperCase();
+        badge.style.color = cfg.color;
+    }
+}
+
+function selectClinicalDesk(role) {
+    const targetRole = CLINICAL_DESK_CONFIG[role] ? role : 'doctor';
+    const cfg = CLINICAL_DESK_CONFIG[targetRole];
+
+    // 1. Set role in auth state and localStorage
+    localStorage.setItem('activeClinicalDesk', targetRole);
+    let staffUser = {};
+    try {
+        staffUser = JSON.parse(sessionStorage.getItem('staffUser') || '{}');
+    } catch(e){}
+    staffUser.role = targetRole;
+    sessionStorage.setItem('staffUser', JSON.stringify(staffUser));
+
+    // 2. Move active checkmark to selected card
+    updateDeskModalSelectionUI(targetRole);
+
+    // 3. Update navbar role badge text and icon
+    updateNavbarRoleBadge(targetRole);
+
+    // 4. Close modal automatically
+    closeDeskSwitcherModal();
+
+    // 5. Switch active view to desk default view
+    navigateToDeskDefaultView(cfg.defaultView);
+
+    // 6. Enforce role restrictions
+    if (typeof enforceRoleRestrictions === 'function') {
+        enforceRoleRestrictions();
+    }
+
+    // 7. Show toast confirmation
+    showToastNotification(`${cfg.icon} Switched to ${cfg.name} (${cfg.title}) Desk`);
+
+    // 8. Track desk switch in analytics
+    try {
+        if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
+            window.dbAPI.trackRouteVisit('clinical_desk:' + targetRole);
+        }
+    } catch(e) {}
+}
+
+function navigateToDeskDefaultView(viewName) {
+    // If not in dashboard, go to dashboard
+    if (typeof showSection === 'function') {
+        showSection('dashboard');
+    }
+
+    if (viewName === 'consult') {
+        if (typeof showDashboardTab === 'function') showDashboardTab('patients');
+    } else if (viewName === 'queue') {
+        if (typeof showDashboardTab === 'function') showDashboardTab('schedule');
+    } else if (viewName === 'dispensary') {
+        if (typeof showDashboardTab === 'function') showDashboardTab('patients');
+        const searchInput = document.getElementById('patientSearch');
+        if (searchInput) searchInput.placeholder = 'Search patient for dispensary / medicines...';
+    }
+}
+
+function switchActiveStaffRole(role) {
+    selectClinicalDesk(role);
+}
+
+function showToastNotification(message) {
+    const existing = document.getElementById('appDeskSwitcherToast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'appDeskSwitcherToast';
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #0F172A;
+        color: #FFFFFF;
+        padding: 0.75rem 1.4rem;
+        border-radius: 99px;
+        font-size: 0.86rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+        z-index: 10000000;
+        animation: deskToastUp 0.25s ease-out;
+        pointer-events: none;
+    `;
+    toast.innerHTML = `<span>${message}</span>`;
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 2400);
+}
+
+// Global exposure
+window.openDeskSwitcherModal = openDeskSwitcherModal;
+window.closeDeskSwitcherModal = closeDeskSwitcherModal;
+window.selectClinicalDesk = selectClinicalDesk;
+window.handleDeskSwitcherBackdropClick = handleDeskSwitcherBackdropClick;
+window.switchActiveStaffRole = switchActiveStaffRole;
+
+// Call restrictions and initialize navbar badge after loading
 document.addEventListener('DOMContentLoaded', () => {
+    updateNavbarRoleBadge(getActiveClinicalRole());
     setTimeout(enforceRoleRestrictions, 500);
 });
 
@@ -3516,22 +3826,34 @@ function generateRxPDFDocument(rxRecord) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // 1. Top Decorative Brand Bar (Teal Accent)
-    doc.setFillColor(13, 148, 136); // #0D9488
-    doc.rect(0, 0, 210, 6, 'F');
-
-    // 2. Clinic Header
+    const themeHex = window.currentClinicSettings?.primary_color || '#0D9488';
+    const rgb = (typeof hexToRgb === 'function') ? hexToRgb(themeHex) : { r: 13, g: 148, b: 136 };
     const clinicName = window.currentClinicSettings?.clinic_name || 'MY DENTAL CLINIC';
     const clinicSubtitle = window.currentClinicSettings?.subtitle || 'Dental & Cosmetic Clinic';
+    const monogram = (typeof getClinicMonogram === 'function') ? getClinicMonogram(clinicName) : 'MD';
+
+    // 1. Top Decorative Brand Bar (Tenant Color Accent)
+    doc.setFillColor(rgb.r, rgb.g, rgb.b);
+    doc.rect(0, 0, 210, 6, 'F');
+
+    // 2. Monogram Badge (2-character monogram badge box)
+    doc.setFillColor(rgb.r, rgb.g, rgb.b);
+    doc.roundedRect(20, 11, 14, 14, 3, 3, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text(monogram, 27, 20.5, { align: 'center' });
+
+    // 3. Clinic Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
     doc.setTextColor(15, 23, 42);
-    doc.text(clinicName.toUpperCase(), 20, 22);
+    doc.text(clinicName.toUpperCase(), 38, 19);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(13, 148, 136);
-    doc.text(clinicSubtitle, 20, 28);
+    doc.setTextColor(rgb.r, rgb.g, rgb.b);
+    doc.text(clinicSubtitle, 38, 25);
 
     // 3. Document Title (Right Aligned)
     doc.setFont('helvetica', 'bold');
@@ -3976,22 +4298,34 @@ function generateTreatmentPlanPDFDocument(planRecord) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
-    // 1. Top Decorative Brand Bar (Teal Accent)
-    doc.setFillColor(13, 148, 136); // #0D9488
-    doc.rect(0, 0, 210, 6, 'F');
-
-    // 2. Clinic Header
+    const themeHex = window.currentClinicSettings?.primary_color || '#0D9488';
+    const rgb = (typeof hexToRgb === 'function') ? hexToRgb(themeHex) : { r: 13, g: 148, b: 136 };
     const clinicName = window.currentClinicSettings?.clinic_name || 'MY DENTAL CLINIC';
     const clinicSubtitle = window.currentClinicSettings?.subtitle || 'Dental & Cosmetic Clinic';
+    const monogram = (typeof getClinicMonogram === 'function') ? getClinicMonogram(clinicName) : 'MD';
+
+    // 1. Top Decorative Brand Bar (Tenant Color Accent)
+    doc.setFillColor(rgb.r, rgb.g, rgb.b);
+    doc.rect(0, 0, 210, 6, 'F');
+
+    // 2. Monogram Badge (2-character monogram badge box)
+    doc.setFillColor(rgb.r, rgb.g, rgb.b);
+    doc.roundedRect(20, 11, 14, 14, 3, 3, 'F');
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(22);
+    doc.setFontSize(11);
+    doc.setTextColor(255, 255, 255);
+    doc.text(monogram, 27, 20.5, { align: 'center' });
+
+    // 3. Clinic Header
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
     doc.setTextColor(15, 23, 42);
-    doc.text(clinicName.toUpperCase(), 20, 22);
+    doc.text(clinicName.toUpperCase(), 38, 19);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.setTextColor(13, 148, 136);
-    doc.text(clinicSubtitle, 20, 28);
+    doc.setTextColor(rgb.r, rgb.g, rgb.b);
+    doc.text(clinicSubtitle, 38, 25);
 
     // 3. Document Title (Right Aligned)
     doc.setFont('helvetica', 'bold');
@@ -4281,6 +4615,12 @@ window.openLoginModal = openLoginModal;
 
 function handleMobileNav(target) {
     document.querySelectorAll('.mobile-nav-item').forEach(item => item.classList.remove('active'));
+    
+    try {
+        if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
+            window.dbAPI.trackRouteVisit('mobile_tab:' + target);
+        }
+    } catch(e) {}
     
     if (target === 'home') {
         const item = document.getElementById('mobNavHome');

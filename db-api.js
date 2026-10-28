@@ -495,6 +495,10 @@ class DatabaseAPI {
 
     // Log admin login history & visitor access (IP, Timestamp, Name, Mobile, Role/Type)
     async logAdminLogin(email, extraData = {}) {
+        if (typeof email === 'object' && email !== null) {
+            extraData = email;
+            email = extraData.email || extraData.username || '';
+        }
         let ip = 'Unknown';
         try {
             const res = await fetch('https://api.ipify.org?format=json');
@@ -609,24 +613,35 @@ class DatabaseAPI {
 
     // Get SuperAdmin All Logs (Logins & Visitor Entries across all clinics)
     async getSuperAdminLogs() {
-        if (!this.useFirebase || !this.db) {
+        let logs = [];
+        if (this.useFirebase && this.db) {
             try {
-                return JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]') || this.getLocalData('adminLoginLogs', []);
-            } catch(e) {
-                return [];
+                const snap = await this.db.collection('superadmin_logs').orderBy('timestamp', 'desc').limit(150).get();
+                if (!snap.empty) {
+                    logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                }
+            } catch (err) {
+                console.warn('Superadmin logs query fallback:', err);
             }
         }
 
+        // Merge with local cached logs
         try {
-            const snap = await this.db.collection('superadmin_logs').orderBy('timestamp', 'desc').limit(100).get();
-            if (!snap.empty) {
-                return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            }
-            return JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
-        } catch (err) {
-            console.warn('Superadmin logs query fallback:', err);
-            return JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
-        }
+            const local = JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
+            const legacy = this.getLocalData('adminLoginLogs', []);
+            const combined = [...logs, ...local, ...legacy];
+            // Deduplicate by timestamp + email
+            const seen = new Set();
+            logs = combined.filter(l => {
+                const key = `${l.timestamp || ''}_${l.email || ''}_${l.type || ''}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        } catch(e) {}
+
+        logs.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+        return logs;
     }
 
     // Get All Marketing Leads for SuperAdmin
@@ -649,6 +664,133 @@ class DatabaseAPI {
             console.warn('Global marketing leads query fallback:', err);
             return JSON.parse(localStorage.getItem('global_marketing_leads_cache') || '[]');
         }
+    }
+
+    // Fetch all user email history (Google logins, registered patients, visitor gate leads) for 1-click marketing engagement
+    async getAllEngagementEmailRecipients(tenantScope = 'all') {
+        const emailMap = new Map();
+
+        // 1. Fetch from superadmin_logs (all login history)
+        try {
+            const logs = await this.getSuperAdminLogs();
+            (logs || []).forEach(l => {
+                const email = (l.email || '').trim().toLowerCase();
+                if (email && email.includes('@') && email.includes('.') && !email.includes('superadmin') && !email.includes('admin@clinic')) {
+                    const tenant = l.tenant_id || l.clinic_slug || 'default';
+                    if (tenantScope === 'all' || tenant === tenantScope) {
+                        if (!emailMap.has(email)) {
+                            emailMap.set(email, {
+                                email: email,
+                                name: l.name || (email.split('@')[0].replace(/[._]/g, ' ')),
+                                mobile: l.mobile || '',
+                                tenant_id: tenant,
+                                role: l.role || 'Visitor',
+                                source: l.type || 'Google Login History',
+                                lastActive: l.timestamp || new Date().toISOString()
+                            });
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn('Recipients from logs fetch notice:', e);
+        }
+
+        // 2. Fetch from global_marketing_leads
+        try {
+            const leads = await this.getMarketingLeads();
+            (leads || []).forEach(l => {
+                const email = (l.email || '').trim().toLowerCase();
+                if (email && email.includes('@') && email.includes('.')) {
+                    const tenant = l.tenant_id || l.clinic_slug || 'default';
+                    if (tenantScope === 'all' || tenant === tenantScope) {
+                        if (!emailMap.has(email)) {
+                            emailMap.set(email, {
+                                email: email,
+                                name: l.name || (email.split('@')[0].replace(/[._]/g, ' ')),
+                                mobile: l.mobile || l.phone || '',
+                                tenant_id: tenant,
+                                role: 'Patient / Visitor',
+                                source: l.source || 'Marketing Gate Lead',
+                                lastActive: l.createdAt || new Date().toISOString()
+                            });
+                        } else {
+                            const existing = emailMap.get(email);
+                            if (!existing.mobile && (l.mobile || l.phone)) existing.mobile = (l.mobile || l.phone);
+                            if (existing.name === 'Patient' && l.name) existing.name = l.name;
+                        }
+                    }
+                }
+            });
+        } catch (e) {
+            console.warn('Recipients from leads fetch notice:', e);
+        }
+
+        // 3. Fetch from patient database across tenants
+        if (this.useFirebase && this.db) {
+            try {
+                const tenantsToFetch = (tenantScope && tenantScope !== 'all') ? [tenantScope] : ['default', 'swastik-dental', ...(window.allLoadedTenants ? window.allLoadedTenants.map(t => t.id) : [])];
+                const uniqueTenants = [...new Set(tenantsToFetch)];
+
+                for (const tId of uniqueTenants) {
+                    try {
+                        const snap = await this.db.collection('tenants').doc(tId).collection('patients').limit(100).get();
+                        snap.forEach(doc => {
+                            const p = doc.data();
+                            const email = (p.email || '').trim().toLowerCase();
+                            if (email && email.includes('@') && email.includes('.')) {
+                                if (tenantScope === 'all' || tId === tenantScope) {
+                                    if (!emailMap.has(email)) {
+                                        emailMap.set(email, {
+                                            email: email,
+                                            name: p.name || p.displayName || email.split('@')[0],
+                                            mobile: p.mobile || p.phone || '',
+                                            tenant_id: tId,
+                                            role: 'Registered Patient',
+                                            source: 'Patient Database',
+                                            lastActive: p.updatedAt || p.createdAt || new Date().toISOString()
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                    } catch(err) {}
+                }
+            } catch(e) {}
+        }
+
+        // 4. Merge any local storage patient profiles
+        try {
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith('patient_profile_')) {
+                    try {
+                        const p = JSON.parse(localStorage.getItem(k) || '{}');
+                        const email = (p.email || '').trim().toLowerCase();
+                        if (email && email.includes('@') && email.includes('.')) {
+                            const tenant = p.tenant_id || 'default';
+                            if (tenantScope === 'all' || tenant === tenantScope) {
+                                if (!emailMap.has(email)) {
+                                    emailMap.set(email, {
+                                        email: email,
+                                        name: p.name || email.split('@')[0],
+                                        mobile: p.mobile || '',
+                                        tenant_id: tenant,
+                                        role: 'Registered Patient',
+                                        source: 'Local Patient Profile',
+                                        lastActive: p.updatedAt || new Date().toISOString()
+                                    });
+                                }
+                            }
+                        }
+                    } catch(err) {}
+                }
+            }
+        } catch(e) {}
+
+        const list = Array.from(emailMap.values());
+        list.sort((a, b) => new Date(b.lastActive || 0) - new Date(a.lastActive || 0));
+        return list;
     }
 
     // Helper to get fresh ID Token for secure API calls

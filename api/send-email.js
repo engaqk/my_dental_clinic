@@ -26,10 +26,14 @@ module.exports = async (req, res) => {
 
     const {
         to,
+        recipients, // Array of { email, name } for bulk campaign
         subject,
         html,
         text,
-        type, // 'welcome' | 'confirmation' | 'reminder' | 'prescription' | 'custom'
+        type, // 'welcome' | 'confirmation' | 'reminder' | 'prescription' | 'marketing' | 'custom'
+        templateKey, // 'daily_care' | 'checkup_offer' | 'portal_reminder' | 'custom'
+        customMessage,
+        clinicUrl,
         name,
         tenantId,
         clinicName,
@@ -41,8 +45,9 @@ module.exports = async (req, res) => {
         prescriptionData
     } = req.body || {};
 
-    if (!to || (!to.includes('@'))) {
-        return res.status(400).json({ error: 'A valid recipient email (to) is required.' });
+    const isBulk = Array.isArray(recipients) && recipients.length > 0;
+    if (!isBulk && (!to || !to.includes('@'))) {
+        return res.status(400).json({ error: 'A valid recipient email (to) or a recipients array is required.' });
     }
 
     const smtpUser = process.env.SMTP_USER || 'mydentalapp77@gmail.com';
@@ -61,13 +66,89 @@ module.exports = async (req, res) => {
         }
     });
 
+    const reqTenant = req.body?.tenant || {};
     const tenantInfo = {
-        clinic_name: clinicName || 'My Dental Clinic',
-        doctor_name: doctorName || 'Dental Specialist',
-        phone: phone || '',
-        address: address || '',
-        primary_color: primaryColor || '#0D9488'
+        clinic_name: clinicName || reqTenant.clinic_name || reqTenant.name || 'My Dental Clinic',
+        doctor_name: doctorName || reqTenant.doctor_name || reqTenant.subtitle || 'Dental Specialist',
+        phone: phone || reqTenant.phone || '+91 98765 43210',
+        address: address || reqTenant.address || 'Main Clinic Road',
+        primary_color: primaryColor || reqTenant.primary_color || reqTenant.primaryColor || '#0D9488',
+        slug: tenantId || reqTenant.slug || reqTenant.id || 'default',
+        portal_url: clinicUrl || reqTenant.portal_url || reqTenant.clinicUrl || ''
     };
+
+    // --- BULK MARKETING BLAST DISPATCH ---
+    if (isBulk) {
+        const cleanRecipients = recipients
+            .map(r => typeof r === 'string' ? { email: r.trim(), name: 'Valued Patient' } : { email: (r.email || '').trim(), name: r.name || 'Valued Patient' })
+            .filter(r => r.email && r.email.includes('@'));
+
+        if (cleanRecipients.length === 0) {
+            return res.status(400).json({ error: 'No valid recipient email addresses found in recipients list.' });
+        }
+
+        const sent = [];
+        const failed = [];
+
+        for (const recipient of cleanRecipients) {
+            try {
+                let recSubject = subject;
+                let recHtml = html;
+
+                if (type === 'marketing' || type === 'marketing_engagement' || templateKey) {
+                    const tpl = emailTemplates.getMarketingEngagementTemplate;
+                    if (tpl) {
+                        const resTpl = tpl({
+                            patientName: recipient.name,
+                            tenant: tenantInfo,
+                            templateKey: templateKey || 'daily_care',
+                            customSubject: subject,
+                            customMessage: customMessage || text,
+                            clinicUrl: clinicUrl || 'https://mydentalclinic01.vercel.app'
+                        });
+                        recHtml = resTpl.html;
+                        recSubject = resTpl.subject;
+                    }
+                }
+
+                if (!recHtml) {
+                    recHtml = `<div style="font-family: Arial, sans-serif; padding: 20px;">
+                        <h2 style="color: ${tenantInfo.primary_color};">${tenantInfo.clinic_name}</h2>
+                        <p>Hello ${recipient.name},</p>
+                        <p>${text || customMessage || 'Thank you for connecting with our clinic.'}</p>
+                    </div>`;
+                }
+
+                const mailOptions = {
+                    from: `"${tenantInfo.clinic_name}" <${smtpUser}>`,
+                    to: recipient.email,
+                    replyTo: smtpUser,
+                    subject: recSubject || `Oral Care Update from ${tenantInfo.clinic_name}`,
+                    html: recHtml
+                };
+
+                const info = await transporter.sendMail(mailOptions);
+                sent.push({ email: recipient.email, name: recipient.name, messageId: info.messageId });
+
+                // Brief pause (50ms) to prevent SMTP bursting
+                await new Promise(resolve => setTimeout(resolve, 50));
+            } catch (recErr) {
+                console.error(`[SMTP Bulk] Failed for ${recipient.email}:`, recErr);
+                failed.push({ email: recipient.email, error: recErr.message });
+            }
+        }
+
+        console.log(`[SMTP Bulk Campaign] Total: ${cleanRecipients.length}, Sent: ${sent.length}, Failed: ${failed.length}`);
+        return res.status(200).json({
+            success: true,
+            total: cleanRecipients.length,
+            sentCount: sent.length,
+            failedCount: failed.length,
+            sent: sent,
+            failed: failed,
+            sender: smtpUser
+        });
+    }
 
     let finalSubject = subject;
     let finalHtml = html;
@@ -101,17 +182,41 @@ module.exports = async (req, res) => {
                 finalHtml = typeof res === 'object' ? res.html : res;
                 finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Digital Prescription - ${tenantInfo.clinic_name}`;
             }
+        } else if (type === 'treatment_plan' || type === 'treatment') {
+            const tpl = (emailTemplates.getTreatmentPlanEmail || emailTemplates.getTreatmentPlanTemplate);
+            if (tpl) {
+                const res = tpl({ patientName: name || 'Valued Patient', treatmentPlan: req.body?.treatmentPlan || req.body?.plan || {}, tenant: tenantInfo });
+                finalHtml = typeof res === 'object' ? res.html : res;
+                finalSubject = finalSubject || (typeof res === 'object' ? res.subject : null) || `Treatment Plan & Cost Quotation | ${tenantInfo.clinic_name}`;
+            }
+        } else if (type === 'marketing' || type === 'marketing_engagement') {
+            const tpl = emailTemplates.getMarketingEngagementTemplate;
+            if (tpl) {
+                const res = tpl({
+                    patientName: name || 'Valued Patient',
+                    tenant: tenantInfo,
+                    templateKey: templateKey || 'daily_care',
+                    customSubject: subject,
+                    customMessage: customMessage || text,
+                    clinicUrl: clinicUrl || 'https://mydentalclinic01.vercel.app'
+                });
+                finalHtml = res.html;
+                finalSubject = finalSubject || res.subject;
+            }
         }
 
-        // Fallback default content if no html generated
+        // Fallback default content wrapped in dynamic tenant theme boilerplate if no html generated
         if (!finalHtml) {
-            finalHtml = `<div style="font-family: Arial, sans-serif; padding: 20px;">
-                <h2 style="color: ${tenantInfo.primary_color};">${tenantInfo.clinic_name}</h2>
-                <p>Hello ${name || 'Patient'},</p>
-                <p>${text || 'Thank you for connecting with our clinic.'}</p>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                <small style="color: #666;">${tenantInfo.doctor_name} &bull; ${tenantInfo.phone}</small>
-            </div>`;
+            const fallbackBody = `
+                <h2 style="font-size: 20px; font-weight: 800; color: #0F172A; margin: 0 0 12px 0;">Notice from ${tenantInfo.clinic_name}</h2>
+                <p style="font-size: 15px; color: #334155; margin: 0 0 14px 0;">Hello <strong>${name || 'Valued Patient'}</strong>,</p>
+                <div style="font-size: 14px; line-height: 1.6; color: #475569; margin: 16px 0;">
+                    ${(text || customMessage || 'Thank you for connecting with our clinic. We are committed to your dental health and wellness.').replace(/\n/g, '<br>')}
+                </div>
+            `;
+            finalHtml = (emailTemplates.wrapEmailBoilerplate) 
+                ? emailTemplates.wrapEmailBoilerplate(fallbackBody, tenantInfo)
+                : fallbackBody;
         }
 
         const mailOptions = {
