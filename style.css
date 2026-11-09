@@ -207,37 +207,43 @@ nav a.active { color: var(--primary); }
   .mobile-menu-btn { display: none !important; }
   header .nav-container {
     max-width: 100% !important;
-    padding: 0 4rem !important;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    padding: 0 2.5rem !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
   }
   .logo-section {
-    order: 1;
+    order: 1 !important;
+    flex-shrink: 0 !important;
+    max-width: none !important;
+    margin-right: 0 !important;
   }
   #mainNav {
-    order: 2;
-    position: static;
-    transform: none;
-    padding: 0;
-    box-shadow: none;
-    width: auto;
-    background: transparent;
-    margin-left: auto;
+    order: 2 !important;
+    position: static !important;
+    transform: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    width: auto !important;
+    background: transparent !important;
+    margin-left: auto !important;
+    margin-right: 1.25rem !important;
     display: block !important;
   }
   nav .nav-links {
-    flex-direction: row;
-    gap: 2rem;
-    align-items: center;
+    flex-direction: row !important;
+    gap: 1.25rem !important;
+    align-items: center !important;
+    white-space: nowrap !important;
   }
   nav a {
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 0.5rem 0;
-    transition: color 0.3s ease;
-    position: relative;
+    font-size: 0.82rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding: 0.4rem 0 !important;
+    transition: color 0.3s ease !important;
+    position: relative !important;
+    white-space: nowrap !important;
   }
   nav a::after {
     content: '';
@@ -255,17 +261,35 @@ nav a.active { color: var(--primary); }
   nav a:hover::after, nav a.active::after {
     width: 100%;
   }
+
+  /* Desktop Header Controls Group (Right side) */
+  .header-right-actions {
+    order: 3 !important;
+    margin-left: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Hide mobile-only install button on web desktop (since 'Install App' is cleanly in navLinks) */
+  #headerPwaInstallBtn {
+    display: none !important;
+  }
+
   .lang-selector-container {
-    order: 3;
-    margin-left: 2rem;
-    margin-right: 0;
+    order: unset !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
   .lang-select {
     background: var(--bg-soft);
-    border: 1px solid rgba(15, 23, 42, 0.1);
+    border: 1.5px solid #CBD5E1;
     color: var(--secondary);
-    font-size: 0.85rem;
-    padding: 0.4rem 0.75rem;
+    font-size: 0.82rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+    font-weight: 700;
   }
   .lang-select:hover {
     background: var(--primary-light);

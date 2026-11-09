@@ -2228,21 +2228,22 @@ async function saveNewDiagnosis() {
     }
 }
 
-// --- PWA REGISTRATION & INSTANT AUTO-REFRESH ON NEW DEPLOYMENT ---
+// --- PWA REGISTRATION & BULLETPROOF SINGLE-REFRESH ON NEW DEPLOYMENT ---
 if ('serviceWorker' in navigator) {
     let isRefreshing = false;
+    let hadPreviousController = !!navigator.serviceWorker.controller;
 
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
             console.log('💎 Premium Engine: PWA Service Worker Registered');
             
-            // Force checking for updates immediately on page load
+            // Check for SW updates
             reg.update().catch(err => console.log('SW update check bypassed:', err.message));
             
-            // Periodic check for SW update every 60 seconds
+            // Periodic check for SW update every 5 minutes (avoids battery & network drain)
             setInterval(() => {
                 reg.update().catch(err => console.log('SW periodic update bypassed:', err.message));
-            }, 60 * 1000);
+            }, 5 * 60 * 1000);
 
             // Check for updates when user refocuses the app/tab
             window.addEventListener('focus', () => {
@@ -2253,25 +2254,46 @@ if ('serviceWorker' in navigator) {
             console.warn('SW: Registration failed:', err);
         });
 
-        // Check version on initial launch
+        // Check version once on initial launch
         checkForAppDeploymentUpdate();
-        setInterval(checkForAppDeploymentUpdate, 60 * 1000);
+        // Periodic version check every 5 minutes
+        setInterval(checkForAppDeploymentUpdate, 5 * 60 * 1000);
     });
 
-    // Auto-refresh immediately when controller changes (new ServiceWorker activated)
+    // Auto-refresh ONLY when controller changes from an EXISTING older worker to a newer worker
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+        // If the page was NOT previously controlled, this is just the initial SW claiming the page on first visit.
+        // DO NOT reload! The page was already loaded fresh from the network.
+        if (!hadPreviousController) {
+            hadPreviousController = true;
+            return;
+        }
+
+        // Guard against infinite refresh loops: reload strictly once per session
+        if (sessionStorage.getItem('sw_controller_reloaded') === 'true') {
+            return;
+        }
         if (!isRefreshing) {
             isRefreshing = true;
-            window.location.reload(true);
+            sessionStorage.setItem('sw_controller_reloaded', 'true');
+            console.log('🔄 New Service Worker active. Refreshing once to load latest version...');
+            window.location.reload();
         }
     });
 
-    // Also auto-refresh when SW broadcasts SW_VERSION_UPDATED
+    // Also handle SW_VERSION_UPDATED broadcast safely (refresh once per cache version)
     navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'SW_VERSION_UPDATED') {
+            const newVersion = event.data.version || 'latest';
+            const lastRefreshedVersion = sessionStorage.getItem('sw_last_refreshed_version');
+            if (lastRefreshedVersion === newVersion) {
+                return; // Already refreshed once for this new version! Do not loop!
+            }
             if (!isRefreshing) {
                 isRefreshing = true;
-                window.location.reload(true);
+                sessionStorage.setItem('sw_last_refreshed_version', newVersion);
+                console.log('🔄 Version updated to ' + newVersion + '. Refreshing once...');
+                window.location.reload();
             }
         }
     });
@@ -2284,18 +2306,28 @@ async function checkForAppDeploymentUpdate() {
         if (!res.ok) return;
         const data = await res.json();
         if (data && data.build) {
+            const buildStr = String(data.build);
             const currentBuild = localStorage.getItem('app_installed_build_version');
-            if (currentBuild && currentBuild !== String(data.build)) {
-                console.log('🚀 New deployment detected (Build: ' + data.build + '). Purging caches & auto-refreshing...');
-                localStorage.setItem('app_installed_build_version', String(data.build));
+            
+            if (currentBuild && currentBuild !== buildStr) {
+                // Safety guard: ensure we only reload once per build per session
+                if (sessionStorage.getItem('app_reloaded_for_build') === buildStr) {
+                    localStorage.setItem('app_installed_build_version', buildStr);
+                    return;
+                }
+                console.log('🚀 New deployment detected (Build: ' + buildStr + '). Refreshing once to update...');
+                localStorage.setItem('app_installed_build_version', buildStr);
+                sessionStorage.setItem('app_reloaded_for_build', buildStr);
+                
                 if ('caches' in window) {
                     const keys = await caches.keys();
                     await Promise.all(keys.map(k => caches.delete(k)));
                 }
-                window.location.reload(true);
+                window.location.reload();
                 return;
             }
-            localStorage.setItem('app_installed_build_version', String(data.build));
+            localStorage.setItem('app_installed_build_version', buildStr);
+            sessionStorage.setItem('app_reloaded_for_build', buildStr);
         }
     } catch (e) {
         // Silent catch for offline or non-blocking network glitches
