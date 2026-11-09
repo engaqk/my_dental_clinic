@@ -1840,6 +1840,17 @@ body.modal-open .mobile-bottom-nav,
     }
 }
 
+@keyframes vipModalFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92) translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
 .desk-role-card {
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }

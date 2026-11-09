@@ -1135,37 +1135,108 @@ function adjustColorBrightness(hex, percent) {
     }
 }
 
-// --- DYNAMIC 2-CHARACTER MONOGRAM GENERATOR ---
+// --- DYNAMIC 2-CHARACTER MONOGRAM & APP LOGO GENERATOR ([First Letter] + 'C') ---
 function getClinicMonogram(name) {
-    if (!name || typeof name !== 'string') return 'MD';
+    if (!name || typeof name !== 'string') return 'MC';
     // Clean string: remove non-alphanumeric except spaces
     let clean = name.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
-    if (!clean) return 'MD';
+    if (!clean) return 'MC';
 
     let words = clean.split(/\s+/).filter(w => w.length > 0);
     const ignoreWords = ['the', 'a', 'an', 'and', 'of', '&'];
     let filtered = words.filter(w => !ignoreWords.includes(w.toLowerCase()));
     if (filtered.length === 0) filtered = words;
 
-    // If first word is "Dr" or "Dr." and we have at least 2 other words, skip "Dr"
-    if (filtered.length >= 3 && /^dr\.?$/i.test(filtered[0])) {
+    // If first word is "Dr" or "Dr." and we have at least 2 words, skip "Dr"
+    if (filtered.length >= 2 && /^dr\.?$/i.test(filtered[0])) {
         filtered = filtered.slice(1);
     }
 
-    if (filtered.length >= 2) {
-        return (filtered[0][0] + filtered[1][0]).toUpperCase();
-    } else if (filtered.length === 1) {
-        const single = filtered[0];
-        return (single.length >= 2 ? single.slice(0, 2) : single + 'C').toUpperCase();
-    }
-    return 'MD';
+    const firstWord = filtered[0] || 'Clinic';
+    const firstChar = firstWord[0].toUpperCase();
+    return `${firstChar}C`; // First letter of clinic name + 'C' for Clinic (e.g. SC for Swastik, MC for My Clinic)
 }
 
-function updateDynamicFavicon(monogram, primaryColor, primaryDark) {
+// --- HIGH-RESOLUTION DYNAMIC TENANT CANVAS ICON GENERATOR ---
+function generateTenantAppIcon(monogram, primaryColor, primaryDark, size = 512) {
+    try {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return null;
+
+        primaryColor = primaryColor || '#0D9488';
+        primaryDark = primaryDark || adjustColorBrightness(primaryColor, -0.25);
+
+        // 1. Draw rounded squircle background with gradient
+        const radius = Math.round(size * 0.22);
+        const grad = ctx.createLinearGradient(0, 0, size, size);
+        grad.addColorStop(0, primaryColor);
+        grad.addColorStop(1, primaryDark);
+
+        ctx.beginPath();
+        ctx.moveTo(radius, 0);
+        ctx.lineTo(size - radius, 0);
+        ctx.quadraticCurveTo(size, 0, size, radius);
+        ctx.lineTo(size, size - radius);
+        ctx.quadraticCurveTo(size, size, size - radius, size);
+        ctx.lineTo(radius, size);
+        ctx.quadraticCurveTo(0, size, 0, size - radius);
+        ctx.lineTo(0, radius);
+        ctx.quadraticCurveTo(0, 0, radius, 0);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // 2. Subtle decorative inner border ring
+        ctx.lineWidth = Math.max(2, Math.round(size * 0.015));
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.stroke();
+
+        // 3. Subtle background oral health / medical emblem watermark
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.beginPath();
+        const cx = size / 2;
+        const cy = size / 2;
+        ctx.arc(cx, cy, size * 0.38, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 4. Centered crisp 2-character monogram ([Letter]C)
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const fontSize = Math.round(size * 0.44);
+        ctx.font = `900 ${fontSize}px "Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+        
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        ctx.shadowBlur = Math.round(size * 0.035);
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = Math.round(size * 0.015);
+
+        ctx.fillText(monogram, cx, cy + Math.round(size * 0.02));
+
+        return canvas.toDataURL('image/png');
+    } catch (e) {
+        console.warn('Canvas icon generation error:', e);
+        return null;
+    }
+}
+
+function updateDynamicFavicon(monogram, primaryColor, primaryDark, clinicName) {
     try {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${primaryColor}"/><stop offset="100%" stop-color="${primaryDark}"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#g)"/><text x="32" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">${monogram}</text></svg>`;
         const faviconUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
         
+        // Generate high-res canvas PNGs for Apple Touch Icon & PWA
+        const icon512 = generateTenantAppIcon(monogram, primaryColor, primaryDark, 512);
+        const icon192 = generateTenantAppIcon(monogram, primaryColor, primaryDark, 192);
+
+        window.tenantIcon512 = icon512 || faviconUrl;
+        window.tenantIcon192 = icon192 || faviconUrl;
+
         let iconLink = document.querySelector("link[rel*='icon']");
         if (!iconLink) {
             iconLink = document.createElement('link');
@@ -1181,7 +1252,33 @@ function updateDynamicFavicon(monogram, primaryColor, primaryDark) {
             appleIcon.rel = 'apple-touch-icon';
             document.head.appendChild(appleIcon);
         }
-        appleIcon.href = faviconUrl;
+        appleIcon.href = icon512 || faviconUrl;
+
+        // Meta tags
+        const cName = clinicName || (window.currentClinicSettings ? (window.currentClinicSettings.clinic_name || window.currentClinicSettings.name) : 'Dental Clinic');
+        let appNameMeta = document.querySelector('meta[name="application-name"]');
+        if (!appNameMeta) {
+            appNameMeta = document.createElement('meta');
+            appNameMeta.name = 'application-name';
+            document.head.appendChild(appNameMeta);
+        }
+        appNameMeta.setAttribute('content', cName);
+
+        let appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+        if (!appleTitle) {
+            appleTitle = document.createElement('meta');
+            appleTitle.name = 'apple-mobile-web-app-title';
+            document.head.appendChild(appleTitle);
+        }
+        appleTitle.setAttribute('content', cName);
+
+        // Update floating startup banner icon
+        const pwaBannerAppIcon = document.getElementById('pwaBannerAppIcon');
+        if (pwaBannerAppIcon && icon192) pwaBannerAppIcon.src = icon192;
+
+        // Update VIP startup popup monogram and install button
+        const vipMonogram = document.getElementById('vipStartupMonogramText');
+        if (vipMonogram) vipMonogram.innerText = monogram;
     } catch (e) {
         console.warn('Favicon update error:', e);
     }
@@ -1207,8 +1304,8 @@ function applyTenantTheme(colorHex, monogram) {
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) metaTheme.setAttribute('content', primary);
 
-    // Update dynamic SVG favicon with 2-character monogram
-    const activeMonogram = monogram || (window.currentClinicSettings ? getClinicMonogram(window.currentClinicSettings.clinic_name) : 'MD');
+    // Update dynamic SVG favicon with 2-character monogram ([Letter]C)
+    const activeMonogram = monogram || (window.currentClinicSettings ? getClinicMonogram(window.currentClinicSettings.clinic_name) : 'MC');
     updateDynamicFavicon(activeMonogram, primary, primaryDark);
 
     // Update preview swatch in settings form if present
@@ -1222,13 +1319,28 @@ function updateTenantPWA(settings) {
         const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
         const isDefault = !tenantId || tenantId === 'default';
         const clinicName = (settings && (settings.clinic_name || settings.name)) ? (settings.clinic_name || settings.name) : 'My Dental Clinic';
-        const subtitle = (settings && settings.subtitle) ? settings.subtitle : 'Dental & Cosmetic Clinic';
+        const subtitle = (settings && settings.subtitle) ? settings.subtitle : 'Comprehensive Dental & Oral Healthcare';
         const primaryColor = (settings && (settings.primary_color || settings.primaryColor)) ? (settings.primary_color || settings.primaryColor) : '#0D9488';
-        
-        let startUrl = isDefault ? '/' : `/${tenantId}`;
+        const primaryDark = adjustColorBrightness(primaryColor, -0.25);
+        const monogram = getClinicMonogram(clinicName); // [FirstLetter] + 'C'
+
+        const icon192 = generateTenantAppIcon(monogram, primaryColor, primaryDark, 192);
+        const icon512 = generateTenantAppIcon(monogram, primaryColor, primaryDark, 512);
+
+        let startUrl = isDefault ? '/' : `/?c=${tenantId}`;
         if (window.location.protocol === 'file:') {
             startUrl = isDefault ? 'index.html' : `index.html?c=${tenantId}`;
         }
+
+        const iconsArray = [];
+        if (icon192) {
+            iconsArray.push({ src: icon192, sizes: "192x192", type: "image/png", purpose: "any maskable" });
+        }
+        if (icon512) {
+            iconsArray.push({ src: icon512, sizes: "512x512", type: "image/png", purpose: "any maskable" });
+        }
+        iconsArray.push({ src: `/api/tenant-icon?c=${tenantId}&size=192`, sizes: "192x192", type: "image/svg+xml", purpose: "any maskable" });
+        iconsArray.push({ src: `/api/tenant-icon?c=${tenantId}&size=512`, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" });
 
         const manifestData = {
             name: clinicName,
@@ -1241,14 +1353,7 @@ function updateTenantPWA(settings) {
             theme_color: primaryColor,
             description: `${clinicName} - ${subtitle}`,
             categories: ["medical", "health", "business"],
-            icons: [
-                {
-                    src: "/app-icon.png",
-                    sizes: "512x512",
-                    type: "image/png",
-                    purpose: "any maskable"
-                }
-            ]
+            icons: iconsArray
         };
 
         const manifestBlob = new Blob([JSON.stringify(manifestData, null, 2)], { type: 'application/manifest+json' });
@@ -1271,11 +1376,61 @@ function updateTenantPWA(settings) {
         }
         appleTitle.setAttribute('content', clinicName);
 
-        console.log(`📱 PWA Manifest dynamically configured: ${clinicName} (${tenantId}) -> ${startUrl}`);
+        // Update floating startup banner
+        const pwaBannerAppTitle = document.getElementById('pwaBannerAppTitle');
+        if (pwaBannerAppTitle) pwaBannerAppTitle.innerText = `Install ${clinicName} App`;
+        const pwaBannerAppIcon = document.getElementById('pwaBannerAppIcon');
+        if (pwaBannerAppIcon && icon192) pwaBannerAppIcon.src = icon192;
+
+        // Update VIP startup popup labels
+        const vipInstallBtn = document.getElementById('vipModalInstallBtn');
+        if (vipInstallBtn) vipInstallBtn.innerHTML = `<i class="fas fa-download"></i> INSTALL ${clinicName.toUpperCase()} APP`;
+        const vipClinicTitle = document.getElementById('vipStartupClinicTitle');
+        if (vipClinicTitle) vipClinicTitle.innerText = `Welcome to ${clinicName} Concierge`;
+        const vipMonogram = document.getElementById('vipStartupMonogramText');
+        if (vipMonogram) vipMonogram.innerText = monogram;
+
+        console.log(`📱 PWA Manifest dynamically configured: ${clinicName} (${tenantId}) [${monogram}] -> ${startUrl}`);
     } catch (e) {
         console.warn('Tenant PWA adaptation note:', e);
     }
 }
+
+// --- FIRST-TIME VIP STARTUP CONCIERGE MODAL (SINGLE-SCREEN ZERO-SCROLL) ---
+function checkVipStartupModal() {
+    try {
+        const alreadyShown = localStorage.getItem('clinic_vip_startup_shown');
+        if (alreadyShown === 'true') return;
+
+        const modal = document.getElementById('vipStartupBenefitsModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    } catch(e) {}
+}
+
+function closeVipStartupModal() {
+    try {
+        localStorage.setItem('clinic_vip_startup_shown', 'true');
+        const modal = document.getElementById('vipStartupBenefitsModal');
+        if (modal) modal.style.display = 'none';
+    } catch(e) {}
+}
+
+function handleVipModalInstall() {
+    closeVipStartupModal();
+    if (typeof triggerPWAInstall === 'function') {
+        triggerPWAInstall();
+    }
+}
+
+function openVipStartupModal() {
+    const modal = document.getElementById('vipStartupBenefitsModal');
+    if (modal) modal.style.display = 'flex';
+}
+window.openVipStartupModal = openVipStartupModal;
+window.closeVipStartupModal = closeVipStartupModal;
+window.handleVipModalInstall = handleVipModalInstall;
 
 // Live interactive theme functions for doctor settings form
 function updateThemeFromPicker(hex) {
@@ -1847,12 +2002,19 @@ function loadClinicSettings() {
             'footerClinicMonogramText',
             'heroMonogramText',
             'dashClinicMonogramText',
-            'gateClinicMonogramText'
+            'gateClinicMonogramText',
+            'vipStartupMonogramText'
         ];
         monogramEls.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerText = monogram;
         });
+
+        // Update VIP startup popup
+        const vipInstallBtn = document.getElementById('vipModalInstallBtn');
+        if (vipInstallBtn) vipInstallBtn.innerHTML = `<i class="fas fa-download"></i> INSTALL ${clinicName.toUpperCase()} APP`;
+        const vipClinicTitle = document.getElementById('vipStartupClinicTitle');
+        if (vipClinicTitle) vipClinicTitle.innerText = `Welcome to ${clinicName} Concierge`;
 
         document.title = `${clinicName} | ${doctorName}`;
 
@@ -1860,6 +2022,7 @@ function loadClinicSettings() {
         updateTenantPWA(settings);
         populateSettingsForm(settings);
         checkFirstTimeAccessGate(settings);
+        checkVipStartupModal();
     }).catch(err => {
         console.warn('loadClinicSettings error:', err);
     });
