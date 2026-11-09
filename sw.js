@@ -1,10 +1,10 @@
 /**
  * sw.js - Service Worker for Dental Clinic PWA
- * Version: v46.1.0
+ * Version: v46.2.0
  * Features: Instant auto-update, Network-First strategy for fresh deployments, offline fallback.
  */
 
-const CACHE_NAME = 'dental-clinic-v46-1';
+const CACHE_NAME = 'dental-clinic-v46-2';
 
 const ASSETS = [
     './',
@@ -22,8 +22,6 @@ const ASSETS = [
     'logo.png',
     'logo-blue.png',
     'logo-green.png',
-    'favicon.ico',
-    'app-icon.png',
     'manifest.webmanifest'
 ];
 
@@ -64,8 +62,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const url = event.request.url;
 
-    // 1. Never intercept non-GET, API calls, or version.json check
-    if (event.request.method !== 'GET' || url.includes('/api/') || url.includes('version.json') || url.includes('identitytoolkit') || url.includes('googleapis.com')) {
+    // 1. Never intercept non-GET, API calls, or version/icon checks
+    if (event.request.method !== 'GET' || url.includes('/api/') || url.includes('version.json') || url.includes('favicon') || url.includes('app-icon') || url.includes('tenant-icon') || url.includes('identitytoolkit') || url.includes('googleapis.com')) {
         return;
     }
 

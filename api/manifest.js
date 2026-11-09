@@ -1,7 +1,30 @@
 // api/manifest.js - Dynamic Web App Manifest Generator for Multi-Tenant Dental PWA
 module.exports = (req, res) => {
-    const tenantId = (req.query.c || req.query.tenant || req.query.slug || 'default').toString().toLowerCase().trim();
-    const isDefault = !tenantId || tenantId === 'default';
+    let tenantId = (req.query.c || req.query.tenant || req.query.slug || '').toString().toLowerCase().trim();
+
+    // Check cookie fallback if query param not present
+    if (!tenantId && req.headers.cookie) {
+        const match = req.headers.cookie.match(/(?:clinic_tenant|tenant_id)=([^;]+)/);
+        if (match) tenantId = decodeURIComponent(match[1]).toLowerCase().trim();
+    }
+
+    // Check referer header fallback
+    if (!tenantId && req.headers.referer) {
+        try {
+            const refUrl = new URL(req.headers.referer);
+            tenantId = (refUrl.searchParams.get('c') || '').toLowerCase().trim();
+            if (!tenantId) {
+                const segs = refUrl.pathname.replace(/^\/+|\/+$/g, '').split('/');
+                const last = segs[segs.length - 1];
+                if (last && !last.includes('.') && last !== 'api' && last !== 'superadmin') {
+                    tenantId = last.toLowerCase().trim();
+                }
+            }
+        } catch (e) {}
+    }
+
+    if (!tenantId) tenantId = 'default';
+    const isDefault = tenantId === 'default';
 
     let clinicName = 'My Dental Clinic';
     let subtitle = 'Dental & Cosmetic Clinic';

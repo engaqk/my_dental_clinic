@@ -1,6 +1,29 @@
-// api/tenant-icon.js - Dynamic SVG/PNG Icon Server for Multi-Tenant Dental App & PWA
+// api/tenant-icon.js - Dynamic Vector App Icon & Favicon Engine for Multi-Tenant Dental PWA
 module.exports = (req, res) => {
-    const tenantId = (req.query.c || req.query.tenant || req.query.slug || 'default').toString().toLowerCase().trim();
+    let tenantId = (req.query.c || req.query.tenant || req.query.slug || '').toString().toLowerCase().trim();
+
+    // Check cookie fallback if query param not present (e.g. direct /favicon.ico request)
+    if (!tenantId && req.headers.cookie) {
+        const match = req.headers.cookie.match(/(?:clinic_tenant|tenant_id)=([^;]+)/);
+        if (match) tenantId = decodeURIComponent(match[1]).toLowerCase().trim();
+    }
+
+    // Check referer header fallback
+    if (!tenantId && req.headers.referer) {
+        try {
+            const refUrl = new URL(req.headers.referer);
+            tenantId = (refUrl.searchParams.get('c') || '').toLowerCase().trim();
+            if (!tenantId) {
+                const segs = refUrl.pathname.replace(/^\/+|\/+$/g, '').split('/');
+                const last = segs[segs.length - 1];
+                if (last && !last.includes('.') && last !== 'api' && last !== 'superadmin') {
+                    tenantId = last.toLowerCase().trim();
+                }
+            }
+        } catch (e) {}
+    }
+
+    if (!tenantId) tenantId = 'default';
     const size = parseInt(req.query.size) || 512;
 
     // Resolve tenant details
@@ -24,16 +47,25 @@ module.exports = (req, res) => {
         primaryDark = '#115E59';
     }
 
-    // Compute 2-character monogram: First character of clinic name + 'C' (for Clinic)
-    const cleanWords = clinicName.replace(/[^\w\s]/g, ' ').trim().split(/\s+/).filter(Boolean);
-    const ignore = ['the', 'a', 'an', 'and', 'of', '&'];
-    const filtered = cleanWords.filter(w => !ignore.includes(w.toLowerCase()));
-    let firstWord = filtered[0] || 'Clinic';
-    if (filtered.length >= 2 && /^dr\.?$/i.test(firstWord)) {
-        firstWord = filtered[1];
+    // Allow explicit override via query params if provided
+    if (req.query.color) {
+        primaryColor = req.query.color;
+        primaryDark = req.query.dark || primaryColor;
     }
-    const firstChar = firstWord[0].toUpperCase();
-    const monogram = `${firstChar}C`;
+
+    // Compute 2-character monogram: First character of clinic name + 'C' (for Clinic)
+    let monogram = req.query.m || '';
+    if (!monogram) {
+        const cleanWords = clinicName.replace(/[^\w\s]/g, ' ').trim().split(/\s+/).filter(Boolean);
+        const ignore = ['the', 'a', 'an', 'and', 'of', '&'];
+        const filtered = cleanWords.filter(w => !ignore.includes(w.toLowerCase()));
+        let firstWord = filtered[0] || 'Clinic';
+        if (filtered.length >= 2 && /^dr\.?$/i.test(firstWord)) {
+            firstWord = filtered[1];
+        }
+        const firstChar = firstWord[0].toUpperCase();
+        monogram = `${firstChar}C`;
+    }
 
     // Generate responsive, vector SVG icon with high aesthetic fidelity
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="${size}" height="${size}">

@@ -54,6 +54,77 @@
                 }
                 document.title = clinicName + ' | Comprehensive Care';
 
+                // Save cookie for tenant icon requests
+                try {
+                    document.cookie = 'clinic_tenant=' + encodeURIComponent(tid) + '; path=/; max-age=31536000';
+                } catch(e){}
+
+                // Instant pre-render dynamic SVG/Canvas favicon & apple-touch-icon
+                var darkColor = (color === '#10B981') ? '#059669' : '#115E59';
+                var svgFav = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="' + color + '"/><stop offset="100%" stop-color="' + darkColor + '"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#g)"/><text x="32" y="44" font-family="-apple-system, BlinkMacSystemFont, Outfit, Segoe UI, sans-serif" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">' + monogram + '</text></svg>';
+                var favData = 'data:image/svg+xml,' + encodeURIComponent(svgFav);
+
+                // Set dynamic SVG favicon immediately in <head>
+                var lSvg = document.createElement('link');
+                lSvg.id = 'dynamicFaviconSvg';
+                lSvg.rel = 'icon';
+                lSvg.type = 'image/svg+xml';
+                lSvg.href = favData;
+                document.head.appendChild(lSvg);
+
+                // Instant canvas render for PNG favicon (preferred by Chromium/Edge tab bar)
+                try {
+                    var c = document.createElement('canvas');
+                    c.width = 64; c.height = 64;
+                    var ctx = c.getContext('2d');
+                    if (ctx) {
+                        var rad = 16;
+                        var grad = ctx.createLinearGradient(0, 0, 64, 64);
+                        grad.addColorStop(0, color);
+                        grad.addColorStop(1, darkColor);
+                        ctx.fillStyle = grad;
+                        ctx.beginPath();
+                        ctx.moveTo(rad, 0); ctx.lineTo(64 - rad, 0); ctx.quadraticCurveTo(64, 0, 64, rad);
+                        ctx.lineTo(64, 64 - rad); ctx.quadraticCurveTo(64, 64, 64 - rad, 64);
+                        ctx.lineTo(rad, 64); ctx.quadraticCurveTo(0, 64, 0, 64 - rad);
+                        ctx.lineTo(0, rad); ctx.quadraticCurveTo(0, 0, rad, 0);
+                        ctx.closePath();
+                        ctx.fill();
+
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+                        ctx.beginPath();
+                        ctx.arc(32, 32, 24, 0, Math.PI * 2);
+                        ctx.fill();
+
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.font = '900 28px -apple-system, BlinkMacSystemFont, Outfit, Segoe UI, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(monogram, 32, 34);
+
+                        var pngFav = c.toDataURL('image/png');
+                        var lPng = document.createElement('link');
+                        lPng.id = 'dynamicFaviconPng';
+                        lPng.rel = 'icon';
+                        lPng.type = 'image/png';
+                        lPng.sizes = '64x64';
+                        lPng.href = pngFav;
+                        document.head.appendChild(lPng);
+
+                        var lShort = document.createElement('link');
+                        lShort.id = 'dynamicFaviconShort';
+                        lShort.rel = 'shortcut icon';
+                        lShort.href = pngFav;
+                        document.head.appendChild(lShort);
+
+                        var lApple = document.createElement('link');
+                        lApple.id = 'dynamicFaviconApple';
+                        lApple.rel = 'apple-touch-icon';
+                        lApple.href = pngFav;
+                        document.head.appendChild(lApple);
+                    }
+                } catch(e){}
+
                 // Check VIP Startup modal on first-time load
                 var startupDone = localStorage.getItem('clinic_vip_startup_shown');
                 if (startupDone !== 'true') {
@@ -92,7 +163,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#10B981">
-    <link rel="apple-touch-icon" href="app-icon.png">
+    <link rel="icon" type="image/svg+xml" href="/api/tenant-icon?size=64">
+    <link rel="alternate icon" type="image/png" href="/api/tenant-icon?size=64">
+    <link rel="apple-touch-icon" href="/api/tenant-icon?size=192">
     <script src="translations.js?v=35"></script>
 </head>
 <body>

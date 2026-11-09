@@ -1230,29 +1230,51 @@ function updateDynamicFavicon(monogram, primaryColor, primaryDark, clinicName) {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="${primaryColor}"/><stop offset="100%" stop-color="${primaryDark}"/></linearGradient></defs><rect width="64" height="64" rx="16" fill="url(#g)"/><text x="32" y="42" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-1">${monogram}</text></svg>`;
         const faviconUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
         
-        // Generate high-res canvas PNGs for Apple Touch Icon & PWA
+        // Generate high-res canvas PNGs for Apple Touch Icon, browser tabs & PWA
         const icon512 = generateTenantAppIcon(monogram, primaryColor, primaryDark, 512);
         const icon192 = generateTenantAppIcon(monogram, primaryColor, primaryDark, 192);
+        const icon64 = generateTenantAppIcon(monogram, primaryColor, primaryDark, 64);
 
         window.tenantIcon512 = icon512 || faviconUrl;
         window.tenantIcon192 = icon192 || faviconUrl;
+        window.tenantIcon64 = icon64 || faviconUrl;
 
-        let iconLink = document.querySelector("link[rel*='icon']");
-        if (!iconLink) {
-            iconLink = document.createElement('link');
-            iconLink.rel = 'shortcut icon';
-            document.head.appendChild(iconLink);
-        }
-        iconLink.type = 'image/svg+xml';
-        iconLink.href = faviconUrl;
+        // Force browser tab to repaint favicon immediately by replacing link nodes
+        document.querySelectorAll("link[rel*='icon'], link[rel='apple-touch-icon']").forEach(el => {
+            if (el.parentNode) el.parentNode.removeChild(el);
+        });
 
-        let appleIcon = document.querySelector("link[rel='apple-touch-icon']");
-        if (!appleIcon) {
-            appleIcon = document.createElement('link');
-            appleIcon.rel = 'apple-touch-icon';
-            document.head.appendChild(appleIcon);
+        const iconSvg = document.createElement('link');
+        iconSvg.rel = 'icon';
+        iconSvg.type = 'image/svg+xml';
+        iconSvg.href = faviconUrl;
+        document.head.appendChild(iconSvg);
+
+        if (icon64) {
+            const iconPng = document.createElement('link');
+            iconPng.rel = 'icon';
+            iconPng.type = 'image/png';
+            iconPng.sizes = '64x64';
+            iconPng.href = icon64;
+            document.head.appendChild(iconPng);
+
+            const iconShort = document.createElement('link');
+            iconShort.rel = 'shortcut icon';
+            iconShort.type = 'image/png';
+            iconShort.href = icon64;
+            document.head.appendChild(iconShort);
         }
-        appleIcon.href = icon512 || faviconUrl;
+
+        const appleIcon = document.createElement('link');
+        appleIcon.rel = 'apple-touch-icon';
+        appleIcon.href = icon192 || icon512 || faviconUrl;
+        document.head.appendChild(appleIcon);
+
+        // Keep tenant cookie updated for server-rendered icon routes
+        try {
+            const curTid = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'default';
+            document.cookie = 'clinic_tenant=' + encodeURIComponent(curTid) + '; path=/; max-age=31536000';
+        } catch(e){}
 
         // Meta tags
         const cName = clinicName || (window.currentClinicSettings ? (window.currentClinicSettings.clinic_name || window.currentClinicSettings.name) : 'Dental Clinic');
