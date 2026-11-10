@@ -1508,8 +1508,8 @@
 
             logTbody.innerHTML = logs.slice(0, 150).map(l => {
                 const dt = l.timestamp ? new Date(l.timestamp) : new Date();
-                const dateStr = l.dateStr || dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                const timeStr = l.timeStr || dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+                const dateStr = l.ist_date || l.dateStr || dt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
+                const timeStr = l.ist_time || l.timeStr || (dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST');
                 const tenant = l.tenant_id || l.clinic_slug || 'default';
                 const actor = l.actor || l.name || 'User';
                 const role = l.role || 'Staff';

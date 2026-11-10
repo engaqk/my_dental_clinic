@@ -3,23 +3,26 @@
 
 // Show/hide login modal
 function showLoginModal() {
-    document.getElementById('loginModal').style.display = 'flex';
-    document.getElementById('loginError').style.display = 'none';
-    document.getElementById('loginForm').reset();
-    if (window.innerWidth > 768) {
-        setTimeout(() => {
-            const usernameInput = document.getElementById('username');
-            if (usernameInput) usernameInput.focus();
-        }, 150);
-    }
+    const modal = document.getElementById('loginModal');
+    if (modal) modal.style.display = 'flex';
+    const err = document.getElementById('loginError');
+    if (err) err.style.display = 'none';
+    const staffWrapper = document.getElementById('staffCredentialsWrapper');
+    if (staffWrapper) staffWrapper.style.setProperty('display', 'none', 'important');
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) loginForm.reset();
 }
 
 function closeLoginModal() {
-    document.getElementById('loginModal').style.display = 'none';
-    document.getElementById('loginError').style.display = 'none';
+    const modal = document.getElementById('loginModal');
+    if (modal) modal.style.display = 'none';
+    const err = document.getElementById('loginError');
+    if (err) err.style.display = 'none';
+    const staffWrapper = document.getElementById('staffCredentialsWrapper');
+    if (staffWrapper) staffWrapper.style.setProperty('display', 'none', 'important');
     const modalTitle = document.querySelector('#loginModal h2');
     const modalHero = document.querySelector('#loginModal .hero-label');
-    if (modalTitle) modalTitle.innerText = 'Staff & Doctor Access';
+    if (modalTitle) modalTitle.innerText = 'Clinical Portal Access';
     if (modalHero) modalHero.innerText = 'CLINICAL PORTAL';
 }
 
@@ -41,6 +44,12 @@ function openSuperAdminLogin(event) {
 
     sessionStorage.setItem('pendingRedirectTab', 'superadmin');
     showLoginModal();
+
+    // Reveal credentials form specifically when SuperAdmin login is triggered
+    const staffWrapper = document.getElementById('staffCredentialsWrapper');
+    if (staffWrapper) {
+        staffWrapper.style.setProperty('display', 'block', 'important');
+    }
 
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');

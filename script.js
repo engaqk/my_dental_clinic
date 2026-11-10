@@ -1637,48 +1637,81 @@ async function handleDoctorGoogleSignIn() {
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = `
-                <svg width="20" height="20" viewBox="0 0 48 48">
+                <svg width="22" height="22" viewBox="0 0 48 48">
                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                     <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
                     <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                     <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
                 </svg>
-                Sign in with Google (Doctor Login)
+                <span>Sign in with Gmail</span>
             `;
         }
     }
 }
 
-function loginStaffAsDoctor(user) {
+async function loginStaffAsDoctor(user) {
+    const userEmail = (user.email || '').toLowerCase().trim();
+    let role = 'doctor';
+    let staffName = user.displayName || 'Clinical Specialist';
+    let mobile = user.phoneNumber || '';
+
+    // Check if user is SuperAdmin by email
+    if (userEmail === 'abdulqadir.galaxy53@gmail.com') {
+        role = 'super_admin';
+        sessionStorage.setItem('isSuperAdmin', 'true');
+    } else if (window.dbAPI && window.dbAPI.db && window.dbAPI.tenantId) {
+        // Check if user has an assigned staff role in this clinic's staff database
+        try {
+            const staffDoc = await window.dbAPI.getCollection('staff').doc(userEmail).get();
+            if (staffDoc && staffDoc.exists) {
+                const sData = staffDoc.data();
+                if (sData.role) role = sData.role.toLowerCase();
+                if (sData.name) staffName = sData.name;
+                if (sData.mobile || sData.phone) mobile = sData.mobile || sData.phone;
+            }
+        } catch (e) {
+            console.warn('Could not query staff role from DB:', e);
+        }
+    }
+
     const staffData = {
-        name: user.displayName || 'Doctor',
-        email: user.email,
-        role: 'doctor',
+        name: staffName,
+        email: userEmail,
+        role: role,
+        mobile: mobile,
         photoURL: user.photoURL || ''
     };
     sessionStorage.setItem('staffLoggedIn', 'true');
     sessionStorage.setItem('staffUser', JSON.stringify(staffData));
+    if (typeof checkSuperAdminUI === 'function') checkSuperAdminUI();
 
+    const activeTenant = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : (localStorage.getItem('activeTenantId') || 'default');
+    const clinicName = window.currentClinicSettings?.clinic_name || window.currentClinicSettings?.name || 'Clinic';
+    const roleTitle = role === 'super_admin' ? 'Super Admin' : (role === 'doctor' ? 'Doctor' : (role.charAt(0).toUpperCase() + role.slice(1)));
+
+    // Strict Tenant-Wise IST Login History Logging
     if (window.dbAPI && typeof window.dbAPI.logAdminLogin === 'function') {
-        window.dbAPI.logAdminLogin(user.email, {
-            name: user.displayName || 'Doctor',
-            email: user.email,
-            role: 'Doctor',
-            type: 'Google Staff Login',
-            status: 'SUCCESS (Doctor Google Auth)',
-            tenant_id: window.dbAPI.tenantId || 'default',
-            clinic: window.currentClinicSettings?.clinic_name || 'Clinic'
+        await window.dbAPI.logAdminLogin(userEmail, {
+            name: staffName,
+            email: userEmail,
+            mobile: mobile,
+            role: roleTitle,
+            type: 'Google (Gmail) Clinical Portal Login',
+            status: 'SUCCESS (Gmail Auth)',
+            tenant_id: activeTenant,
+            clinic_slug: activeTenant,
+            clinic: clinicName
         });
     }
 
     if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
-        window.dbAPI.trackRouteVisit('auth:doctor_google_login');
+        window.dbAPI.trackRouteVisit('auth:clinical_portal_gmail_login');
     }
 
     if (typeof closeLoginModal === 'function') closeLoginModal();
     if (typeof showSection === 'function') showSection('dashboard');
     if (typeof refreshDashboard === 'function') refreshDashboard();
-    if (typeof switchActiveStaffRole === 'function') switchActiveStaffRole('doctor');
+    if (typeof switchActiveStaffRole === 'function') switchActiveStaffRole(role);
 }
 
 async function handleFirstTimeGoogleSignIn() {
@@ -2360,27 +2393,31 @@ async function checkForAppDeploymentUpdate() {
 async function openSecurityLogsModal() {
     document.getElementById('securityLogsModal').style.display = 'flex';
     const tbody = document.getElementById('securityLogsTableBody');
-    tbody.innerHTML = '<tr><td colspan="3" style="padding: 20px; text-align: center; color: var(--text-muted);">Loading logs...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">Loading logs...</td></tr>';
     
     try {
         const logs = await window.dbAPI.getAdminLoginHistory();
         if (!logs || logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" style="padding: 20px; text-align: center; color: var(--text-muted);">No login history found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">No login history found for this clinic tenant.</td></tr>';
             return;
         }
         
         tbody.innerHTML = logs.map(log => {
-            const date = new Date(log.timestamp).toLocaleString();
+            const istDateStr = log.ist_timestamp || (log.dateStr ? `${log.dateStr} ${log.timeStr || ''}` : new Date(log.timestamp).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST');
+            const userName = log.name || log.actor || 'User';
+            const userEmail = log.email || '-';
+            const roleBadge = log.role || log.type || 'Staff';
             return `
             <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem;">${date}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem; font-weight: 600; white-space: nowrap;">${istDateStr}</td>
                 <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem;"><span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${log.ipAddress || 'Unknown'}</span></td>
-                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem;">${log.email}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem;"><strong>${userName}</strong><br><span style="font-size: 0.75rem; color: #64748B;">${userEmail}</span></td>
+                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem;"><span style="background: #CCFBF1; color: #0D9488; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem;">${roleBadge}</span></td>
             </tr>
             `;
         }).join('');
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="3" style="padding: 20px; text-align: center; color: var(--danger);">Failed to load logs.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--danger);">Failed to load logs.</td></tr>';
         console.error(err);
     }
 }

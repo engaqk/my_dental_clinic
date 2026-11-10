@@ -537,7 +537,7 @@ class DatabaseAPI {
         }
     }
 
-    // Log admin login history & visitor access (IP, Timestamp, Name, Mobile, Role/Type)
+    // Log admin login history & visitor access (IP, Timestamp, Name, Mobile, Role/Type) - Strict IST & Tenant Partitioned
     async logAdminLogin(email, extraData = {}) {
         if (typeof email === 'object' && email !== null) {
             extraData = email;
@@ -555,17 +555,25 @@ class DatabaseAPI {
             console.warn('Could not fetch IP address', e);
         }
 
+        // Strict Indian Standard Time (IST, UTC+5:30) date & time generation
         const now = new Date();
-        const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        const istDateOptions = { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' };
+        const istTimeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+        const dateStr = now.toLocaleDateString('en-IN', istDateOptions);
+        const timeStr = now.toLocaleTimeString('en-IN', istTimeOptions) + ' IST';
+        const istFull = `${dateStr}, ${timeStr}`;
+
+        const activeTenant = extraData.tenant_id || extraData.clinic_slug || this.tenantId || localStorage.getItem('activeTenantId') || 'default';
+        const clinicName = extraData.clinic || (window.currentClinicSettings && (window.currentClinicSettings.clinic_name || window.currentClinicSettings.name)) || activeTenant;
         const role = extraData.role || (email === 'superadmin' ? 'super_admin' : 'admin');
         const eventType = extraData.type || (extraData.role === 'Visitor' ? 'Visitor Gate' : 'Staff Login');
         const name = extraData.name || (email === 'superadmin' ? 'Super Admin' : (email ? email.split('@')[0] : 'Admin User'));
 
         const logEntry = {
             id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
-            tenant_id: extraData.tenant_id || this.tenantId,
-            clinic_slug: extraData.clinic_slug || this.tenantId,
+            tenant_id: activeTenant,
+            clinic_slug: activeTenant,
+            clinic: clinicName,
             email: email || extraData.email || 'N/A',
             name: name,
             actor: name,
@@ -573,19 +581,24 @@ class DatabaseAPI {
             role: role,
             category: 'auth',
             type: eventType,
+            status: extraData.status || 'SUCCESS',
             details: `${name} authenticated successfully via ${eventType}`,
             ipAddress: ip,
             device: navigator.userAgent ? (navigator.userAgent.includes('Mobile') ? 'Mobile Device' : 'Desktop Browser') : 'Web Browser',
             dateStr: dateStr,
             timeStr: timeStr,
-            timestamp: now.toISOString()
+            ist_date: dateStr,
+            ist_time: timeStr,
+            ist_timestamp: istFull,
+            timestamp: now.toISOString(),
+            createdAt: now.toISOString()
         };
 
         if (this.useFirebase && this.db) {
             try {
-                // 1. Tenant-scoped login history
+                // 1. Tenant-scoped login history (isolated per tenant partition)
                 await this.getCollection('login_history').add(logEntry);
-                // 2. Global SuperAdmin log collection
+                // 2. Global SuperAdmin log collection (for central security audit)
                 await this.db.collection('superadmin_logs').add(logEntry);
             } catch (err) {
                 console.error('Failed to log admin login to Firestore', err);
@@ -608,8 +621,9 @@ class DatabaseAPI {
     async logActivity(category, type, details, meta = {}) {
         const tenantId = meta.tenantId || meta.tenant_id || this.tenantId || 'default';
         const now = new Date();
-        const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+        const dateStr = now.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
+        const timeStr = now.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST';
+        const istFull = `${dateStr}, ${timeStr}`;
 
         let actor = meta.actor || meta.name || '';
         let role = meta.role || '';
@@ -643,6 +657,9 @@ class DatabaseAPI {
             mobile: mobile,
             dateStr: dateStr,
             timeStr: timeStr,
+            ist_date: dateStr,
+            ist_time: timeStr,
+            ist_timestamp: istFull,
             timestamp: now.toISOString(),
             ipAddress: meta.ipAddress || (window.cachedUserIP || '127.0.0.1'),
             device: meta.device || (navigator.userAgent ? (navigator.userAgent.includes('Mobile') ? 'Mobile Device' : 'Desktop Browser') : 'Web Browser'),
