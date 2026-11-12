@@ -24,11 +24,21 @@ class DatabaseAPI {
             hashId = '';
         }
 
-        const queryId = urlParams.get('c') || urlParams.get('clinic') || '';
+        const queryId = urlParams.get('c') || urlParams.get('clinic') || urlParams.get('tenant') || '';
+        const urlSlug = queryId || pathId || hashId || '';
+        const storedSlug = (sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || '').toLowerCase().trim();
+        const validStored = (storedSlug && storedSlug !== 'default' && storedSlug !== 'null' && storedSlug !== 'undefined') ? storedSlug : '';
 
-        this.tenantId = queryId || pathId || hashId || 'default';
+        // Explicit URL slug always takes precedence; if URL has no slug, persist the existing stored slug across navigation
+        const resolvedSlug = (urlSlug || validStored || 'default').toLowerCase().trim();
+
+        this.tenantId = resolvedSlug;
         this.cacheVersion = '1.0.0';
+        sessionStorage.setItem('activeTenantSlug', this.tenantId);
         localStorage.setItem('activeTenantId', this.tenantId);
+        try {
+            document.cookie = 'clinic_tenant=' + encodeURIComponent(this.tenantId) + '; path=/; max-age=31536000';
+        } catch(e){}
 
         const firebaseConfig = {
             apiKey: "AIzaSyAW9f8YvUDWpTkaJiwjXSaancicOJcKnBk",
@@ -1000,7 +1010,7 @@ class DatabaseAPI {
 
     // Pre-configured Tenant Blueprints
     getTenantBlueprint(tenantId) {
-        const id = (tenantId || this.tenantId || '').toLowerCase();
+        const id = (tenantId || this.tenantId || '').toLowerCase().trim();
         if (id.includes('swastik')) {
             return {
                 clinic_name: 'Swastik Dental Clinic',
@@ -1017,26 +1027,74 @@ class DatabaseAPI {
                 access_pin: '1234'
             };
         }
-        if (id === 'default' || !id) {
+        if (id.includes('smile')) {
             return {
-                clinic_name: 'My Dental Clinic',
-                subtitle: 'Dental & Cosmetic Clinic',
-                primary_color: '#10B981',
-                admin_user: 'admin',
+                clinic_name: 'Smile Dental Clinic',
+                subtitle: 'Advanced Dental & Cosmetic Clinic',
+                primary_color: '#0D9488',
+                admin_user: 'smileadmin',
                 admin_pass: 'admin',
-                doctor_name: 'Dr. Dental Expert (MDS)',
+                doctor_name: 'Dr. Smile Specialist',
                 degrees: 'M.D.S., B.D.S.',
-                address: 'Modern Dental Care Center',
+                address: 'Smile Dental Care Center',
                 phone: '',
                 access_gate_enabled: true,
                 pin_required: false,
                 access_pin: '1234'
             };
         }
-        return null;
+        if (id.includes('sumya')) {
+            return {
+                clinic_name: 'Sumya Dental Clinic',
+                subtitle: 'Comprehensive Dental & Oral Healthcare',
+                primary_color: '#0D9488',
+                admin_user: 'sumyaadmin',
+                admin_pass: 'admin',
+                doctor_name: 'Dr. Sumya Specialist',
+                degrees: 'B.D.S.',
+                address: 'Sumya Dental Practice',
+                phone: '',
+                access_gate_enabled: true,
+                pin_required: false,
+                access_pin: '1234'
+            };
+        }
+        if (id !== 'default' && id) {
+            const words = id.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+            const formatted = words.join(' ');
+            const cName = formatted.toLowerCase().includes('clinic') || formatted.toLowerCase().includes('dental') ? formatted : `${formatted} Dental Clinic`;
+            return {
+                clinic_name: cName,
+                subtitle: 'Advanced Oral Care & Cosmetic Dentistry',
+                primary_color: '#0D9488',
+                admin_user: id.replace(/[^a-z0-9]/g, '') + 'admin',
+                admin_pass: 'admin',
+                doctor_name: `Dr. ${formatted} Specialist`,
+                degrees: 'M.D.S., B.D.S.',
+                address: `${formatted} Practice`,
+                phone: '',
+                access_gate_enabled: true,
+                pin_required: false,
+                access_pin: '1234'
+            };
+        }
+        return {
+            clinic_name: 'My Dental Clinic',
+            subtitle: 'Dental & Cosmetic Clinic',
+            primary_color: '#10B981',
+            admin_user: 'admin',
+            admin_pass: 'admin',
+            doctor_name: 'Dr. Dental Expert (MDS)',
+            degrees: 'M.D.S., B.D.S.',
+            address: 'Modern Dental Care Center',
+            phone: '',
+            access_gate_enabled: true,
+            pin_required: false,
+            access_pin: '1234'
+        };
     }
 
-    // Get App Settings (Tenant-Scoped)
+    // Get App Settings (Authoritative Firestore Persistence with Local Fallback)
     async getSettings() {
         const tenantKey = 'clinicSettings_' + this.tenantId;
         const blueprint = this.getTenantBlueprint(this.tenantId);
@@ -1047,29 +1105,62 @@ class DatabaseAPI {
         }
 
         try {
-            const doc = await this.getCollection('settings').doc('clinic').get();
-            if (doc.exists) {
-                const data = doc.data();
-                localStorage.setItem(tenantKey, JSON.stringify(data));
-                this.currentSettings = data;
-                return data;
+            console.log(`📡 Fetching authoritative settings from Firestore for tenant [${this.tenantId}]...`);
+            
+            // Check both tenant subcollection and root tenant document in Firestore
+            const [subDoc, rootDoc] = await Promise.all([
+                this.getCollection('settings').doc('clinic').get().catch(() => null),
+                this.db.collection('tenants').doc(this.tenantId).get().catch(() => null)
+            ]);
+
+            let mergedData = null;
+
+            if (subDoc && subDoc.exists) {
+                mergedData = { ...blueprint, ...subDoc.data() };
+            }
+            if (rootDoc && rootDoc.exists) {
+                const rData = rootDoc.data();
+                const mappedRoot = {
+                    clinic_name: rData.name || rData.clinic_name,
+                    subtitle: rData.subtitle,
+                    primary_color: rData.primary_color || rData.primaryColor,
+                    doctor_name: rData.doctor_name || rData.subtitle,
+                    access_gate_enabled: rData.access_gate_enabled,
+                    access_pin: rData.access_pin,
+                    admin_user: rData.admin_user,
+                    admin_pass: rData.admin_pass,
+                    ...rData
+                };
+                mergedData = mergedData ? { ...mergedData, ...mappedRoot } : { ...blueprint, ...mappedRoot };
             }
 
-            // Auto-seed preconfigured tenant if not exists in Firestore yet
+            if (mergedData) {
+                localStorage.setItem(tenantKey, JSON.stringify(mergedData));
+                this.currentSettings = mergedData;
+                return mergedData;
+            }
+
+            // Auto-seed preconfigured tenant into Firestore persistent database
             if (blueprint) {
-                console.log(`🌱 Auto-seeding new tenant settings for: ${this.tenantId}`);
-                await this.getCollection('settings').doc('clinic').set(blueprint, { merge: true });
-                await this.db.collection('tenants').doc(this.tenantId).set({
-                    name: blueprint.clinic_name,
-                    subtitle: blueprint.subtitle,
-                    createdAt: new Date().toISOString()
-                }, { merge: true });
-                await this.getCollection('staff').doc(blueprint.admin_user).set({
-                    name: blueprint.doctor_name || blueprint.clinic_name,
-                    email: blueprint.admin_user,
-                    password: blueprint.admin_pass,
-                    role: 'admin'
-                }, { merge: true });
+                console.log(`🌱 Auto-seeding persistent tenant in Firestore: ${this.tenantId}`);
+                await Promise.all([
+                    this.getCollection('settings').doc('clinic').set(blueprint, { merge: true }),
+                    this.db.collection('tenants').doc(this.tenantId).set({
+                        name: blueprint.clinic_name,
+                        subtitle: blueprint.subtitle,
+                        primary_color: blueprint.primary_color,
+                        doctor_name: blueprint.doctor_name,
+                        access_gate_enabled: blueprint.access_gate_enabled,
+                        access_pin: blueprint.access_pin,
+                        createdAt: new Date().toISOString()
+                    }, { merge: true }),
+                    this.getCollection('staff').doc(blueprint.admin_user).set({
+                        name: blueprint.doctor_name || blueprint.clinic_name,
+                        email: blueprint.admin_user,
+                        password: blueprint.admin_pass,
+                        role: 'admin'
+                    }, { merge: true })
+                ]);
                 localStorage.setItem(tenantKey, JSON.stringify(blueprint));
                 this.currentSettings = blueprint;
                 return blueprint;
@@ -1079,10 +1170,30 @@ class DatabaseAPI {
             this.currentSettings = fallback;
             return fallback;
         } catch (error) {
-            console.error('Error fetching settings (using local fallback):', error);
+            console.error('Error fetching settings from Firestore (using local fallback):', error);
             const cached = JSON.parse(localStorage.getItem(tenantKey) || 'null') || blueprint || {};
             this.currentSettings = cached;
             return cached;
+        }
+    }
+
+    // Real-time Firestore Tenant Settings Listener
+    listenToTenantSettings(callback) {
+        if (!this.db || !this.useFirebase) return () => {};
+        try {
+            return this.getCollection('settings').doc('clinic').onSnapshot((doc) => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const tenantKey = 'clinicSettings_' + this.tenantId;
+                    localStorage.setItem(tenantKey, JSON.stringify(data));
+                    this.currentSettings = data;
+                    if (typeof callback === 'function') {
+                        callback(data);
+                    }
+                }
+            }, err => console.log('Firestore settings listener notice:', err.message));
+        } catch(e) {
+            return () => {};
         }
     }
 

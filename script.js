@@ -1040,7 +1040,10 @@ async function generateBill(appJson) {
 
 function sendWhatsApp(appJson) {
     const app = JSON.parse(decodeURIComponent(appJson));
-    const msg = encodeURIComponent(`Hello ${app.name}, reminder for your visit on ${app.appointmentDate} at ${app.appointmentTime}.`);
+    const clinicName = window.currentClinicSettings?.clinic_name || window.currentClinicSettings?.name || 'Clinic';
+    const activeTenant = (window.dbAPI && window.dbAPI.tenantId && window.dbAPI.tenantId !== 'default') ? window.dbAPI.tenantId : (sessionStorage.getItem('activeTenantSlug') || '');
+    const appLink = window.location.origin + (activeTenant ? '/?c=' + encodeURIComponent(activeTenant) : '/');
+    const msg = encodeURIComponent(`Hello ${app.name}, reminder for your appointment at ${clinicName} on ${app.appointmentDate || app.date} at ${app.appointmentTime || 'Selected Slot'}.\n\nAccess Clinic App & Records:\n${appLink}`);
     const waNum = formatWhatsAppNumber(app.mobile);
     window.open(`https://wa.me/${waNum}?text=${msg}`, '_blank');
 }
@@ -1100,7 +1103,27 @@ function initQRCode() {
     if (container) { container.innerHTML = ""; new QRCode(container, { text: window.location.origin, width: 256, height: 256 }); }
 }
 
-function logout() { sessionStorage.clear(); window.location.reload(); }
+async function logout() {
+    try {
+        if (window.dbAPI && typeof window.dbAPI.signOut === 'function') {
+            await window.dbAPI.signOut();
+        }
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            await firebase.auth().signOut().catch(() => {});
+        }
+    } catch(e) {
+        console.warn('Logout signOut warning:', e);
+    }
+    const curTenant = sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || '';
+    sessionStorage.clear();
+    localStorage.removeItem('clinic_current_user');
+    if (curTenant && curTenant !== 'default') {
+        sessionStorage.setItem('activeTenantSlug', curTenant);
+        localStorage.setItem('activeTenantId', curTenant);
+    }
+    window.location.reload();
+}
+window.logout = logout;
 function closeProfileModal() { document.body.classList.remove('profile-modal-open'); document.getElementById('patientProfileModal').style.display = 'none'; refreshDashboard(); }
 function closeBookingModal() { document.getElementById('bookingModal').style.display = 'none'; }
 
@@ -1684,6 +1707,7 @@ async function loginStaffAsDoctor(user) {
     sessionStorage.setItem('staffLoggedIn', 'true');
     sessionStorage.setItem('staffUser', JSON.stringify(staffData));
     if (typeof checkSuperAdminUI === 'function') checkSuperAdminUI();
+    if (typeof checkSuperAdmin === 'function') checkSuperAdmin();
 
     const activeTenant = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : (localStorage.getItem('activeTenantId') || 'default');
     const clinicName = window.currentClinicSettings?.clinic_name || window.currentClinicSettings?.name || 'Clinic';
@@ -2014,10 +2038,26 @@ function loadClinicSettings() {
     if (!window.dbAPI) return;
     window.dbAPI.getSettings().then(settings => {
         window.currentClinicSettings = settings || {};
-        const clinicName = settings.clinic_name || settings.name || 'MY DENTAL CLINIC';
+        
+        const curTenant = (window.dbAPI.tenantId || sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || 'default').toLowerCase().trim();
+        const isSlugTenant = curTenant && curTenant !== 'default';
+
+        let clinicName = settings.clinic_name || settings.name;
+        if (!clinicName) {
+            if (curTenant.includes('smile')) clinicName = 'Smile Dental Clinic';
+            else if (curTenant.includes('swastik')) clinicName = 'Swastik Dental Clinic';
+            else if (curTenant.includes('sumya')) clinicName = 'Sumya Dental Clinic';
+            else if (isSlugTenant) {
+                const words = curTenant.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+                clinicName = words.join(' ') + ' Dental Clinic';
+            } else {
+                clinicName = 'MY DENTAL CLINIC';
+            }
+        }
+
         const subtitle = settings.subtitle || 'Dental & Cosmetic Clinic';
-        const doctorName = settings.doctor_name || clinicName;
-        const themeColor = settings.primary_color || settings.primaryColor || '#0D9488';
+        const doctorName = settings.doctor_name || (isSlugTenant ? `Dr. ${clinicName.replace(/Dental\s*Clinic/i, '').trim()} Specialist` : 'Clinic Specialist');
+        const themeColor = settings.primary_color || settings.primaryColor || (isSlugTenant ? '#0D9488' : '#10B981');
         const monogram = getClinicMonogram(clinicName);
 
         // Update all text elements
@@ -2078,6 +2118,34 @@ function loadClinicSettings() {
         populateSettingsForm(settings);
         checkFirstTimeAccessGate(settings);
         checkVipStartupModal();
+
+        // Ensure URL routing preserves the tenant slug across navigation without reloading
+        if (isSlugTenant) {
+            try {
+                const curUrl = new URL(window.location.href);
+                if (!curUrl.pathname.includes(curTenant) && curUrl.searchParams.get('c') !== curTenant) {
+                    curUrl.searchParams.set('c', curTenant);
+                    window.history.replaceState({ tenant: curTenant }, '', curUrl.toString());
+                }
+            } catch(e){}
+        }
+
+        // Attach real-time Firestore settings listener (persists live database updates across all sessions)
+        if (!window.__tenantSettingsListenerAttached && window.dbAPI && typeof window.dbAPI.listenToTenantSettings === 'function') {
+            window.__tenantSettingsListenerAttached = true;
+            window.dbAPI.listenToTenantSettings((liveSettings) => {
+                if (liveSettings) {
+                    console.log('⚡ Realtime Firestore settings push applied for tenant:', curTenant);
+                    window.currentClinicSettings = liveSettings;
+                    const cName = liveSettings.clinic_name || liveSettings.name || clinicName;
+                    const cDoc = liveSettings.doctor_name || doctorName;
+                    const cColor = liveSettings.primary_color || liveSettings.primaryColor || themeColor;
+                    const cMono = getClinicMonogram(cName);
+                    applyTenantTheme(cColor, cMono);
+                    document.title = `${cName} | ${cDoc}`;
+                }
+            });
+        }
     }).catch(err => {
         console.warn('loadClinicSettings error:', err);
     });
@@ -2088,19 +2156,30 @@ function checkSuperAdmin() {
     const logsBtn = document.getElementById('securityLogsBtn');
     const fields = document.getElementById('superAdminFields');
     const logoutNav = document.getElementById('logout-nav-item');
+    const headerLogout = document.getElementById('headerLogoutBtn');
+    const modalDeskLogout = document.getElementById('modalDeskLogoutBtn');
     const userStr = sessionStorage.getItem('staffUser');
     const user = userStr ? JSON.parse(userStr) : null;
+    const isStaff = !!(user || sessionStorage.getItem('staffLoggedIn') === 'true');
 
     if (user && (user.role === 'super_admin' || user.role === 'admin' || user.email === 'abdulqadir.galaxy53@gmail.com')) {
         if (btn) btn.style.display = 'inline-block';
         if (logsBtn) logsBtn.style.display = 'inline-block';
         if (fields) fields.style.display = 'block';
-        if (logoutNav) logoutNav.style.display = 'block';
     } else {
         if (btn) btn.style.display = 'none';
         if (logsBtn) logsBtn.style.display = 'none';
         if (fields) fields.style.display = 'none';
+    }
+
+    if (isStaff) {
+        if (logoutNav) logoutNav.style.display = 'block';
+        if (headerLogout) headerLogout.style.display = 'inline-flex';
+        if (modalDeskLogout) modalDeskLogout.style.display = 'inline-flex';
+    } else {
         if (logoutNav) logoutNav.style.display = 'none';
+        if (headerLogout) headerLogout.style.display = 'none';
+        if (modalDeskLogout) modalDeskLogout.style.display = 'none';
     }
 }
 window.checkSuperAdmin = checkSuperAdmin;
@@ -2311,8 +2390,40 @@ if ('serviceWorker' in navigator) {
 
         // Check version once on initial launch
         checkForAppDeploymentUpdate();
-        // Periodic version check every 5 minutes
-        setInterval(checkForAppDeploymentUpdate, 5 * 60 * 1000);
+        // Periodic version check every 20 seconds
+        setInterval(checkForAppDeploymentUpdate, 20 * 1000);
+        // Instant check when user switches back to the tab or unminimizes PWA
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                checkForAppDeploymentUpdate();
+            }
+        });
+        // Real-time Firestore version snapshot listener
+        try {
+            if (window.firebase && window.firebase.firestore) {
+                window.firebase.firestore().collection('system').doc('app_version').onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (data && data.build) {
+                            const bStr = String(data.build);
+                            const curB = localStorage.getItem('app_installed_build_version');
+                            if (curB && curB !== bStr && sessionStorage.getItem('app_reloaded_for_build') !== bStr) {
+                                console.log('⚡ Realtime deployment broadcast received:', bStr);
+                                localStorage.setItem('app_installed_build_version', bStr);
+                                sessionStorage.setItem('app_reloaded_for_build', bStr);
+                                if ('caches' in window) {
+                                    caches.keys().then(k => Promise.all(k.map(c => caches.delete(c)))).finally(() => {
+                                        window.location.reload();
+                                    });
+                                } else {
+                                    window.location.reload();
+                                }
+                            }
+                        }
+                    }
+                }, () => {});
+            }
+        } catch(e) {}
     });
 
     // Auto-refresh ONLY when controller changes from an EXISTING older worker to a newer worker
@@ -4319,8 +4430,10 @@ function shareRxWhatsApp() {
         msg += `📝 *Note:* ${notes}\n`;
     }
 
+    const activeTenant = (window.dbAPI && window.dbAPI.tenantId && window.dbAPI.tenantId !== 'default') ? window.dbAPI.tenantId : (sessionStorage.getItem('activeTenantSlug') || '');
+    const appLink = window.location.origin + (activeTenant ? '/?c=' + encodeURIComponent(activeTenant) : '/');
     msg += `---------------------------\n`;
-    msg += `✨ *Developed by proconixsoftware.vercel.app*`;
+    msg += `📲 *Clinic Portal & Prescription:*\n${appLink}`;
 
     const cleanMobile = (activePatient.mobile || '').replace(/[^0-9]/g, '');
     const url = `https://wa.me/${cleanMobile}?text=${encodeURIComponent(msg)}`;
@@ -4386,8 +4499,9 @@ function reprintRxPDF(rxJson) {
 function reprintRxWhatsApp(rxJson) {
     try {
         const rx = JSON.parse(decodeURIComponent(rxJson));
+        const clinicTitle = (window.currentClinicSettings?.clinic_name || document.getElementById('mainClinicName')?.innerText || 'MY DENTAL CLINIC').toUpperCase();
         let msg = `💊 *DENTAL PRESCRIPTION (Rx)*\n`;
-        msg += `🏥 *MY DENTAL CLINIC*\n`;
+        msg += `🏥 *${clinicTitle}*\n`;
         msg += `👤 *Patient:* ${rx.patientName}\n`;
         msg += `📅 *Date:* ${rx.date}\n`;
         msg += `---------------------------\n`;
@@ -4399,7 +4513,10 @@ function reprintRxWhatsApp(rxJson) {
             msg += `---------------------------\n*ADVICE:*\n`;
             rx.advice.forEach(a => msg += `• ${a}\n`);
         }
-        msg += `---------------------------\n✨ *Developed by proconixsoftware.vercel.app*`;
+        const activeTenant = (window.dbAPI && window.dbAPI.tenantId && window.dbAPI.tenantId !== 'default') ? window.dbAPI.tenantId : (sessionStorage.getItem('activeTenantSlug') || '');
+        const appLink = window.location.origin + (activeTenant ? '/?c=' + encodeURIComponent(activeTenant) : '/');
+        msg += `---------------------------\n`;
+        msg += `📲 *Clinic Portal & Prescription:*\n${appLink}`;
         const cleanMobile = (rx.patientMobile || '').replace(/[^0-9]/g, '');
         window.open(`https://wa.me/${cleanMobile}?text=${encodeURIComponent(msg)}`, '_blank');
     } catch (e) {
@@ -4785,7 +4902,9 @@ function shareTreatmentPlanWhatsApp() {
     msg += `*GRAND TOTAL ESTIMATE:* ₹${grandTotal.toLocaleString('en-IN')}\n`;
     msg += `---------------------------\n`;
     msg += `_Note: Flexible milestone payments available._\n`;
-    msg += `✨ *Developed by proconixsoftware.vercel.app*`;
+    const activeTenant = (window.dbAPI && window.dbAPI.tenantId && window.dbAPI.tenantId !== 'default') ? window.dbAPI.tenantId : (sessionStorage.getItem('activeTenantSlug') || '');
+    const appLink = window.location.origin + (activeTenant ? '/?c=' + encodeURIComponent(activeTenant) : '/');
+    msg += `📲 *Clinic Portal & Treatment Estimate:*\n${appLink}`;
 
     const cleanMobile = (activePatient.mobile || '').replace(/[^0-9]/g, '');
     const url = `https://wa.me/${cleanMobile}?text=${encodeURIComponent(msg)}`;
@@ -4871,7 +4990,9 @@ function reprintTreatmentPlanWhatsApp(planJson) {
         }
         msg += `*GRAND TOTAL ESTIMATE:* ₹${(plan.grandTotal || 0).toLocaleString('en-IN')}\n`;
         msg += `---------------------------\n`;
-        msg += `✨ *Developed by proconixsoftware.vercel.app*`;
+        const activeTenant = (window.dbAPI && window.dbAPI.tenantId && window.dbAPI.tenantId !== 'default') ? window.dbAPI.tenantId : (sessionStorage.getItem('activeTenantSlug') || '');
+    const appLink = window.location.origin + (activeTenant ? '/?c=' + encodeURIComponent(activeTenant) : '/');
+    msg += `📲 *Clinic Portal & Treatment Estimate:*\n${appLink}`;
         const cleanMobile = (plan.patientMobile || '').replace(/[^0-9]/g, '');
         window.open(`https://wa.me/${cleanMobile}?text=${encodeURIComponent(msg)}`, '_blank');
     } catch (e) {

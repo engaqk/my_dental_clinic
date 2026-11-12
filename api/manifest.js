@@ -38,6 +38,10 @@ module.exports = (req, res) => {
         clinicName = 'Sumya Dental Clinic';
         subtitle = 'Comprehensive Dental & Oral Healthcare';
         primaryColor = '#0D9488';
+    } else if (tenantId.includes('smile')) {
+        clinicName = 'Smile Dental Clinic';
+        subtitle = 'Advanced Dental & Cosmetic Clinic';
+        primaryColor = '#0D9488';
     } else if (!isDefault) {
         const words = tenantId.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
         const formatted = words.join(' ');
@@ -60,6 +64,24 @@ module.exports = (req, res) => {
         description: `${clinicName} - ${subtitle}`,
         categories: ["medical", "health", "business"],
         icons: [
+            {
+                src: `/api/tenant-icon?c=${tenantId}&size=192&format=png`,
+                sizes: "192x192",
+                type: "image/png",
+                purpose: "any"
+            },
+            {
+                src: `/api/tenant-icon?c=${tenantId}&size=512&format=png`,
+                sizes: "512x512",
+                type: "image/png",
+                purpose: "any"
+            },
+            {
+                src: `/api/tenant-icon?c=${tenantId}&size=512&format=png`,
+                sizes: "512x512",
+                type: "image/png",
+                purpose: "maskable"
+            },
             {
                 src: `/api/tenant-icon?c=${tenantId}&size=192`,
                 sizes: "192x192",

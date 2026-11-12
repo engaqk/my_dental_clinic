@@ -254,9 +254,25 @@ function checkAuth() {
 // Logout function
 async function logout() {
     if (confirm('Are you sure you want to end your clinical session?')) {
-        if (window.dbAPI && window.dbAPI.signOut) await window.dbAPI.signOut();
+        const activeSlug = sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || '';
+        try {
+            if (window.firebase && window.firebase.auth) {
+                await window.firebase.auth().signOut();
+            }
+            if (window.dbAPI && window.dbAPI.signOut) {
+                await window.dbAPI.signOut();
+            }
+        } catch(e) {
+            console.warn('Signout error:', e);
+        }
         sessionStorage.clear();
-        window.location.reload();
+        if (activeSlug && activeSlug !== 'default') {
+            sessionStorage.setItem('activeTenantSlug', activeSlug);
+            localStorage.setItem('activeTenantId', activeSlug);
+            window.location.href = window.location.origin + '/?c=' + encodeURIComponent(activeSlug);
+        } else {
+            window.location.reload();
+        }
     }
 }
 

@@ -6,9 +6,9 @@
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/manifest.webmanifest", "destination": "/api/manifest" },
-    { "source": "/favicon.ico", "destination": "/api/tenant-icon?size=64" },
-    { "source": "/favicon.png", "destination": "/api/tenant-icon?size=64" },
-    { "source": "/app-icon.png", "destination": "/api/tenant-icon?size=512" },
+    { "source": "/favicon.ico", "destination": "/api/tenant-icon?size=64&format=png" },
+    { "source": "/favicon.png", "destination": "/api/tenant-icon?size=64&format=png" },
+    { "source": "/app-icon.png", "destination": "/api/tenant-icon?size=512&format=png" },
     { "source": "/superadmin", "destination": "/superadmin.html" },
     { "source": "/:slug([a-z0-9-]+)", "destination": "/?c=:slug" }
   ],
@@ -20,7 +20,7 @@
       ]
     },
     {
-      "source": "/(sw.js|manifest.webmanifest)",
+      "source": "/(sw.js|manifest.webmanifest|version.json)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]

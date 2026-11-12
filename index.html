@@ -13,8 +13,12 @@
                 const p = window.location.pathname.replace(/^\/+|\/+$/g, '');
                 const segs = p ? p.split('/') : [];
                 const last = segs[segs.length - 1];
-                const q = new URLSearchParams(window.location.search).get('c');
-                const tid = q || (last && !last.includes('.') && last !== 'api' && last !== 'superadmin' ? last : 'default');
+                const q = new URLSearchParams(window.location.search).get('c') || new URLSearchParams(window.location.search).get('clinic') || new URLSearchParams(window.location.search).get('tenant');
+                const urlSlug = q || (last && !last.includes('.') && last !== 'api' && last !== 'superadmin' ? last : '');
+                const storedSlug = sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || '';
+                const tid = (urlSlug || (storedSlug && storedSlug !== 'default' ? storedSlug : 'default')).toLowerCase().trim();
+                sessionStorage.setItem('activeTenantSlug', tid);
+                localStorage.setItem('activeTenantId', tid);
                 const cached = JSON.parse(localStorage.getItem('clinicSettings_' + tid) || 'null');
                 
                 let clinicName = 'My Dental Clinic';
@@ -33,6 +37,10 @@
                     clinicName = 'Sumya Dental Clinic';
                     color = '#0D9488';
                     doctorName = 'Dr. Sumya Specialist';
+                } else if (tid.includes('smile')) {
+                    clinicName = 'Smile Dental Clinic';
+                    color = '#0D9488';
+                    doctorName = 'Dr. Smile Specialist';
                 } else if (tid !== 'default') {
                     const formatted = tid.split('-').filter(Boolean).map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(); }).join(' ');
                     clinicName = formatted.toLowerCase().includes('clinic') || formatted.toLowerCase().includes('dental') ? formatted : (formatted + ' Dental Clinic');
@@ -65,64 +73,97 @@
                 var favData = 'data:image/svg+xml,' + encodeURIComponent(svgFav);
 
                 // Set dynamic SVG favicon immediately in <head>
-                var lSvg = document.createElement('link');
-                lSvg.id = 'dynamicFaviconSvg';
-                lSvg.rel = 'icon';
-                lSvg.type = 'image/svg+xml';
+                var lSvg = document.getElementById('dynamicFaviconSvg');
+                if (!lSvg) {
+                    lSvg = document.createElement('link');
+                    lSvg.id = 'dynamicFaviconSvg';
+                    lSvg.rel = 'icon';
+                    lSvg.type = 'image/svg+xml';
+                    document.head.appendChild(lSvg);
+                }
                 lSvg.href = favData;
-                document.head.appendChild(lSvg);
 
-                // Instant canvas render for PNG favicon (preferred by Chromium/Edge tab bar)
+                // Instant canvas render for High-DPI PNG favicon (preferred by Chromium/Edge tab bar)
                 try {
                     var c = document.createElement('canvas');
-                    c.width = 64; c.height = 64;
+                    c.width = 128; c.height = 128;
                     var ctx = c.getContext('2d');
                     if (ctx) {
-                        var rad = 16;
-                        var grad = ctx.createLinearGradient(0, 0, 64, 64);
+                        var rad = 32;
+                        var grad = ctx.createLinearGradient(0, 0, 128, 128);
                         grad.addColorStop(0, color);
                         grad.addColorStop(1, darkColor);
                         ctx.fillStyle = grad;
                         ctx.beginPath();
-                        ctx.moveTo(rad, 0); ctx.lineTo(64 - rad, 0); ctx.quadraticCurveTo(64, 0, 64, rad);
-                        ctx.lineTo(64, 64 - rad); ctx.quadraticCurveTo(64, 64, 64 - rad, 64);
-                        ctx.lineTo(rad, 64); ctx.quadraticCurveTo(0, 64, 0, 64 - rad);
+                        ctx.moveTo(rad, 0); ctx.lineTo(128 - rad, 0); ctx.quadraticCurveTo(128, 0, 128, rad);
+                        ctx.lineTo(128, 128 - rad); ctx.quadraticCurveTo(128, 128, 128 - rad, 128);
+                        ctx.lineTo(rad, 128); ctx.quadraticCurveTo(0, 128, 0, 128 - rad);
                         ctx.lineTo(0, rad); ctx.quadraticCurveTo(0, 0, rad, 0);
                         ctx.closePath();
                         ctx.fill();
 
-                        ctx.fillStyle = 'rgba(255, 255, 255, 0.12)';
+                        // Inner border highlight
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                        ctx.lineWidth = 4;
+                        ctx.stroke();
+
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.14)';
                         ctx.beginPath();
-                        ctx.arc(32, 32, 24, 0, Math.PI * 2);
+                        ctx.arc(64, 64, 48, 0, Math.PI * 2);
                         ctx.fill();
 
                         ctx.fillStyle = '#FFFFFF';
-                        ctx.font = '900 28px -apple-system, BlinkMacSystemFont, Outfit, Segoe UI, sans-serif';
+                        ctx.font = '900 56px -apple-system, BlinkMacSystemFont, Outfit, Segoe UI, sans-serif';
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'middle';
-                        ctx.fillText(monogram, 32, 34);
+                        ctx.fillText(monogram, 64, 68);
 
                         var pngFav = c.toDataURL('image/png');
-                        var lPng = document.createElement('link');
-                        lPng.id = 'dynamicFaviconPng';
-                        lPng.rel = 'icon';
-                        lPng.type = 'image/png';
-                        lPng.sizes = '64x64';
+                        var lPng = document.getElementById('dynamicFaviconPng');
+                        if (!lPng) {
+                            lPng = document.createElement('link');
+                            lPng.id = 'dynamicFaviconPng';
+                            lPng.rel = 'icon';
+                            lPng.type = 'image/png';
+                            lPng.sizes = '128x128 64x64 32x32';
+                            document.head.appendChild(lPng);
+                        }
                         lPng.href = pngFav;
-                        document.head.appendChild(lPng);
 
-                        var lShort = document.createElement('link');
-                        lShort.id = 'dynamicFaviconShort';
-                        lShort.rel = 'shortcut icon';
+                        var lShort = document.getElementById('dynamicFaviconShort');
+                        if (!lShort) {
+                            lShort = document.createElement('link');
+                            lShort.id = 'dynamicFaviconShort';
+                            lShort.rel = 'shortcut icon';
+                            document.head.appendChild(lShort);
+                        }
                         lShort.href = pngFav;
-                        document.head.appendChild(lShort);
 
-                        var lApple = document.createElement('link');
-                        lApple.id = 'dynamicFaviconApple';
-                        lApple.rel = 'apple-touch-icon';
+                        var lApple = document.getElementById('dynamicFaviconApple');
+                        if (!lApple) {
+                            lApple = document.createElement('link');
+                            lApple.id = 'dynamicFaviconApple';
+                            lApple.rel = 'apple-touch-icon';
+                            document.head.appendChild(lApple);
+                        }
                         lApple.href = pngFav;
-                        document.head.appendChild(lApple);
                     }
+                } catch(e){}
+
+                // Instant OpenGraph dynamic tag updates for message link sharing
+                try {
+                    var fullIconUrl = window.location.origin + '/api/tenant-icon?c=' + encodeURIComponent(tid) + '&size=512&format=png';
+                    ['ogImageMeta', 'ogImageSecureMeta', 'twitterImageMeta', 'imageSrcLink'].forEach(function(mid) {
+                        var m = document.getElementById(mid);
+                        if (m) {
+                            if (m.tagName === 'LINK') m.href = fullIconUrl;
+                            else m.content = fullIconUrl;
+                        }
+                    });
+                    var ogTitle = document.getElementById('ogTitleMeta');
+                    if (ogTitle) ogTitle.content = clinicName + ' | VIP Healthcare Practice';
+                    var twTitle = document.getElementById('twitterTitleMeta');
+                    if (twTitle) twTitle.content = clinicName + ' | VIP Healthcare Practice';
                 } catch(e){}
 
                 // Check VIP Startup modal on first-time load
@@ -155,22 +196,35 @@
             } catch(e){}
         })();
     </script>
-    <link rel="stylesheet" href="style.css?v=46.1">
+    <link rel="stylesheet" href="style.css?v=46.4">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="manifest" href="manifest.webmanifest">
-    <meta name="theme-color" content="#10B981">
-    <link rel="icon" type="image/svg+xml" href="/api/tenant-icon?size=64">
-    <link rel="alternate icon" type="image/png" href="/api/tenant-icon?size=64">
-    <link rel="apple-touch-icon" href="/api/tenant-icon?size=192">
+    <meta name="theme-color" content="#0D9488">
+
+    <!-- Open Graph & Social Sharing Previews (Strict PNG for WhatsApp, iMessage, SMS & Social Bots) -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" id="ogTitleMeta" content="Smile Dental Clinic | VIP Healthcare Practice">
+    <meta property="og:description" id="ogDescMeta" content="Instant chairside appointments, interactive visual odontogram charting, itemized treatment plans &amp; verified digital prescriptions.">
+    <meta property="og:image" id="ogImageMeta" content="/api/tenant-icon?size=512&amp;format=png">
+    <meta property="og:image:secure_url" id="ogImageSecureMeta" content="/api/tenant-icon?size=512&amp;format=png">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" id="twitterTitleMeta" content="Smile Dental Clinic | VIP Healthcare Practice">
+    <meta name="twitter:description" id="twitterDescMeta" content="Instant chairside appointments, interactive visual odontogram charting &amp; verified prescriptions.">
+    <meta name="twitter:image" id="twitterImageMeta" content="/api/tenant-icon?size=512&amp;format=png">
+    <link rel="image_src" id="imageSrcLink" href="/api/tenant-icon?size=512&amp;format=png">
     <script src="translations.js?v=35"></script>
 </head>
 <body>
     <header>
         <div class="container nav-container">
+            <!-- 1. Left: Clinic Monogram & Brand Name -->
             <div class="logo-section" onclick="showSection('home')" style="cursor: pointer;">
                 <!-- Dynamic 2-Character Monogram Badge (Instead of static tooth) -->
                 <div class="clinic-monogram-logo" id="mainClinicLogoBadge" aria-label="Clinic Monogram">
@@ -181,8 +235,23 @@
                     <span id="mainClinicSubtitle">Dental &amp; Cosmetic Clinic</span>
                 </div>
             </div>
+
+            <!-- 2. Center/Main: Navigation Links Menu -->
+            <nav id="mainNav">
+                <ul class="nav-links" id="navLinks">
+                    <li><a href="javascript:void(0)" onclick="showSection('home'); return false;" id="home-nav" class="active">Home</a></li>
+                    <li><a href="javascript:void(0)" onclick="scrollToBooking(); return false;">Book Appointment</a></li>
+                    <li id="patient-nav-item" style="display: none;"><a href="javascript:void(0)" onclick="openPatientProfileView()" style="display: inline-flex; align-items: center; gap: 7px; font-weight: 700; color: var(--primary);"><img id="patientNavAvatar" src="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none;"> <span id="patientNavName">My Profile</span></a></li>
+                    <li id="patient-login-item"><a href="javascript:void(0)" onclick="triggerGoogleSignInPrompt()" style="font-weight: 700; color: #475569;"><i class="fab fa-google" style="color: #4285F4;"></i> Sign In</a></li>
+                    <li id="vip-concierge-nav-item"><a href="javascript:void(0)" onclick="openVipStartupModal(); return false;" style="font-weight: 700; color: #0F172A;"><i class="fas fa-sparkles" style="color: #F59E0B;"></i> Patient Concierge</a></li>
+                    <li id="portal-nav-item"><a href="javascript:void(0)" onclick="showSection('dashboard'); return false;" id="dashboard-nav">Clinical Portal (Admin/Staff)</a></li>
+                    <li id="superadmin-nav-item"><a href="superadmin.html" id="superadmin-nav" onclick="if(window.location.protocol!=='file:'){window.location.href='/superadmin'; return false;} else {window.location.href='superadmin.html'; return false;}" style="color: #8B5CF6; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-crown" style="color: #F59E0B; font-size: 0.95rem;"></i> SuperAdmin</a></li>
+                    <li id="pwa-install-item"><a href="javascript:void(0)" id="pwaInstallBtn" onclick="triggerPWAInstall(); return false;" style="color: var(--primary); font-weight: 800;"><i class="fas fa-download"></i> Install App</a></li>
+                    <li id="logout-nav-item" style="display: none;"><a href="javascript:void(0)" onclick="logout(); return false;" style="color: #DC2626; font-weight: 800;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
+            </nav>
             
-            <!-- Mobile-first Right Controls Group (Guarantees clean 1-row layout) -->
+            <!-- 3. Right: Header Actions (Desk Switcher, Logout, Lang, Mobile Menu Hamburger) -->
             <div class="header-right-actions">
                 <!-- Navbar Role-Based Desk Switcher Trigger (Mobile-responsive, triggers centered modal) -->
                 <button type="button" id="navDeskSwitcherBtn" onclick="openDeskSwitcherModal()" aria-label="Switch Clinical Desk" style="display: inline-flex; align-items: center; gap: 4px; background: #F8FAFC; border: 1.5px solid #CBD5E1; color: #0F172A; font-weight: 800; font-size: 0.76rem; padding: 5px 8px; border-radius: 20px; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 4px rgba(0,0,0,0.05); white-space: nowrap;">
@@ -191,7 +260,12 @@
                     <i class="fas fa-chevron-down" style="font-size: 0.6rem; color: #64748B; margin-left: 1px;"></i>
                 </button>
 
-                <!-- 1-Click PWA App Install Button -->
+                <!-- Quick Header Logout Button (visible when staff/doctor is logged in) -->
+                <button type="button" id="headerLogoutBtn" onclick="logout()" aria-label="End Session" title="Logout" style="display: none; align-items: center; gap: 4px; background: #FEF2F2; border: 1.5px solid #FCA5A5; color: #DC2626; font-weight: 800; font-size: 0.74rem; padding: 5px 9px; border-radius: 20px; cursor: pointer; white-space: nowrap;">
+                    <i class="fas fa-power-off"></i> <span class="hide-on-tiny">Logout</span>
+                </button>
+
+                <!-- 1-Click PWA App Install Button (Mobile Only) -->
                 <button type="button" id="headerPwaInstallBtn" onclick="triggerPWAInstall()" aria-label="Install App" title="Install App to Home Screen" class="nav-install-btn" style="display: inline-flex; align-items: center; gap: 4px; background: var(--primary-light, #CCFBF1); border: 1.5px solid var(--primary, #0D9488); color: var(--primary, #0D9488); font-weight: 800; font-size: 0.74rem; padding: 5px 9px; border-radius: 20px; cursor: pointer; white-space: nowrap;">
                     <i class="fas fa-download"></i> <span class="hide-on-tiny">Install</span>
                 </button>
@@ -209,20 +283,6 @@
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
-
-            <nav id="mainNav">
-                <ul class="nav-links" id="navLinks">
-                    <li><a href="#" onclick="showSection('home')" id="home-nav" class="active">Home</a></li>
-                    <li><a href="#" onclick="scrollToBooking()">Book Appointment</a></li>
-                    <li id="patient-nav-item" style="display: none;"><a href="javascript:void(0)" onclick="openPatientProfileView()" style="display: inline-flex; align-items: center; gap: 7px; font-weight: 700; color: var(--primary);"><img id="patientNavAvatar" src="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none;"> <span id="patientNavName">My Profile</span></a></li>
-                    <li id="patient-login-item"><a href="javascript:void(0)" onclick="triggerGoogleSignInPrompt()" style="font-weight: 700; color: #475569;"><i class="fab fa-google" style="color: #4285F4;"></i> Sign In</a></li>
-                    <li id="vip-concierge-nav-item"><a href="javascript:void(0)" onclick="openVipStartupModal(); return false;" style="font-weight: 700; color: #0F172A;"><i class="fas fa-sparkles" style="color: #F59E0B;"></i> Patient Concierge</a></li>
-                    <li id="portal-nav-item"><a href="#" onclick="showSection('dashboard')" id="dashboard-nav">Clinical Portal (Admin/Staff)</a></li>
-                    <li id="superadmin-nav-item"><a href="superadmin.html" id="superadmin-nav" onclick="if(window.location.protocol!=='file:'){window.location.href='/superadmin'; return false;} else {window.location.href='superadmin.html'; return false;}" style="color: #8B5CF6; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-crown" style="color: #F59E0B; font-size: 0.95rem;"></i> SuperAdmin</a></li>
-                    <li id="pwa-install-item"><a href="javascript:void(0)" id="pwaInstallBtn" onclick="triggerPWAInstall(); return false;" style="color: var(--primary); font-weight: 800;"><i class="fas fa-download"></i> Install App</a></li>
-                    <li id="logout-nav-item" style="display: none;"><a href="#" onclick="logout()" style="color: var(--danger);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                </ul>
-            </nav>
         </div>
     </header>
 
@@ -465,7 +525,7 @@
                         <button id="settingsBtn" onclick="showDashboardTab('settings')" class="btn-primary" style="background: var(--primary-dark); height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Settings"><i class="fas fa-sliders-h"></i> Settings</button>
                         <button id="securityLogsBtn" onclick="openSecurityLogsModal()" class="btn-primary" style="background: #475569; height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Logs"><i class="fas fa-shield-alt"></i> Logs</button>
                         <button id="manageClinicsBtn" onclick="showDashboardTab('superadmin')" class="btn-primary" style="background: #8B5CF6; height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Super Admin"><i class="fas fa-building"></i> Super Admin</button>
-                        <button onclick="logout()" class="btn-primary" style="background: var(--danger); height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Logout"><i class="fas fa-power-off"></i> Exit</button>
+                        <button onclick="logout()" class="btn-primary" style="background: #EF4444; color: #FFFFFF; height: 38px; padding: 0 1rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer;" title="Logout Session"><i class="fas fa-sign-out-alt"></i> Logout</button>
                     </div>
                 </div>
 
@@ -1622,8 +1682,11 @@
             </div>
 
             <!-- Modal Footer -->
-            <div style="display: flex; justify-content: flex-end;">
-                <button type="button" onclick="closeDeskSwitcherModal()" style="padding: 0.6rem 1.25rem; border-radius: 10px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 1rem; margin-top: 0.5rem;">
+                <button type="button" id="modalDeskLogoutBtn" onclick="logout()" style="display: none; align-items: center; gap: 6px; padding: 0.55rem 1rem; border-radius: 10px; border: 1.5px solid #FCA5A5; background: #FEF2F2; color: #DC2626; font-weight: 800; font-size: 0.82rem; cursor: pointer;">
+                    <i class="fas fa-sign-out-alt"></i> Logout Session
+                </button>
+                <button type="button" onclick="closeDeskSwitcherModal()" style="padding: 0.55rem 1.25rem; border-radius: 10px; border: 1px solid #CBD5E1; background: #FFFFFF; color: #475569; font-weight: 700; font-size: 0.85rem; cursor: pointer; margin-left: auto;">
                     Close
                 </button>
             </div>
@@ -1706,11 +1769,11 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=45.8"></script>
-    <script src="auth.js?v=45.8"></script>
-    <script src="emailTemplates.js?v=45.8"></script>
-    <script src="script.js?v=45.8"></script>
-    <script src="premium-features.js?v=45.8"></script>
+    <script src="db-api.js?v=46.4"></script>
+    <script src="auth.js?v=46.4"></script>
+    <script src="emailTemplates.js?v=46.4"></script>
+    <script src="script.js?v=46.4"></script>
+    <script src="premium-features.js?v=46.4"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {
@@ -1876,61 +1939,53 @@
                 <div style="font-size: 0.72rem; color: #64748B; margin-top: 2px; font-weight: 600;">Your VIP Chairside Patient Ecosystem</div>
             </div>
 
-            <!-- 5 Micro Benefit Rows (Ultra-compact, guaranteed zero-scroll) -->
-            <div style="padding: 0.2rem 0.85rem 0.35rem 0.85rem; display: flex; flex-direction: column; gap: 6px; flex-grow: 1; justify-content: space-around;">
+            <!-- Clinical Concierge Benefit Rows (Strict Zero-Scroll Layout) -->
+            <div style="padding: 0.35rem 0.85rem; display: flex; flex-direction: column; gap: 7px; flex-grow: 1; justify-content: space-around;">
                 
-                <!-- Row 1: Teeth Chart (Interactive Smile Mirror) -->
-                <div style="display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #F0FDFA; border: 1px solid #CCFBF1; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #CCFBF1; color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <!-- Row 1: Interactive Visual Charting (Precision Odontogram USP) -->
+                <div style="display: flex; align-items: center; gap: 10px; padding: 7px 11px; background: #F0FDFA; border: 1.5px solid #CCFBF1; border-radius: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #CCFBF1; color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0;">
                         🦷
                     </div>
-                    <div style="text-align: left; line-height: 1.2;">
-                        <div style="font-weight: 800; font-size: 0.78rem; color: #0F172A;">Interactive Smile Mirror</div>
-                        <div style="font-size: 0.67rem; color: #475569;">See what your dentist sees • Visual tooth chart &amp; clarity</div>
+                    <div style="text-align: left; line-height: 1.25; flex: 1;">
+                        <div style="font-weight: 800; font-size: 0.8rem; color: #0F172A; display: flex; align-items: center; justify-content: space-between;">
+                            <span>Interactive Visual Charting</span>
+                            <span style="background: var(--primary, #0D9488); color: white; font-size: 0.58rem; font-weight: 900; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.5px;">USP</span>
+                        </div>
+                        <div style="font-size: 0.69rem; color: #475569; font-weight: 600;">Precision Odontogram &amp; Pediatric Mapping</div>
                     </div>
                 </div>
 
-                <!-- Row 2: Treatment Plans & Milestone Estimates (Zero Surprise Bills) -->
-                <div style="display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #F0F9FF; border: 1px solid #E0F2FE; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <!-- Row 2: Digital Prescriptions & Transparent Cost -->
+                <div style="display: flex; align-items: center; gap: 10px; padding: 7px 11px; background: #F0F9FF; border: 1.5px solid #E0F2FE; border-radius: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0;">
                         📋
                     </div>
-                    <div style="text-align: left; line-height: 1.2;">
-                        <div style="font-weight: 800; font-size: 0.78rem; color: #0F172A;">Zero Surprise Bills</div>
-                        <div style="font-size: 0.67rem; color: #475569;">Upfront milestone care • Transparent procedure estimates</div>
+                    <div style="text-align: left; line-height: 1.25; flex: 1;">
+                        <div style="font-weight: 800; font-size: 0.8rem; color: #0F172A;">Digital Prescriptions &amp; Transparent Cost</div>
+                        <div style="font-size: 0.69rem; color: #475569; font-weight: 600;">Itemized Treatment Plans &amp; Step-by-Step Milestones</div>
                     </div>
                 </div>
 
-                <!-- Row 3: Prescriptions & Safety (Pocket Rx & Allergy Shield) -->
-                <div style="display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #FAF5FF; border: 1px solid #F3E8FF; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
-                        💊
-                    </div>
-                    <div style="text-align: left; line-height: 1.2;">
-                        <div style="font-weight: 800; font-size: 0.78rem; color: #0F172A;">Pocket Rx &amp; Allergy Shield</div>
-                        <div style="font-size: 0.67rem; color: #475569;">24/7 legible prescriptions • Complete medical safety vault</div>
-                    </div>
-                </div>
-
-                <!-- Row 4: Priority Booking & Ledger (Skip Waiting & Instant Receipts) -->
-                <div style="display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #FFFBEB; border: 1px solid #FEF3C7; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <!-- Row 3: Priority Same-Day Scheduling -->
+                <div style="display: flex; align-items: center; gap: 10px; padding: 7px 11px; background: #FAF5FF; border: 1.5px solid #F3E8FF; border-radius: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0;">
                         ⚡
                     </div>
-                    <div style="text-align: left; line-height: 1.2;">
-                        <div style="font-weight: 800; font-size: 0.78rem; color: #0F172A;">Priority Booking &amp; Digital Ledger</div>
-                        <div style="font-size: 0.67rem; color: #475569;">Direct chair reservation in 30s • Real-time invoice receipts</div>
+                    <div style="text-align: left; line-height: 1.25; flex: 1;">
+                        <div style="font-weight: 800; font-size: 0.8rem; color: #0F172A;">Priority Same-Day Scheduling</div>
+                        <div style="font-size: 0.69rem; color: #475569; font-weight: 600;">Instant Confirmation &amp; Direct WhatsApp Support</div>
                     </div>
                 </div>
 
-                <!-- Row 5: Whole Clinic Synergy (Connected Care) -->
-                <div style="display: flex; align-items: center; gap: 10px; padding: 6px 10px; background: #FFF1F2; border: 1px solid #FFE4E6; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #FFE4E6; color: #E11D48; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <!-- Row 4: Connected Clinic Practice & Ledger -->
+                <div style="display: flex; align-items: center; gap: 10px; padding: 7px 11px; background: #FFFBEB; border: 1.5px solid #FEF3C7; border-radius: 12px;">
+                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0;">
                         🏥
                     </div>
-                    <div style="text-align: left; line-height: 1.2;">
-                        <div style="font-weight: 800; font-size: 0.78rem; color: #0F172A;">Connected Clinical Harmony</div>
-                        <div style="font-size: 0.67rem; color: #475569;">Doctor, Compounder &amp; Reception working as one team</div>
+                    <div style="text-align: left; line-height: 1.25; flex: 1;">
+                        <div style="font-weight: 800; font-size: 0.8rem; color: #0F172A;">Connected Practice &amp; Financial Ledger</div>
+                        <div style="font-size: 0.69rem; color: #475569; font-weight: 600;">Doctor, Staff &amp; Reception Working in Total Harmony</div>
                     </div>
                 </div>
 
