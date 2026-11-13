@@ -1236,8 +1236,19 @@ input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback { display:
   overflow-y: auto !important;
   overscroll-behavior-y: contain !important;
   -webkit-overflow-scrolling: touch !important;
-  padding: 1rem 1.25rem !important;
+  padding: 0.35rem 0.85rem 60px 0.85rem !important;
   background: #FFFFFF !important;
+}
+
+/* Zero-gap directly beneath clinical tabs */
+#patientProfileModal .seating-card,
+#patientProfileModal .dashboard-card,
+.profile-modal .seating-card,
+.profile-modal .dashboard-card {
+  margin-top: 0.25rem !important;
+  padding: 0.75rem 0.95rem !important;
+  border-radius: 12px !important;
+  margin-bottom: 0.75rem !important;
 }
 
 .profile-booking-grid {
@@ -1463,8 +1474,8 @@ input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback { display:
   color: var(--secondary);
   border: 1px solid #CBD5E1;
   border-radius: 99px;
-  padding: 0.35rem 0.75rem;
-  font-size: 0.75rem;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s;
@@ -1808,7 +1819,7 @@ body.modal-open .mobile-bottom-nav,
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
         overscroll-behavior-y: contain !important;
-        padding: 0.85rem 0.9rem 90px 0.9rem !important;
+        padding: 0.35rem 0.85rem 60px 0.85rem !important;
         background: #FFFFFF !important;
         box-sizing: border-box !important;
     }
@@ -3009,7 +3020,7 @@ body.modal-open .mobile-bottom-nav,
         overflow-y: auto !important;
         -webkit-overflow-scrolling: touch !important;
         overscroll-behavior-y: contain !important;
-        padding: 0.75rem 0.85rem 90px 0.85rem !important;
+        padding: 0.35rem 0.85rem 60px 0.85rem !important;
     }
     .fdi-chart-card {
         padding: 0.65rem 0.6rem !important;

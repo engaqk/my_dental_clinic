@@ -1188,18 +1188,6 @@
                         </div>
                         </div>
 
-                        <!-- Digital E-Signature Pad -->
-                        <div class="dashboard-card" style="padding: 1.5rem; border-radius: 14px; border: 1px solid #E2E8F0; background: #FFFFFF;">
-                            <h3 style="margin: 0 0 0.5rem 0; color: var(--secondary, #0F172A); font-size: 1.15rem;"><i class="fas fa-file-signature" style="color: var(--primary);"></i> Patient Consent E-Signature Pad</h3>
-                            <p style="color: var(--text-muted); margin-bottom: 1rem; font-size: 0.85rem;">Sign below to record digital patient consent for charted procedures.</p>
-                            <div style="border: 2px dashed #CBD5E1; border-radius: 10px; background: #F8FAFC; margin-bottom: 1rem; position: relative;">
-                                <canvas id="signaturePad" width="400" height="150" style="width: 100%; touch-action: none; cursor: crosshair;"></canvas>
-                            </div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                                <button type="button" class="btn-primary" style="background: #94A3B8; padding: 0.5rem 1rem; font-size: 0.85rem;" onclick="clearSignature()"><i class="fas fa-eraser"></i> Clear</button>
-                                <button type="button" class="btn-primary" style="background: var(--success, #16A34A); padding: 0.5rem 1.25rem; font-size: 0.85rem;" onclick="saveSignature()"><i class="fas fa-check"></i> Save Signature</button>
-                            </div>
-                            <div id="signatureSuccessMessage" style="color: var(--success, #16A34A); font-weight: 800; display: none; margin-top: 0.75rem; text-align: center;"><i class="fas fa-check-circle"></i> Signature Saved Successfully!</div>
                         </div>
                     </div>
                 </div>
@@ -1212,7 +1200,7 @@
                 
                 <!-- Digital Prescription (Rx) Section -->
                 <div id="profilePrescriptionsSection" style="display: none;">
-                    <div class="seating-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0; margin-bottom: 2rem;">
+                    <div class="seating-card" style="background: white; border-radius: 12px; padding: 0.75rem 0.95rem; border: 1px solid #E2E8F0; margin-top: 0; margin-bottom: 0.75rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
                             <h3 style="margin: 0; color: var(--primary); font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
                                 <i class="fas fa-prescription"></i> Write Digital Prescription (Rx)
@@ -1237,28 +1225,30 @@
                         </div>
 
                         <!-- Custom Medicine Input Row -->
-                        <div style="background: var(--bg-soft); padding: 1rem; border-radius: 12px; margin-bottom: 1.25rem; border: 1px solid #E2E8F0;">
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <div style="background: var(--bg-soft); padding: 0.55rem 0.75rem; border-radius: 10px; margin-bottom: 0.65rem; border: 1px solid #E2E8F0;">
+                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr auto; gap: 0.4rem; align-items: flex-end;">
                                 <div>
-                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">MEDICINE NAME</label>
-                                    <input type="text" id="rxDrugName" placeholder="e.g. Cefixime 200mg" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Medicine Name</label>
+                                    <input type="text" id="rxDrugName" placeholder="e.g. Cefixime 200mg" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">FREQUENCY</label>
-                                    <input type="text" id="rxDrugFrequency" placeholder="e.g. 1-0-1 or 1-1-1" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Frequency</label>
+                                    <input type="text" id="rxDrugFrequency" placeholder="1-0-1" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">DURATION</label>
-                                    <input type="text" id="rxDrugDuration" placeholder="e.g. 5 Days" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Duration</label>
+                                    <input type="text" id="rxDrugDuration" placeholder="5 Days" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">INSTRUCTION</label>
-                                    <input type="text" id="rxDrugInstructions" placeholder="e.g. After food" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Instruction</label>
+                                    <input type="text" id="rxDrugInstructions" placeholder="After food" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                                </div>
+                                <div>
+                                    <button type="button" onclick="addCustomRxMedicine()" class="btn-primary" style="background: var(--secondary); height: 32px; font-size: 0.76rem; padding: 0 0.85rem; border-radius: 6px; white-space: nowrap; font-weight: 800;">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
                                 </div>
                             </div>
-                            <button type="button" onclick="addCustomRxMedicine()" class="btn-primary" style="background: var(--secondary); height: 36px; font-size: 0.8rem; padding: 0 1rem;">
-                                <i class="fas fa-plus"></i> Add Medicine
-                            </button>
                         </div>
 
                         <!-- Prescribed Medicines Table -->
@@ -1308,7 +1298,7 @@
                                     <span>Avoid alcohol / smoking</span>
                                 </label>
                             </div>
-                            <textarea id="rxAdditionalNotes" rows="2" placeholder="Additional doctor notes or tooth-specific advice..." style="width: 100%; border-radius: 8px; border: 1px solid #CBD5E1; padding: 0.6rem; font-size: 0.82rem;"></textarea>
+                            <textarea id="rxAdditionalNotes" rows="1" placeholder="Additional doctor notes or tooth-specific advice..." style="width: 100%; height: 32px; min-height: 32px; border-radius: 6px; border: 1px solid #CBD5E1; padding: 4px 8px; font-size: 0.78rem; resize: vertical; box-sizing: border-box;"></textarea>
                         </div>
 
                         <!-- Rx Action Buttons -->
@@ -1338,7 +1328,7 @@
 
                 <!-- Treatment Plan & Cost Quotation Section -->
                 <div id="profileTreatmentPlansSection" style="display: none;">
-                    <div class="seating-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0; margin-bottom: 2rem;">
+                    <div class="seating-card" style="background: white; border-radius: 12px; padding: 0.75rem 0.95rem; border: 1px solid #E2E8F0; margin-top: 0; margin-bottom: 0.75rem;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
                             <h3 style="margin: 0; color: var(--primary); font-size: 1.25rem; display: flex; align-items: center; gap: 0.5rem;">
                                 <i class="fas fa-clipboard-list"></i> Create Treatment Plan &amp; Quotation
@@ -1365,28 +1355,30 @@
                         </div>
 
                         <!-- Add Procedure Form Row -->
-                        <div style="background: var(--bg-soft); padding: 1rem; border-radius: 12px; margin-bottom: 1.25rem; border: 1px solid #E2E8F0;">
-                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 0.5rem; margin-bottom: 0.75rem;">
+                        <div style="background: var(--bg-soft); padding: 0.55rem 0.75rem; border-radius: 10px; margin-bottom: 0.65rem; border: 1px solid #E2E8F0;">
+                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr auto; gap: 0.4rem; align-items: flex-end;">
                                 <div>
-                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">PROCEDURE / TREATMENT</label>
-                                    <input type="text" id="planItemName" placeholder="e.g. Zirconia Crown" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Procedure / Treatment</label>
+                                    <input type="text" id="planItemName" placeholder="e.g. Zirconia Crown" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">TOOTH #</label>
-                                    <input type="text" id="planItemTooth" placeholder="e.g. #16 or Upper" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Tooth #</label>
+                                    <input type="text" id="planItemTooth" placeholder="e.g. #16" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">SITTINGS</label>
-                                    <input type="number" id="planItemSittings" value="1" min="1" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Sittings</label>
+                                    <input type="number" id="planItemSittings" value="1" min="1" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 0.7rem; font-weight: 800; color: var(--text-muted);">EST. COST (₹)</label>
-                                    <input type="number" id="planItemCost" placeholder="0" min="0" style="height: 38px; padding: 0 0.75rem; font-size: 0.85rem; width: 100%;">
+                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Est. Cost (₹)</label>
+                                    <input type="number" id="planItemCost" placeholder="0" min="0" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                                </div>
+                                <div>
+                                    <button type="button" onclick="addCustomPlanItem()" class="btn-primary" style="background: var(--secondary); height: 32px; font-size: 0.76rem; padding: 0 0.85rem; border-radius: 6px; white-space: nowrap; font-weight: 800;">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
                                 </div>
                             </div>
-                            <button type="button" onclick="addCustomPlanItem()" class="btn-primary" style="background: var(--secondary); height: 36px; font-size: 0.8rem; padding: 0 1rem;">
-                                <i class="fas fa-plus"></i> Add Procedure
-                            </button>
                         </div>
 
                         <!-- Planned Procedures Table -->
