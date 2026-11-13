@@ -3254,3 +3254,146 @@ body.modal-open .mobile-bottom-nav,
     pointer-events: none;
     -webkit-user-drag: none;
 }
+
+
+/* ==========================================================================
+   CLINICAL TABS NAVIGATION CONTROLS (SimilimumPro Reference)
+   ========================================================================== */
+.tab-nav-wrapper {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  background: #F8FAFC !important;
+  border-bottom: 1px solid #E2E8F0 !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  z-index: 20 !important;
+}
+
+.profile-modal .tab-nav-wrapper .tab-container,
+#patientProfileModal .tab-nav-wrapper .tab-container,
+.tab-nav-wrapper .tab-container {
+  flex: 1 1 auto !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+  gap: 6px !important;
+  padding: 6px 0.5rem !important;
+  margin: 0 !important;
+  border: none !important;
+  border-bottom: none !important;
+  background: transparent !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch !important;
+  scroll-behavior: smooth !important;
+}
+
+.tab-nav-wrapper .tab-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Left & Right Arrow Buttons */
+.tab-scroll-arrow {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  border-radius: 50% !important;
+  background: #FFFFFF !important;
+  border: 1.5px solid #CBD5E1 !important;
+  color: var(--primary, #0D9488) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  z-index: 25 !important;
+}
+
+.tab-scroll-arrow:hover {
+  background: #F1F5F9 !important;
+  border-color: var(--primary, #0D9488) !important;
+  transform: scale(1.06);
+}
+
+.tab-scroll-arrow:active {
+  transform: scale(0.94);
+}
+
+.tab-scroll-left {
+  margin-left: 6px !important;
+  margin-right: 2px !important;
+}
+
+/* Right Scroll Group with "Scroll →" Pill & Right Chevron */
+.tab-scroll-right-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  flex-shrink: 0 !important;
+  padding-right: 8px !important;
+  padding-left: 4px !important;
+  background: linear-gradient(90deg, rgba(248, 250, 252, 0) 0%, #F8FAFC 25%, #F8FAFC 100%) !important;
+  z-index: 25 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+/* "Scroll →" Pill Button (matches reference image 3) */
+.tab-scroll-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  background: linear-gradient(135deg, #0284C7, #0369A1) !important;
+  color: #FFFFFF !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  padding: 4px 10px !important;
+  border-radius: 99px !important;
+  border: none !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.35) !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  transition: all 0.15s ease !important;
+  letter-spacing: 0.3px !important;
+}
+
+.tab-scroll-pill:hover {
+  filter: brightness(1.1) !important;
+  transform: translateX(1px);
+}
+
+.tab-scroll-pill:active {
+  transform: scale(0.95);
+}
+
+@media (max-width: 480px) {
+  .tab-nav-wrapper {
+    padding: 0 !important;
+  }
+  .tab-nav-wrapper .tab-container {
+    padding: 5px 0.35rem !important;
+    gap: 5px !important;
+  }
+  .tab-scroll-pill {
+    font-size: 0.68rem !important;
+    padding: 3px 8px !important;
+  }
+  .tab-scroll-arrow {
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
+    font-size: 0.68rem !important;
+  }
+}

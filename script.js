@@ -298,6 +298,11 @@ async function openPatientProfile(patient) {
         if (typeof renderPatientMedicalAlerts === 'function') await renderPatientMedicalAlerts(patient.mobile);
         document.body.classList.add('profile-modal-open');
         modal.style.display = 'flex';
+        setTimeout(() => {
+            if (typeof updateClinicalTabsScrollControls === 'function') {
+                updateClinicalTabsScrollControls();
+            }
+        }, 150);
         // Open with Interactive Dental Charting (Clinic USP) as Tab 1
         switchProfileTab('charting');
     }
@@ -358,6 +363,20 @@ function switchProfileTab(tab) {
     if (pContent) pContent.scrollTop = 0;
     const pModal = document.querySelector('#patientProfileModal .modal-content');
     if (pModal) pModal.scrollTop = 0;
+
+    // Smoothly center the active tab button into view and update scroll arrows
+    setTimeout(() => {
+        const container = document.getElementById('clinicalTabsContainer');
+        if (container) {
+            const activeBtn = container.querySelector('.profile-tab-btn.active');
+            if (activeBtn && typeof activeBtn.scrollIntoView === 'function') {
+                activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            }
+            if (typeof updateClinicalTabsScrollControls === 'function') {
+                updateClinicalTabsScrollControls();
+            }
+        }
+    }, 50);
 
     const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
     if (pat && pat.mobile) {
@@ -6428,3 +6447,50 @@ async function loadPatientLabOrders(patient) {
         '</div>';
     }).join('');
 }
+
+
+
+// =============================================================================
+// CLINICAL TABS HORIZONTAL SCROLL CONTROLS (SimilimumPro Reference)
+// =============================================================================
+function scrollClinicalTabs(direction) {
+    const container = document.getElementById('clinicalTabsContainer');
+    if (!container) return;
+    const amount = direction * (window.innerWidth < 480 ? 180 : 260);
+    container.scrollBy({ left: amount, behavior: 'smooth' });
+    setTimeout(updateClinicalTabsScrollControls, 280);
+}
+
+function updateClinicalTabsScrollControls() {
+    const container = document.getElementById('clinicalTabsContainer');
+    const leftBtn = document.getElementById('clinicalTabScrollLeft');
+    const rightGroup = document.getElementById('clinicalTabScrollRightGroup');
+    if (!container) return;
+
+    const scrollLeft = container.scrollLeft;
+    const maxScroll = container.scrollWidth - container.clientWidth;
+
+    if (leftBtn) {
+        leftBtn.style.display = scrollLeft > 15 ? 'inline-flex' : 'none';
+    }
+
+    if (rightGroup) {
+        if (maxScroll <= 15) {
+            rightGroup.style.display = 'none';
+        } else {
+            rightGroup.style.display = 'flex';
+            if (scrollLeft >= maxScroll - 15) {
+                rightGroup.style.opacity = '0.35';
+            } else {
+                rightGroup.style.opacity = '1';
+            }
+        }
+    }
+}
+
+// Hook into resize event to ensure scroll controls stay in sync
+window.addEventListener('resize', () => {
+    if (typeof updateClinicalTabsScrollControls === 'function') {
+        updateClinicalTabsScrollControls();
+    }
+});

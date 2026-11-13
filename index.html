@@ -1083,7 +1083,12 @@
                     </button>
                 </div>
             </div>
-            <div class="tab-container" style="overflow-x: auto; white-space: nowrap; padding-bottom: 4px; margin-bottom: 0 !important; margin-top: 0 !important;">
+            <!-- Clinical Navigation Bar with Smooth Scroll Controls (SimilimumPro Reference) -->
+            <div class="tab-nav-wrapper" id="clinicalTabNavWrapper">
+                <button type="button" class="tab-scroll-arrow tab-scroll-left" id="clinicalTabScrollLeft" onclick="scrollClinicalTabs(-1)" aria-label="Scroll Tabs Left" title="Scroll Left" style="display: none;">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="tab-container" id="clinicalTabsContainer" onscroll="updateClinicalTabsScrollControls()">
                 <button class="profile-tab-btn active" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> Charting</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('prescriptions')"><i class="fas fa-prescription"></i> Digital Rx</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('treatment-plans')"><i class="fas fa-clipboard-list"></i> Treatment Plan</button>
@@ -1097,6 +1102,15 @@
                 <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')"><i class="fas fa-calendar-check"></i> Next Sitting</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('diagnoses')"><i class="fas fa-stethoscope"></i> Diagnosis</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('finances')"><i class="fas fa-rupee-sign"></i> Ledger</button>
+            </div>
+                <div class="tab-scroll-right-group" id="clinicalTabScrollRightGroup">
+                    <button type="button" class="tab-scroll-pill" id="clinicalTabScrollPill" onclick="scrollClinicalTabs(1)" title="Scroll to see more clinical tabs">
+                        <span>Scroll</span> <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button type="button" class="tab-scroll-arrow tab-scroll-right" id="clinicalTabScrollRight" onclick="scrollClinicalTabs(1)" aria-label="Scroll Tabs Right" title="Scroll Right">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
             </div>
             <div class="profile-content">
                 <!-- Visual Interactive Dental Charting & Consent (Clinic USP - Tab 1) -->
