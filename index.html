@@ -196,12 +196,17 @@
             } catch(e){}
         })();
     </script>
-    <link rel="stylesheet" href="style.css?v=47.1">
+    <!-- Preconnect & DNS-Prefetch for Blazing Speed -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet" href="style.css?v=47.5">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#0D9488">
 
@@ -1225,26 +1230,26 @@
                         </div>
 
                         <!-- Custom Medicine Input Row -->
-                        <div style="background: var(--bg-soft); padding: 0.55rem 0.75rem; border-radius: 10px; margin-bottom: 0.65rem; border: 1px solid #E2E8F0;">
-                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr auto; gap: 0.4rem; align-items: flex-end;">
-                                <div>
-                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Medicine Name</label>
-                                    <input type="text" id="rxDrugName" placeholder="e.g. Cefixime 200mg" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                        <div class="rx-form-grid-card" style="background: var(--bg-soft); padding: 0.65rem 0.85rem; border-radius: 10px; margin-bottom: 0.65rem; border: 1px solid #E2E8F0;">
+                            <div class="rx-form-grid">
+                                <div class="field-drug-name">
+                                    <label style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Medicine Name</label>
+                                    <input type="text" id="rxDrugName" placeholder="e.g. Cefixime 200mg" style="height: 36px; padding: 0 0.65rem; font-size: 0.85rem; width: 100%; border-radius: 7px; border: 1px solid #CBD5E1; box-sizing: border-box;">
                                 </div>
-                                <div>
-                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Frequency</label>
-                                    <input type="text" id="rxDrugFrequency" placeholder="1-0-1" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                                <div class="field-drug-freq">
+                                    <label style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Frequency</label>
+                                    <input type="text" id="rxDrugFrequency" placeholder="1-0-1" style="height: 36px; padding: 0 0.65rem; font-size: 0.85rem; width: 100%; border-radius: 7px; border: 1px solid #CBD5E1; box-sizing: border-box;">
                                 </div>
-                                <div>
-                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Duration</label>
-                                    <input type="text" id="rxDrugDuration" placeholder="5 Days" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                                <div class="field-drug-dur">
+                                    <label style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Duration</label>
+                                    <input type="text" id="rxDrugDuration" placeholder="5 Days" style="height: 36px; padding: 0 0.65rem; font-size: 0.85rem; width: 100%; border-radius: 7px; border: 1px solid #CBD5E1; box-sizing: border-box;">
                                 </div>
-                                <div>
-                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Instruction</label>
-                                    <input type="text" id="rxDrugInstructions" placeholder="After food" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                                <div class="field-drug-inst">
+                                    <label style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Instruction</label>
+                                    <input type="text" id="rxDrugInstructions" placeholder="After food" style="height: 36px; padding: 0 0.65rem; font-size: 0.85rem; width: 100%; border-radius: 7px; border: 1px solid #CBD5E1; box-sizing: border-box;">
                                 </div>
-                                <div>
-                                    <button type="button" onclick="addCustomRxMedicine()" class="btn-primary" style="background: var(--secondary); height: 32px; font-size: 0.76rem; padding: 0 0.85rem; border-radius: 6px; white-space: nowrap; font-weight: 800;">
+                                <div class="field-drug-btn">
+                                    <button type="button" onclick="addCustomRxMedicine()" class="btn-primary" style="background: var(--secondary); height: 36px; font-size: 0.82rem; padding: 0 1rem; border-radius: 7px; white-space: nowrap; font-weight: 800; width: 100%; justify-content: center;">
                                         <i class="fas fa-plus"></i> Add
                                     </button>
                                 </div>
@@ -1302,7 +1307,7 @@
                         </div>
 
                         <!-- Rx Action Buttons -->
-                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <div class="rx-action-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <button onclick="saveAndGenerateRxPDF()" class="btn-primary" style="background: var(--primary); font-weight: 800; font-size: 0.88rem; padding: 0.7rem 1.4rem;">
                                 <i class="fas fa-file-pdf"></i> Save &amp; Print Rx PDF
                             </button>
@@ -1355,26 +1360,26 @@
                         </div>
 
                         <!-- Add Procedure Form Row -->
-                        <div style="background: var(--bg-soft); padding: 0.55rem 0.75rem; border-radius: 10px; margin-bottom: 0.65rem; border: 1px solid #E2E8F0;">
-                            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr auto; gap: 0.4rem; align-items: flex-end;">
-                                <div>
-                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Procedure / Treatment</label>
-                                    <input type="text" id="planItemName" placeholder="e.g. Zirconia Crown" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                        <div class="plan-form-grid-card" style="background: var(--bg-soft); padding: 0.65rem 0.85rem; border-radius: 10px; margin-bottom: 0.65rem; border: 1px solid #E2E8F0;">
+                            <div class="plan-form-grid">
+                                <div class="field-plan-name">
+                                    <label style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Procedure / Treatment</label>
+                                    <input type="text" id="planItemName" placeholder="e.g. Zirconia Crown" style="height: 36px; padding: 0 0.65rem; font-size: 0.85rem; width: 100%; border-radius: 7px; border: 1px solid #CBD5E1; box-sizing: border-box;">
                                 </div>
-                                <div>
-                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Tooth #</label>
-                                    <input type="text" id="planItemTooth" placeholder="e.g. #16" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                                <div class="field-plan-tooth">
+                                    <label style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Tooth #</label>
+                                    <input type="text" id="planItemTooth" placeholder="e.g. #16" style="height: 36px; padding: 0 0.65rem; font-size: 0.85rem; width: 100%; border-radius: 7px; border: 1px solid #CBD5E1; box-sizing: border-box;">
                                 </div>
-                                <div>
-                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Sittings</label>
-                                    <input type="number" id="planItemSittings" value="1" min="1" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                                <div class="field-plan-sittings">
+                                    <label style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Sittings</label>
+                                    <input type="number" id="planItemSittings" value="1" min="1" style="height: 36px; padding: 0 0.65rem; font-size: 0.85rem; width: 100%; border-radius: 7px; border: 1px solid #CBD5E1; box-sizing: border-box;">
                                 </div>
-                                <div>
-                                    <label style="font-size: 0.66rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Est. Cost (₹)</label>
-                                    <input type="number" id="planItemCost" placeholder="0" min="0" style="height: 32px; padding: 0 0.6rem; font-size: 0.8rem; width: 100%; border-radius: 6px; border: 1px solid #CBD5E1;">
+                                <div class="field-plan-cost">
+                                    <label style="font-size: 0.68rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Est. Cost (₹)</label>
+                                    <input type="number" id="planItemCost" placeholder="0" min="0" style="height: 36px; padding: 0 0.65rem; font-size: 0.85rem; width: 100%; border-radius: 7px; border: 1px solid #CBD5E1; box-sizing: border-box;">
                                 </div>
-                                <div>
-                                    <button type="button" onclick="addCustomPlanItem()" class="btn-primary" style="background: var(--secondary); height: 32px; font-size: 0.76rem; padding: 0 0.85rem; border-radius: 6px; white-space: nowrap; font-weight: 800;">
+                                <div class="field-plan-btn">
+                                    <button type="button" onclick="addCustomPlanItem()" class="btn-primary" style="background: var(--secondary); height: 36px; font-size: 0.82rem; padding: 0 1rem; border-radius: 7px; white-space: nowrap; font-weight: 800; width: 100%; justify-content: center;">
                                         <i class="fas fa-plus"></i> Add
                                     </button>
                                 </div>
@@ -1427,7 +1432,7 @@
                         </div>
 
                         <!-- Plan Action Buttons -->
-                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                        <div class="plan-action-buttons" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                             <button onclick="saveAndGenerateTreatmentPlanPDF()" class="btn-primary" style="background: var(--primary); font-weight: 800; font-size: 0.88rem; padding: 0.7rem 1.4rem;">
                                 <i class="fas fa-file-pdf"></i> Save &amp; Print Quotation PDF
                             </button>
@@ -2014,11 +2019,11 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=47.1"></script>
-    <script src="auth.js?v=47.1"></script>
-    <script src="emailTemplates.js?v=47.1"></script>
-    <script src="script.js?v=47.1"></script>
-    <script src="premium-features.js?v=47.1"></script>
+    <script src="db-api.js?v=47.5"></script>
+    <script src="auth.js?v=47.5"></script>
+    <script src="emailTemplates.js?v=47.5"></script>
+    <script src="script.js?v=47.5"></script>
+    <script src="premium-features.js?v=47.5"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {

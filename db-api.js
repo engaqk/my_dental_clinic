@@ -1712,6 +1712,7 @@ class DatabaseAPI {
 
     // --- DIGITAL PRESCRIPTIONS (Rx - Tenant Isolated) ---
     async savePrescription(rxData) {
+        this._rxCache = {};
         const payload = {
             ...rxData,
             tenant_id: this.tenantId,
@@ -1745,6 +1746,13 @@ class DatabaseAPI {
     }
 
     async getPrescriptions(mobile) {
+        this._rxCache = this._rxCache || {};
+        const cacheKey = (this.tenantId || 'default') + '_' + (mobile || '');
+        const cached = this._rxCache[cacheKey];
+        if (cached && (Date.now() - cached.timestamp < 30000)) {
+            return cached.data;
+        }
+
         const normMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(mobile) : mobile;
         let results = [];
         try {
@@ -1762,16 +1770,21 @@ class DatabaseAPI {
                         fbResults.push({ id: doc.id, ...data });
                     }
                 });
-                if (fbResults.length > 0) return fbResults;
+                if (fbResults.length > 0) {
+                    this._rxCache[cacheKey] = { data: fbResults, timestamp: Date.now() };
+                    return fbResults;
+                }
             } catch (err) {
                 console.warn('Failed to fetch prescriptions from Firebase:', err);
             }
         }
+        this._rxCache[cacheKey] = { data: results, timestamp: Date.now() };
         return results;
     }
 
     // --- TREATMENT PLANS & COST ESTIMATES (Tenant Isolated) ---
     async saveTreatmentPlan(planData) {
+        this._planCache = {};
         const payload = {
             ...planData,
             tenant_id: this.tenantId,
@@ -1807,6 +1820,13 @@ class DatabaseAPI {
     }
 
     async getTreatmentPlans(mobile) {
+        this._planCache = this._planCache || {};
+        const cacheKey = (this.tenantId || 'default') + '_' + (mobile || '');
+        const cached = this._planCache[cacheKey];
+        if (cached && (Date.now() - cached.timestamp < 30000)) {
+            return cached.data;
+        }
+
         const normMobile = window.phoneUtils ? window.phoneUtils.normalizePhone(mobile) : mobile;
         let results = [];
         try {
@@ -1824,11 +1844,15 @@ class DatabaseAPI {
                         fbResults.push({ id: doc.id, ...data });
                     }
                 });
-                if (fbResults.length > 0) return fbResults;
+                if (fbResults.length > 0) {
+                    this._planCache[cacheKey] = { data: fbResults, timestamp: Date.now() };
+                    return fbResults;
+                }
             } catch (err) {
                 console.warn('Failed to fetch treatment plans from Firebase:', err);
             }
         }
+        this._planCache[cacheKey] = { data: results, timestamp: Date.now() };
         return results;
     }
 

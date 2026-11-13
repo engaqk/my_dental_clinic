@@ -1,10 +1,10 @@
 /**
  * sw.js - Service Worker for Dental Clinic PWA
- * Version: v47.4.0
- * Features: Instant auto-update, Network-First strategy for fresh deployments, offline fallback.
+ * Version: v47.5.0
+ * Features: Instant auto-update, Network-First strategy for deployments, Cache-First for static CDNs, offline fallback.
  */
 
-const CACHE_NAME = 'dental-clinic-v47-4';
+const CACHE_NAME = 'dental-clinic-v47-5';
 
 const ASSETS = [
     './',
@@ -58,12 +58,20 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch: Network-First for HTML and scripts so users ALWAYS receive the latest deployment
+// Fetch: Fast intelligent caching strategy
 self.addEventListener('fetch', (event) => {
     const url = event.request.url;
 
-    // 1. Never intercept non-GET, API calls, or version/icon checks
-    if (event.request.method !== 'GET' || url.includes('/api/') || url.includes('version.json') || url.includes('favicon') || url.includes('app-icon') || url.includes('tenant-icon') || url.includes('identitytoolkit') || url.includes('googleapis.com')) {
+    // 1. Never intercept non-GET, API calls, dynamic auth or version/icon checks
+    if (event.request.method !== 'GET' || 
+        url.includes('/api/') || 
+        url.includes('version.json') || 
+        url.includes('favicon') || 
+        url.includes('app-icon') || 
+        url.includes('tenant-icon') || 
+        url.includes('identitytoolkit') || 
+        url.includes('securetoken') || 
+        url.includes('firestore.googleapis.com')) {
         return;
     }
 
@@ -72,7 +80,27 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 3. Network-First Strategy for Navigation (HTML) and Core JS/CSS
+    // 3. Cache-First for static third-party CDNs (Google Fonts, Font Awesome, jsPDF, Chart.js)
+    if (url.includes('fonts.googleapis.com') || 
+        url.includes('fonts.gstatic.com') || 
+        url.includes('cdnjs.cloudflare.com') || 
+        url.includes('cdn.jsdelivr.net')) {
+        event.respondWith(
+            caches.match(event.request).then(cachedResponse => {
+                if (cachedResponse) return cachedResponse;
+                return fetch(event.request).then(networkResponse => {
+                    if (networkResponse && networkResponse.status === 200) {
+                        const responseClone = networkResponse.clone();
+                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+                    }
+                    return networkResponse;
+                }).catch(() => cachedResponse);
+            })
+        );
+        return;
+    }
+
+    // 4. Network-First Strategy for Navigation (HTML) and Core JS/CSS
     const isNavigation = event.request.mode === 'navigate' || url.endsWith('.html') || url.endsWith('/');
     const isCodeAsset = url.endsWith('.js') || url.endsWith('.css');
 
@@ -97,7 +125,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 4. Stale-While-Revalidate for images & static assets
+    // 5. Stale-While-Revalidate for images & static assets
     event.respondWith(
         caches.match(event.request, { ignoreSearch: true }).then(cachedResponse => {
             const fetchPromise = fetch(event.request).then(networkResponse => {
