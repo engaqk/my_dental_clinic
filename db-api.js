@@ -2289,6 +2289,212 @@ class DatabaseAPI {
             patientMobile: patientMobile
         };
     }
+
+    // =========================================================================
+    // PHASE 2: IN-HOUSE MEMBERSHIP CLUB, RECALL CRM & DENTAL LAB TRACKER
+    // =========================================================================
+
+    // 1. In-House Membership Club Engine
+    async savePatientMembership(membershipData) {
+        const tenantId = this.tenantId || 'default';
+        const cleanMobile = (membershipData.patientMobile || '').replace(/[^0-9]/g, '');
+        const memId = 'mem_' + tenantId + '_' + cleanMobile;
+        const payload = {
+            id: memId,
+            ...membershipData,
+            tenant_id: tenantId,
+            clinic_slug: tenantId,
+            updatedAt: new Date().toISOString()
+        };
+
+        try {
+            const cacheKey = 'membership_' + tenantId + '_' + cleanMobile;
+            localStorage.setItem(cacheKey, JSON.stringify(payload));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection('patient_memberships').doc(memId).set(payload, { merge: true });
+            } catch (err) {
+                console.warn('Failed to save membership to Firestore:', err);
+            }
+        }
+        return payload;
+    }
+
+    async getPatientMembership(mobile) {
+        const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+        const tenantId = this.tenantId || 'default';
+        const cacheKey = 'membership_' + tenantId + '_' + cleanMobile;
+        let localData = null;
+        try {
+            localData = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const memId = 'mem_' + tenantId + '_' + cleanMobile;
+                const docSnap = await this.getCollection('patient_memberships').doc(memId).get();
+                if (docSnap.exists) {
+                    const fbData = docSnap.data();
+                    localStorage.setItem(cacheKey, JSON.stringify(fbData));
+                    return fbData;
+                }
+            } catch(err) {
+                console.warn('Failed to fetch membership from Firestore:', err);
+            }
+        }
+        return localData;
+    }
+
+    // 2. Recall & Retention CRM Sequences
+    async savePatientRecall(recallData) {
+        const tenantId = this.tenantId || 'default';
+        const recallId = 'recall_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+        const payload = {
+            id: recallId,
+            ...recallData,
+            tenant_id: tenantId,
+            clinic_slug: tenantId,
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            const cleanMobile = (recallData.patientMobile || '').replace(/[^0-9]/g, '');
+            const cacheKey = 'recalls_' + tenantId + '_' + cleanMobile;
+            const existing = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+            existing.unshift(payload);
+            localStorage.setItem(cacheKey, JSON.stringify(existing.slice(0, 30)));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection('patient_recalls').doc(recallId).set(payload, { merge: true });
+            } catch (err) {
+                console.warn('Failed to save recall touchpoint to Firestore:', err);
+            }
+        }
+        return payload;
+    }
+
+    async getPatientRecalls(mobile) {
+        const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+        const tenantId = this.tenantId || 'default';
+        const cacheKey = 'recalls_' + tenantId + '_' + cleanMobile;
+        let localList = [];
+        try {
+            localList = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const snapshot = await this.getCollection('patient_recalls').get();
+                const fbList = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const docMobile = (data.patientMobile || '').replace(/[^0-9]/g, '');
+                    if (docMobile === cleanMobile || (!cleanMobile && (!data.tenant_id || data.tenant_id === tenantId))) {
+                        fbList.push({ id: doc.id, ...data });
+                    }
+                });
+                if (fbList.length > 0) {
+                    fbList.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+                    localStorage.setItem(cacheKey, JSON.stringify(fbList.slice(0, 30)));
+                    return fbList;
+                }
+            } catch (err) {
+                console.warn('Failed to fetch recalls from Firestore:', err);
+            }
+        }
+        return localList;
+    }
+
+    // 3. Dental Lab & Prosthetics Tracker
+    async saveDentalLabOrder(labData) {
+        const tenantId = this.tenantId || 'default';
+        const orderId = 'lab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+        const payload = {
+            id: orderId,
+            ...labData,
+            status: labData.status || 'Sent to Lab',
+            tenant_id: tenantId,
+            clinic_slug: tenantId,
+            createdAt: new Date().toISOString()
+        };
+
+        try {
+            const cleanMobile = (labData.patientMobile || '').replace(/[^0-9]/g, '');
+            const cacheKey = 'lab_orders_' + tenantId + '_' + cleanMobile;
+            const existing = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+            existing.unshift(payload);
+            localStorage.setItem(cacheKey, JSON.stringify(existing.slice(0, 40)));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection('dental_lab_orders').doc(orderId).set(payload, { merge: true });
+            } catch (err) {
+                console.warn('Failed to save lab order to Firestore:', err);
+            }
+        }
+        return payload;
+    }
+
+    async getDentalLabOrders(mobile) {
+        const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+        const tenantId = this.tenantId || 'default';
+        const cacheKey = 'lab_orders_' + tenantId + '_' + cleanMobile;
+        let localList = [];
+        try {
+            localList = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const snapshot = await this.getCollection('dental_lab_orders').get();
+                const fbList = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const docMobile = (data.patientMobile || '').replace(/[^0-9]/g, '');
+                    if (docMobile === cleanMobile || (!cleanMobile && (!data.tenant_id || data.tenant_id === tenantId))) {
+                        fbList.push({ id: doc.id, ...data });
+                    }
+                });
+                if (fbList.length > 0) {
+                    fbList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                    localStorage.setItem(cacheKey, JSON.stringify(fbList.slice(0, 40)));
+                    return fbList;
+                }
+            } catch (err) {
+                console.warn('Failed to fetch lab orders from Firestore:', err);
+            }
+        }
+        return localList;
+    }
+
+    async updateDentalLabOrderStatus(orderId, newStatus, mobile = '') {
+        const tenantId = this.tenantId || 'default';
+        const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+        const cacheKey = 'lab_orders_' + tenantId + '_' + cleanMobile;
+
+        try {
+            let existing = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+            existing = existing.map(item => item.id === orderId ? { ...item, status: newStatus, statusUpdatedAt: new Date().toISOString() } : item);
+            localStorage.setItem(cacheKey, JSON.stringify(existing));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection('dental_lab_orders').doc(orderId).update({
+                    status: newStatus,
+                    statusUpdatedAt: new Date().toISOString()
+                });
+            } catch (err) {
+                console.warn('Failed to update lab order status in Firestore:', err);
+            }
+        }
+        return true;
+    }
 }
 
 // Export singleton instance

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SuperAdmin Console | Multi-Tenant Clinic Management</title>
+    <title>SuperAdmin Console | Clinic Practice Management</title>
     <script>
         if (window.location.protocol.startsWith('http') && window.location.pathname.replace(/^\/+|\/+$/g, '').length > 0) {
             document.write('<base href="' + window.location.origin + '/">');
@@ -271,7 +271,7 @@
                 </div>
                 <div class="sa-title-text">
                     <h1>SuperAdmin Console</h1>
-                    <span>Multi-Tenant Clinic Configuration &amp; Isolation</span>
+                    <span>Clinic Practice Configuration &amp; Security</span>
                 </div>
             </a>
             
@@ -296,7 +296,7 @@
                     <i class="fas fa-crown"></i>
                 </div>
                 <h2 style="margin: 0; font-size: 1.45rem; font-weight: 800; color: #0F172A;">SuperAdmin Login</h2>
-                <p style="margin: 0.4rem 0 0; font-size: 0.85rem; color: #64748B;">Enter master credentials to configure clinic tenants</p>
+                <p style="margin: 0.4rem 0 0; font-size: 0.85rem; color: #64748B;">Enter master credentials to configure clinic practices</p>
             </div>
 
             <div id="saLoginAlert" style="display: none; background: #FEE2E2; color: #DC2626; padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.85rem; margin-bottom: 1.25rem; border: 1px solid #FCA5A5; text-align: center; font-weight: 600;">
@@ -337,7 +337,7 @@
                     <span style="background: rgba(139, 92, 246, 0.35); color: #C4B5FD; font-size: 0.75rem; font-weight: 800; padding: 3px 10px; border-radius: 99px; text-transform: uppercase;">
                         SuperAdmin Active Session
                     </span>
-                    <h2 style="font-size: 1.6rem; margin: 0.5rem 0 0.25rem 0; font-weight: 800;">Tenant Control Console</h2>
+                    <h2 style="font-size: 1.6rem; margin: 0.5rem 0 0.25rem 0; font-weight: 800;">Practice Control Console</h2>
                     <p style="color: #A5B4FC; margin: 0; font-size: 0.88rem;">Manage isolated clinic environments, branding, credentials, and traffic analytics.</p>
                 </div>
                 <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
@@ -359,7 +359,7 @@
             <!-- Provision New Clinic Form Card -->
             <div class="sa-card">
                 <div class="sa-card-header">
-                    <h2><i class="fas fa-plus-circle" style="color: #8B5CF6;"></i> Provision New Clinic Tenant</h2>
+                    <h2><i class="fas fa-plus-circle" style="color: #8B5CF6;"></i> Add New Clinic Practice</h2>
                     <span style="font-size: 0.8rem; color: #64748B;">Creates dedicated collections, settings, and staff logins</span>
                 </div>
 
@@ -431,7 +431,7 @@
                     </div>
 
                     <button type="submit" id="btnCreateTenant" class="btn-primary" style="background: #8B5CF6; height: 44px; padding: 0 1.5rem; font-weight: 800; font-size: 0.9rem; border-radius: 8px; cursor: pointer;">
-                        <i class="fas fa-plus"></i> Create &amp; Provision Clinic Tenant
+                        <i class="fas fa-plus"></i> Create &amp; Register Clinic Practice
                     </button>
                 </form>
             </div>
@@ -439,7 +439,7 @@
             <!-- Existing Clinics List Card -->
             <div class="sa-card">
                 <div class="sa-card-header">
-                    <h2><i class="fas fa-hospital" style="color: #8B5CF6;"></i> Active Clinic Tenants</h2>
+                    <h2><i class="fas fa-hospital" style="color: #8B5CF6;"></i> Active Clinic Practices</h2>
                     <button onclick="loadAllTenants()" class="btn-portal-back" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; cursor: pointer;">
                         <i class="fas fa-sync-alt"></i> Refresh List
                     </button>
@@ -448,7 +448,7 @@
                 <div id="saTenantsContainer">
                     <div style="text-align: center; padding: 2rem; color: #64748B;">
                         <i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: #8B5CF6; margin-bottom: 0.5rem; display: block;"></i>
-                        Loading clinic tenants...
+                        Loading clinic practices...
                     </div>
                 </div>
             </div>
@@ -466,7 +466,7 @@
                 </div>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
                     <select id="saTenantFilter" onchange="filterSuperAdminAnalyticsAndLogs(this.value)" class="form-input" style="height: 40px; min-width: 250px; font-weight: 700; border-radius: 10px; border: 1.5px solid #CBD5E1; padding: 0 0.85rem; color: #0F172A; background: #F8FAFC; cursor: pointer;">
-                        <option value="all">🌐 All Clinics &amp; Tenants (Global)</option>
+                        <option value="all">🌐 All Clinic Practices (Global)</option>
                     </select>
                 </div>
             </div>
@@ -489,7 +489,7 @@
                             <tr style="border-bottom: 2px solid #E2E8F0; color: #64748B;">
                                 <th style="padding: 10px 12px; width: 60px;">Rank</th>
                                 <th style="padding: 10px 12px;">Route / Page / Section</th>
-                                <th style="padding: 10px 12px;">Clinic Tenant</th>
+                                <th style="padding: 10px 12px;">Clinic Practice</th>
                                 <th style="padding: 10px 12px; text-align: right;">Total Clicks</th>
                                 <th style="padding: 10px 12px; width: 220px;">Traffic Share</th>
                                 <th style="padding: 10px 12px;">Last Clicked</th>
@@ -507,7 +507,7 @@
                 <div class="sa-card-header" style="flex-wrap: wrap; gap: 1rem;">
                     <div>
                         <h2><i class="fas fa-clipboard-list" style="color: #8B5CF6;"></i> Audit Trail &amp; Activity Logs Hub</h2>
-                        <span style="font-size: 0.8rem; color: #64748B;">Multi-tenant real-time audit trail of all staff logins, dental charting, prescriptions, treatment plans, appointments &amp; marketing campaigns with exact date &amp; timestamp.</span>
+                        <span style="font-size: 0.8rem; color: #64748B;">Real-time audit trail of all staff logins, dental charting, prescriptions, treatment plans, appointments &amp; marketing campaigns with exact date &amp; timestamp.</span>
                     </div>
                     <!-- Tab Switcher -->
                     <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
@@ -558,7 +558,7 @@
                         </div>
                         <!-- Live Search Input -->
                         <div style="position: relative;">
-                            <input type="text" id="saActivitySearch" oninput="filterActivityLogsByCategory(window.currentLogCategory || 'all')" placeholder="🔎 Search activities, patient names, mobile numbers, event types, or clinic tenants..." style="width: 100%; height: 38px; padding: 0 1rem 0 2.2rem; font-size: 0.82rem; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #FFFFFF; outline: none;">
+                            <input type="text" id="saActivitySearch" oninput="filterActivityLogsByCategory(window.currentLogCategory || 'all')" placeholder="🔎 Search activities, patient names, mobile numbers, event types, or clinic practices..." style="width: 100%; height: 38px; padding: 0 1rem 0 2.2rem; font-size: 0.82rem; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #FFFFFF; outline: none;">
                             <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: #94A3B8; font-size: 0.82rem;"></i>
                         </div>
                     </div>
@@ -569,7 +569,7 @@
                             <thead>
                                 <tr style="background: #F1F5F9; border-bottom: 2px solid #E2E8F0; color: #475569;">
                                     <th style="padding: 10px 12px; white-space: nowrap;">Date &amp; Time</th>
-                                    <th style="padding: 10px 12px; white-space: nowrap;">Clinic Tenant</th>
+                                    <th style="padding: 10px 12px; white-space: nowrap;">Clinic Practice</th>
                                     <th style="padding: 10px 12px; white-space: nowrap;">Category &amp; Event</th>
                                     <th style="padding: 10px 12px; white-space: nowrap;">Actor &amp; Role</th>
                                     <th style="padding: 10px 12px; min-width: 250px;">Activity Details</th>
@@ -604,7 +604,7 @@
                             <thead>
                                 <tr style="border-bottom: 2px solid #E2E8F0; color: #64748B;">
                                     <th style="padding: 8px 10px;">Captured Date</th>
-                                    <th style="padding: 8px 10px;">Clinic Tenant</th>
+                                    <th style="padding: 8px 10px;">Clinic Practice</th>
                                     <th style="padding: 8px 10px;">Full Name</th>
                                     <th style="padding: 8px 10px;">Mobile Number</th>
                                     <th style="padding: 8px 10px;">Email</th>
@@ -719,7 +719,7 @@
                                 <th style="padding: 10px 12px; width: 45px; text-align: center;"></th>
                                 <th style="padding: 10px 12px;">User / Patient Name</th>
                                 <th style="padding: 10px 12px;">Email Address</th>
-                                <th style="padding: 10px 12px;">Clinic Tenant</th>
+                                <th style="padding: 10px 12px;">Clinic Practice</th>
                                 <th style="padding: 10px 12px;">Role &amp; Source</th>
                                 <th style="padding: 10px 12px;">Last Active</th>
                             </tr>
@@ -863,7 +863,7 @@
 
     <!-- Global Footer -->
     <footer style="background: white; border-top: 1px solid #E2E8F0; padding: 1.5rem; text-align: center; color: #94A3B8; font-size: 0.82rem; margin-top: auto;">
-        <div>SuperAdmin Tenant Isolation</div>
+        <div>SuperAdmin Practice Security</div>
         <div style="margin-top: 0.35rem;">Developed by <a href="https://proconixsoftware.vercel.app" target="_blank" rel="noopener noreferrer" style="color: #8B5CF6; font-weight: 700; text-decoration: underline;">proconixsoftware.vercel.app</a></div>
     </footer>
 
@@ -962,7 +962,7 @@
         async function loadAllTenants() {
             const container = document.getElementById('saTenantsContainer');
             if (!container) return;
-            container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748B;"><i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: #8B5CF6;"></i> Loading tenants...</div>';
+            container.innerHTML = '<div style="text-align: center; padding: 2rem; color: #64748B;"><i class="fas fa-spinner fa-spin" style="font-size: 1.5rem; color: #8B5CF6;"></i> Loading clinics...</div>';
 
             try {
                 let tenants = [];
@@ -1017,7 +1017,7 @@
                 // Populate Scope Filter & Campaign Sender dropdowns
                 const filterSelect = document.getElementById('saTenantFilter');
                 const campTenantSelect = document.getElementById('campaignTenantSelect');
-                let optionsHtml = '<option value="all">🌐 All Clinics &amp; Tenants (Global Broadcast)</option>';
+                let optionsHtml = '<option value="all">🌐 All Clinic Practices (Global Broadcast)</option>';
                 tenants.forEach(t => {
                     optionsHtml += `<option value="${t.id}">${t.name || t.id} (${t.id})</option>`;
                 });
@@ -1068,7 +1068,7 @@
                                     <i class="fas fa-external-link-alt"></i> Open Clinic (${tenantPath})
                                 </a>
                                 ${!isDefault ? `
-                                    <button onclick="handleDeleteTenant('${t.id}', '${encodeURIComponent(t.name || t.id)}')" class="btn-del-tenant" title="Delete Clinic Tenant">
+                                    <button onclick="handleDeleteTenant('${t.id}', '${encodeURIComponent(t.name || t.id)}')" class="btn-del-tenant" title="Delete Clinic Practice">
                                         <i class="fas fa-trash-alt"></i>
                                     </button>
                                 ` : ''}
@@ -1079,7 +1079,7 @@
 
             } catch (err) {
                 console.error('Error loading tenants:', err);
-                container.innerHTML = '<div style="color: #DC2626; text-align: center; padding: 1.5rem;">Failed to load tenants: ' + err.message + '</div>';
+                container.innerHTML = '<div style="color: #DC2626; text-align: center; padding: 1.5rem;">Failed to load clinic practices: ' + err.message + '</div>';
             }
         }
 
@@ -1212,7 +1212,7 @@
 
             } catch (err) {
                 console.error('Error updating tenant:', err);
-                alert('Failed to update tenant: ' + err.message);
+                alert('Failed to update clinic practice: ' + err.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
@@ -1278,13 +1278,13 @@
 
                 const finalPath = (slug === 'default') ? '/' : `/${slug}`;
                 const finalLink = (window.location.protocol === 'file:') ? `index.html?c=${slug}` : `${window.location.origin}${finalPath}`;
-                alert(`✅ Tenant "${name}" (${slug}) successfully provisioned!\n\nAccess Link: ${finalLink}\nStaff Login ID: ${slug}admin\nPassword: admin`);
+                alert(`✅ Clinic "${name}" (${slug}) successfully provisioned!\n\nAccess Link: ${finalLink}\nStaff Login ID: ${slug}admin\nPassword: admin`);
                 document.getElementById('saAddTenantForm').reset();
                 loadAllTenants();
 
             } catch (err) {
                 console.error('Error creating tenant:', err);
-                alert('Failed to provision tenant: ' + err.message);
+                alert('Failed to register clinic practice: ' + err.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-plus"></i> Create & Provision Clinic Tenant';
@@ -1612,7 +1612,7 @@
                 return;
             }
 
-            const headers = ['Date', 'Time', 'Timestamp', 'Tenant', 'Category', 'Event Type', 'Actor', 'Role', 'Activity Details', 'Mobile', 'Email', 'Device', 'IP Address'];
+            const headers = ['Date', 'Time', 'Timestamp', 'Clinic', 'Category', 'Event Type', 'Actor', 'Role', 'Activity Details', 'Mobile', 'Email', 'Device', 'IP Address'];
             const rows = logs.map(l => {
                 const dt = l.timestamp ? new Date(l.timestamp) : new Date();
                 const dStr = l.dateStr || dt.toLocaleDateString('en-IN');
@@ -2049,7 +2049,7 @@
                 return;
             }
 
-            let csvContent = "data:text/csv;charset=utf-8,Date,Tenant,Full Name,Mobile Number,Email,Source\n";
+            let csvContent = "data:text/csv;charset=utf-8,Date,Clinic,Full Name,Mobile Number,Email,Source\n";
             leads.forEach(l => {
                 const row = [
                     `"${l.createdAt || ''}"`,

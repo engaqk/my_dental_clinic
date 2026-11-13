@@ -327,6 +327,14 @@ function switchProfileTab(tab) {
     if (consents) consents.style.display = tab === 'consents' ? 'block' : 'none';
     if (beforeAfter) beforeAfter.style.display = tab === 'before-after' ? 'block' : 'none';
     if (instantPay) instantPay.style.display = tab === 'instant-pay' ? 'block' : 'none';
+
+    // Phase 2 Modern Modules
+    const membership = document.getElementById('profileMembershipSection');
+    const recalls = document.getElementById('profileRecallsSection');
+    const dentalLab = document.getElementById('profileDentalLabSection');
+    if (membership) membership.style.display = tab === 'membership' ? 'block' : 'none';
+    if (recalls) recalls.style.display = tab === 'recalls' ? 'block' : 'none';
+    if (dentalLab) dentalLab.style.display = tab === 'dental-lab' ? 'block' : 'none';
     
     document.querySelectorAll('.profile-tab-btn').forEach(btn => {
         const text = (btn.innerText || btn.textContent || '').toLowerCase();
@@ -339,7 +347,10 @@ function switchProfileTab(tab) {
         if (tab === 'treatment-plans') btn.classList.toggle('active', text.includes('treatment plan') || text.includes('plan'));
         if (tab === 'consents') btn.classList.toggle('active', text.includes('consent') || text.includes('legal'));
         if (tab === 'before-after') btn.classList.toggle('active', text.includes('before') || text.includes('after'));
-        if (tab === 'instant-pay') btn.classList.toggle('active', text.includes('1-tap') || text.includes('pay'));
+        if (tab === 'instant-pay') btn.classList.toggle('active', text.includes('1-tap') || text.includes('pay') || text.includes('instant pay'));
+        if (tab === 'membership') btn.classList.toggle('active', text.includes('vip') || text.includes('club') || text.includes('membership'));
+        if (tab === 'recalls') btn.classList.toggle('active', text.includes('recall') || text.includes('crm'));
+        if (tab === 'dental-lab') btn.classList.toggle('active', text.includes('lab') || text.includes('prosthetic'));
     });
 
     // Reset scroll to top of the content view on tab switch
@@ -356,6 +367,9 @@ function switchProfileTab(tab) {
         if (tab === 'consents' && typeof initConsentsTab === 'function') initConsentsTab(pat);
         if (tab === 'before-after' && typeof initBeforeAfterTab === 'function') initBeforeAfterTab(pat);
         if (tab === 'instant-pay' && typeof initInstantPayTab === 'function') initInstantPayTab(pat);
+        if (tab === 'membership' && typeof initMembershipTab === 'function') initMembershipTab(pat);
+        if (tab === 'recalls' && typeof initRecallsTab === 'function') initRecallsTab(pat);
+        if (tab === 'dental-lab' && typeof initDentalLabTab === 'function') initDentalLabTab(pat);
     }
 }
 
@@ -5775,4 +5789,642 @@ async function recordInstantPaymentInLedger() {
             alert('Payment recorded locally.');
         }
     }
+}
+
+
+// =============================================================================
+// PHASE 2: IN-HOUSE MEMBERSHIP CLUB, AUTOMATED RECALL CRM & DENTAL LAB TRACKER
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// MODULE 1: IN-HOUSE DENTAL MEMBERSHIP CLUB (VIP SMILE CLUB)
+// -----------------------------------------------------------------------------
+const MEMBERSHIP_TIERS = {
+    silver: {
+        key: 'silver',
+        name: '🥈 Silver Preventive Pass',
+        fee: 1499,
+        validityMonths: 12,
+        perks: [
+            '1 Annual Ultrasonic Scaling & Polishing (Free)',
+            '1 Comprehensive Dental Examination & Consultation',
+            '10% Flat Discount on all Composite Fillings & Cleanings',
+            'Priority Emergency Booking Window'
+        ]
+    },
+    gold: {
+        key: 'gold',
+        name: '🥇 Gold Smile Shield (Best)',
+        fee: 2999,
+        validityMonths: 12,
+        perks: [
+            '2 Annual Ultrasonic Scalings & Fluoride Polishing (Free)',
+            '1 Digital Bitewing / Periapical X-Ray Examination',
+            '15% Flat Discount on RCT, Extractions, and Restorations',
+            'Zero Diagnostic / Consultation Fees for 12 Months',
+            '10% Discount for Direct Family Members'
+        ]
+    },
+    platinum: {
+        key: 'platinum',
+        name: '💎 Platinum VIP Family',
+        fee: 5999,
+        validityMonths: 12,
+        perks: [
+            '4 Annual Cleanings (Sharable across Immediate Family)',
+            '2 Complete Digital Diagnostic X-Rays',
+            '20% Flat Discount on Crowns, Implants & Laser Whitening',
+            '15% Discount on all Root Canal Treatments & Prosthetics',
+            'Complimentary Oral Hygiene Kit & 24/7 Doctor WhatsApp Concierge'
+        ]
+    }
+};
+
+let currentPatientActiveMembership = null;
+
+async function initMembershipTab(patient) {
+    const pat = patient || ((typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null));
+    if (!pat || !pat.mobile) return;
+
+    // Set member name on card
+    const nameEl = document.getElementById('memberCardPatientName');
+    if (nameEl) nameEl.textContent = pat.name || 'Valued Patient';
+
+    // Fetch existing membership
+    let mem = null;
+    try {
+        if (window.dbAPI && typeof window.dbAPI.getPatientMembership === 'function') {
+            mem = await window.dbAPI.getPatientMembership(pat.mobile);
+        }
+    } catch(e) {
+        console.warn('Membership fetch error:', e);
+    }
+
+    currentPatientActiveMembership = mem;
+    renderMembershipCardUI(mem, pat);
+}
+
+function renderMembershipCardUI(mem, pat) {
+    const badge = document.getElementById('patientMembershipBadge');
+    const planNameEl = document.getElementById('memberCardPlanName');
+    const expiryEl = document.getElementById('memberCardExpiry');
+    const perksEl = document.getElementById('memberCardEntitlements');
+
+    if (mem && mem.status === 'Active' && mem.tier) {
+        const tier = MEMBERSHIP_TIERS[mem.tier] || { name: mem.tierName || 'VIP Member', perks: mem.perks || [] };
+        if (badge) {
+            badge.textContent = 'STATUS: ACTIVE VIP (' + (mem.tierName || mem.tier).toUpperCase() + ')';
+            badge.style.background = '#DCFCE7';
+            badge.style.color = '#15803D';
+            badge.style.border = '1px solid #86EFAC';
+        }
+        if (planNameEl) planNameEl.textContent = tier.name;
+        if (expiryEl) {
+            const expDate = mem.expiresAt ? new Date(mem.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '1 Year Active';
+            expiryEl.textContent = expDate;
+            expiryEl.style.color = '#10B981';
+        }
+        if (perksEl) {
+            perksEl.innerHTML = (tier.perks || []).map(p => 
+                '<span style="background: rgba(255,255,255,0.15); padding: 2px 7px; border-radius: 6px; font-size: 0.68rem; color: #E2E8F0;">✓ ' + p + '</span>'
+            ).join('');
+        }
+        // Check matching radio
+        const radio = document.querySelector('input[name="membershipTierRadio"][value="' + mem.tier + '"]');
+        if (radio) radio.checked = true;
+    } else {
+        if (badge) {
+            badge.textContent = 'STATUS: NOT ENROLLED';
+            badge.style.background = '#FEF3C7';
+            badge.style.color = '#B45309';
+            badge.style.border = '1px solid #FDE68A';
+        }
+        if (planNameEl) planNameEl.textContent = 'Standard Pay-per-Visit';
+        if (expiryEl) {
+            expiryEl.textContent = 'Not Enrolled';
+            expiryEl.style.color = '#94A3B8';
+        }
+        if (perksEl) {
+            perksEl.innerHTML = '<span style="background: rgba(255,255,255,0.12); padding: 2px 7px; border-radius: 6px; font-size: 0.68rem; color: #CBD5E1;">✓ Standard Procedure Rates &bull; Select a tier below to activate loyalty savings</span>';
+        }
+    }
+}
+
+async function enrollActivePatientInPlan() {
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
+    if (!pat || !pat.name) {
+        alert('Please open an active patient profile first.');
+        return;
+    }
+
+    const selectedRadio = document.querySelector('input[name="membershipTierRadio"]:checked');
+    const tierKey = selectedRadio ? selectedRadio.value : 'gold';
+    const tierData = MEMBERSHIP_TIERS[tierKey] || MEMBERSHIP_TIERS.gold;
+
+    const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+    const payload = {
+        patientName: pat.name,
+        patientMobile: pat.mobile,
+        tier: tierKey,
+        tierName: tierData.name,
+        annualFee: tierData.fee,
+        enrolledAt: new Date().toISOString(),
+        expiresAt: expiresAt,
+        perks: tierData.perks,
+        status: 'Active'
+    };
+
+    try {
+        if (window.dbAPI && typeof window.dbAPI.savePatientMembership === 'function') {
+            await window.dbAPI.savePatientMembership(payload);
+        }
+        currentPatientActiveMembership = payload;
+        renderMembershipCardUI(payload, pat);
+
+        // Record income in financial ledger
+        if (window.dbAPI && typeof window.dbAPI.addExpenseOrIncome === 'function') {
+            window.dbAPI.addExpenseOrIncome({
+                type: 'income',
+                category: 'Membership Subscriptions',
+                amount: tierData.fee,
+                description: 'VIP Membership (' + tierData.name + ') - ' + pat.name,
+                date: new Date().toISOString().split('T')[0]
+            }).catch(console.warn);
+        }
+
+        alert('🎉 Congratulations! ' + pat.name + ' is now enrolled in ' + tierData.name + ' for 1 full year.');
+    } catch(err) {
+        console.error('Membership enrollment error:', err);
+        alert('Enrolled locally. Error syncing to cloud: ' + err.message);
+    }
+}
+
+function sendMembershipWhatsApp() {
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
+    if (!pat) {
+        alert('Please select an active patient first.');
+        return;
+    }
+
+    const mem = currentPatientActiveMembership || {
+        tierName: '🥇 Gold Smile Shield',
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        perks: MEMBERSHIP_TIERS.gold.perks
+    };
+
+    const expDateStr = new Date(mem.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const clinicName = (window.dbAPI && window.dbAPI.getClinicName ? window.dbAPI.getClinicName() : '') || 'MY DENTAL CLINIC';
+
+    let msg = '👑 *VIP DENTAL MEMBERSHIP PASS* 💎\n';
+    msg += '🏥 *' + clinicName.toUpperCase() + '*\n';
+    msg += '👤 *Member Name:* ' + pat.name + '\n';
+    msg += '🛡️ *Plan:* ' + (mem.tierName || 'VIP Smile Club') + '\n';
+    msg += '📅 *Valid Till:* ' + expDateStr + '\n';
+    msg += '---------------------------------\n';
+    msg += '🎁 *YOUR ACTIVE CLUB BENEFITS:*\n';
+    (mem.perks || MEMBERSHIP_TIERS.gold.perks).forEach(p => {
+        msg += '• ' + p + '\n';
+    });
+    msg += '---------------------------------\n';
+    msg += '📞 *Priority Appointment Desk:* Chat with us anytime to schedule your covered cleanings & treatments!\n';
+    msg += '_Thank you for being part of our Dental Family!_';
+
+    const cleanMobile = (pat.mobile || '').replace(/[^0-9]/g, '');
+    window.open('https://wa.me/' + cleanMobile + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+function printMembershipCertificatePDF() {
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
+    if (!pat) {
+        alert('Please select an active patient first.');
+        return;
+    }
+
+    const mem = currentPatientActiveMembership || {
+        tierName: '🥇 Gold Smile Shield',
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        perks: MEMBERSHIP_TIERS.gold.perks
+    };
+
+    try {
+        const { jsPDF } = window.jspdf || {};
+        if (!jsPDF) {
+            window.print();
+            return;
+        }
+
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [148, 105] }); // A6 Card Format
+        const primaryColor = '#0D9488';
+        const clinicName = (window.dbAPI && window.dbAPI.getClinicName ? window.dbAPI.getClinicName() : '') || 'MY DENTAL CLINIC';
+
+        // Outer Dark Border / Card Background
+        doc.setFillColor(15, 23, 42); // #0F172A
+        doc.roundedRect(4, 4, 140, 97, 4, 4, 'F');
+
+        // Gold Accent Header Line
+        doc.setFillColor(245, 158, 11); // #F59E0B
+        doc.rect(4, 4, 140, 3, 'F');
+
+        // Card Title
+        doc.setTextColor(245, 158, 11);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('VIP SMILE PASS', 12, 16);
+
+        doc.setTextColor(148, 163, 184);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(clinicName.toUpperCase() + ' - ANNUAL MEMBERSHIP CLUB', 12, 21);
+
+        // Plan Name
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.text(mem.tierName || 'Gold Smile Shield', 12, 31);
+
+        // Member Details Grid
+        doc.setDrawColor(51, 65, 85);
+        doc.line(12, 35, 136, 35);
+
+        doc.setTextColor(148, 163, 184);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.text('MEMBER NAME', 12, 41);
+        doc.text('VALID UNTIL', 75, 41);
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(10);
+        doc.text(pat.name.toUpperCase(), 12, 47);
+        const expDateStr = new Date(mem.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+        doc.setTextColor(16, 185, 129);
+        doc.text(expDateStr, 75, 47);
+
+        // Benefits Section
+        doc.setDrawColor(51, 65, 85);
+        doc.line(12, 52, 136, 52);
+
+        doc.setTextColor(245, 158, 11);
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'bold');
+        doc.text('INCLUDED ENTITLEMENTS & PRIVILEGES:', 12, 58);
+
+        doc.setTextColor(226, 232, 240);
+        doc.setFontSize(7.5);
+        doc.setFont('helvetica', 'normal');
+        let y = 64;
+        (mem.perks || MEMBERSHIP_TIERS.gold.perks).slice(0, 4).forEach(perk => {
+            doc.text('✓  ' + perk, 14, y);
+            y += 5.5;
+        });
+
+        // Bottom Strip
+        doc.setFontSize(6.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Non-transferable. Present at reception desk chairside. Powered by ' + clinicName, 12, 95);
+
+        doc.save('VIP_Membership_Pass_' + pat.name.replace(/\s+/g, '_') + '.pdf');
+    } catch(err) {
+        console.error('PDF certificate generation error:', err);
+        window.print();
+    }
+}
+
+
+// -----------------------------------------------------------------------------
+// MODULE 2: AUTOMATED 6-MONTH WHATSAPP RECALL CRM & POST-OP DRIPS
+// -----------------------------------------------------------------------------
+let activeRecallSequenceType = '6mo-hygiene';
+
+const RECALL_TEMPLATES = {
+    '6mo-hygiene': {
+        title: '6-Month Routine Cleaning Recall',
+        badgeColor: '#0284C7',
+        buildMessage: (pat, clinic, doctor) => 
+            '🦷 *HYGIENE CHECKUP REMINDER*\n' +
+            'Dear ' + pat.name + ',\n\n' +
+            'It has been 6 months since your last routine dental exam and cleaning at *' + clinic + '*.\n\n' +
+            'Regular scaling removes hidden tartar, prevents gum bleeding, and keeps your teeth bright and healthy.\n\n' +
+            '📅 *Would you like to book your 20-minute hygiene sitting this week?*\n' +
+            'Reply YES or tap here to pick your preferred time:\n' +
+            window.location.origin + '/#bookingForm\n\n' +
+            '_Best regards,_\n*' + doctor + '*\n' + clinic
+    },
+    '3mo-perio': {
+        title: '3-Month Deep Scaling Follow-up',
+        badgeColor: '#0D9488',
+        buildMessage: (pat, clinic, doctor) => 
+            '🩺 *PERIODONTAL GUM CARE CHECK-IN*\n' +
+            'Dear ' + pat.name + ',\n\n' +
+            'Friendly follow-up from *' + clinic + '* regarding your gum health maintenance schedule.\n\n' +
+            'Your 3-month periodontal checkup is now due to review pocket healing and maintain oral comfort.\n\n' +
+            'Reply here with your convenient morning or evening time to reserve your appointment!\n\n' +
+            '_Warm regards,_\n*' + doctor + '*'
+    },
+    'postop-day1': {
+        title: 'Post-Op Day 1 Wellness Check',
+        badgeColor: '#16A34A',
+        buildMessage: (pat, clinic, doctor) => 
+            '🌸 *POST-TREATMENT DAY 1 CARE CHECK*\n' +
+            'Hello ' + pat.name + ',\n\n' +
+            'This is *' + doctor + '* from *' + clinic + '* checking in to see how you are feeling after yesterday\'s dental procedure.\n\n' +
+            'Quick Reminders for today:\n' +
+            '• Soft, non-spicy diet\n' +
+            '• Warm saline rinses (after 24 hours)\n' +
+            '• Take prescribed medicines on schedule\n' +
+            '• Avoid straws or vigorous spitting\n\n' +
+            'If you experience any unusual tenderness or have questions, message us right here anytime!'
+    },
+    'postop-day3': {
+        title: 'Post-RCT Day 3 Comfort Check',
+        badgeColor: '#8B5CF6',
+        buildMessage: (pat, clinic, doctor) => 
+            '✨ *POST-PROCEDURE DAY 3 CHECK-IN*\n' +
+            'Dear ' + pat.name + ',\n\n' +
+            'Checking in on your progress after your recent treatment at *' + clinic + '*. You should be feeling much more comfortable today!\n\n' +
+            'Please let us know how your bite feels. If you need any minor bite adjustment or are ready for your permanent crown impression, reply to this message!\n\n' +
+            '_Best regards,_\n*' + doctor + '*'
+    },
+    'crown-check': {
+        title: 'Crown/Implant Annual Evaluation',
+        badgeColor: '#D97706',
+        buildMessage: (pat, clinic, doctor) => 
+            '👑 *ANNUAL PROSTHETIC & CROWN EVALUATION*\n' +
+            'Dear ' + pat.name + ',\n\n' +
+            'It has been 1 year since your crown / bridge restoration at *' + clinic + '*.\n\n' +
+            'We recommend a complimentary 5-minute chairside evaluation to verify margin seal, contact points, and bite harmony.\n\n' +
+            'Reply to schedule your free checkup sitting!'
+    }
+};
+
+function initRecallsTab(patient) {
+    const pat = patient || ((typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null));
+    if (!pat) return;
+    selectRecallSequence('6mo-hygiene');
+    loadPatientRecalls(pat);
+}
+
+function selectRecallSequence(typeKey) {
+    activeRecallSequenceType = typeKey;
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || { name: 'Valued Patient' });
+    const clinicName = (window.dbAPI && window.dbAPI.getClinicName ? window.dbAPI.getClinicName() : '') || 'MY DENTAL CLINIC';
+    const doctorName = (window.dbAPI && window.dbAPI.getDoctorName ? window.dbAPI.getDoctorName() : '') || 'Clinic Specialist';
+
+    const tpl = RECALL_TEMPLATES[typeKey] || RECALL_TEMPLATES['6mo-hygiene'];
+    const msg = tpl.buildMessage(pat, clinicName, doctorName);
+
+    const textarea = document.getElementById('recallMessagePreview');
+    if (textarea) textarea.value = msg;
+}
+
+async function dispatchRecallWhatsApp() {
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
+    if (!pat || !pat.mobile) {
+        alert('Please open an active patient profile first.');
+        return;
+    }
+
+    const textarea = document.getElementById('recallMessagePreview');
+    const msg = textarea ? textarea.value : '';
+    if (!msg.trim()) {
+        alert('Please write or select a recall message.');
+        return;
+    }
+
+    const cleanMobile = (pat.mobile || '').replace(/[^0-9]/g, '');
+    window.open('https://wa.me/' + cleanMobile + '?text=' + encodeURIComponent(msg), '_blank');
+
+    // Automatically record touchpoint in CRM log
+    await recordRecallTouchpoint(activeRecallSequenceType, msg);
+}
+
+async function recordRecallTouchpoint(type, msgText) {
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
+    if (!pat || !pat.mobile) return;
+
+    const tpl = RECALL_TEMPLATES[type] || { title: 'Patient Recall' };
+    const payload = {
+        patientName: pat.name,
+        patientMobile: pat.mobile,
+        sequenceType: type,
+        sequenceTitle: tpl.title,
+        messageSnippet: (msgText || '').substring(0, 120) + '...',
+        channel: 'WhatsApp CRM',
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        if (window.dbAPI && typeof window.dbAPI.savePatientRecall === 'function') {
+            await window.dbAPI.savePatientRecall(payload);
+        }
+        await loadPatientRecalls(pat);
+    } catch(e) {
+        console.warn('Failed to log recall touchpoint:', e);
+    }
+}
+
+async function loadPatientRecalls(patient) {
+    const pat = patient || ((typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null));
+    const container = document.getElementById('patientRecallsHistoryList');
+    if (!container || !pat || !pat.mobile) return;
+
+    let list = [];
+    try {
+        if (window.dbAPI && typeof window.dbAPI.getPatientRecalls === 'function') {
+            list = await window.dbAPI.getPatientRecalls(pat.mobile);
+        }
+    } catch(e) {
+        console.warn('Recalls history fetch warning:', e);
+    }
+
+    if (!list || list.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 0.85rem; color: var(--text-muted); font-size: 0.78rem;">No past recall drips dispatched yet for this patient.</div>';
+        return;
+    }
+
+    container.innerHTML = list.map(item => {
+        const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Recently';
+        return '<div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.65rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; font-size: 0.78rem; gap: 0.5rem;">' +
+            '<div>' +
+                '<strong style="color: #0284C7; display: block;">' + (item.sequenceTitle || 'Recall Touchpoint') + '</strong>' +
+                '<span style="color: #64748B; font-size: 0.7rem;">' + (item.messageSnippet || 'WhatsApp dispatch recorded') + '</span>' +
+            '</div>' +
+            '<span style="color: #94A3B8; font-size: 0.68rem; font-weight: 700; white-space: nowrap;">' + dateStr + '</span>' +
+        '</div>';
+    }).join('');
+}
+
+
+// -----------------------------------------------------------------------------
+// MODULE 3: DENTAL LAB WORK ORDER & PROSTHETICS TRACKER
+// -----------------------------------------------------------------------------
+function initDentalLabTab(patient) {
+    const pat = patient || ((typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null));
+    
+    // Set default expected delivery date (5 days ahead)
+    const dateInput = document.getElementById('labDeliveryDate');
+    if (dateInput && !dateInput.value) {
+        const d = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
+        dateInput.value = d.toISOString().split('T')[0];
+    }
+
+    if (pat) {
+        loadPatientLabOrders(pat);
+    }
+}
+
+async function saveAndDispatchLabOrder() {
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
+    if (!pat || !pat.name) {
+        alert('Please open an active patient profile first.');
+        return;
+    }
+
+    const toothUnit = (document.getElementById('labToothUnit')?.value || '').trim();
+    const restorationType = document.getElementById('labRestorationType')?.value || 'Full Zirconia Crown (Monolithic)';
+    const shade = document.getElementById('labToothShade')?.value || 'A2';
+    const labName = (document.getElementById('labPartnerName')?.value || '').trim() || 'Apex Precision Dental Lab';
+    const deliveryDate = document.getElementById('labDeliveryDate')?.value || '';
+    const instructions = (document.getElementById('labSpecialInstructions')?.value || '').trim();
+
+    if (!toothUnit) {
+        alert('Please enter the Tooth or Unit # (e.g. #16 or #21-23 Bridge).');
+        return;
+    }
+
+    const payload = {
+        patientName: pat.name,
+        patientMobile: pat.mobile,
+        toothUnit: toothUnit,
+        restorationType: restorationType,
+        shade: shade,
+        labPartnerName: labName,
+        expectedDeliveryDate: deliveryDate,
+        specialInstructions: instructions,
+        status: 'Sent to Lab',
+        createdAt: new Date().toISOString()
+    };
+
+    try {
+        if (window.dbAPI && typeof window.dbAPI.saveDentalLabOrder === 'function') {
+            await window.dbAPI.saveDentalLabOrder(payload);
+        }
+
+        // Reset inputs
+        const tu = document.getElementById('labToothUnit'); if (tu) tu.value = '';
+        const ins = document.getElementById('labSpecialInstructions'); if (ins) ins.value = '';
+
+        await loadPatientLabOrders(pat);
+        alert('✅ Dental Lab Work Order Slip created successfully for Tooth ' + toothUnit + '!');
+
+        // Prompt for WhatsApp dispatch to Lab
+        if (confirm('Would you like to dispatch the Lab Slip details to your technician via WhatsApp now?')) {
+            dispatchLabSlipWhatsApp(payload);
+        }
+    } catch(err) {
+        console.error('Save lab order error:', err);
+        alert('Error saving lab order: ' + err.message);
+    }
+}
+
+function dispatchLabSlipWhatsApp(order) {
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || { name: 'Patient' });
+    const clinicName = (window.dbAPI && window.dbAPI.getClinicName ? window.dbAPI.getClinicName() : '') || 'MY DENTAL CLINIC';
+    const doctorName = (window.dbAPI && window.dbAPI.getDoctorName ? window.dbAPI.getDoctorName() : '') || 'Clinic Specialist';
+
+    let msg = '🔬 *DENTAL LAB WORK ORDER SLIP* 🦷\n';
+    msg += '🏥 *' + clinicName.toUpperCase() + '*\n';
+    msg += '👨‍⚕️ *Doctor:* ' + doctorName + '\n';
+    msg += '👤 *Patient ID:* ' + pat.name + ' (' + (pat.mobile ? pat.mobile.slice(-4) : 'XXXX') + ')\n';
+    msg += '---------------------------------\n';
+    msg += '🦷 *Tooth/Unit #:* ' + (order.toothUnit || 'Single Unit') + '\n';
+    msg += '⚙️ *Restoration:* ' + (order.restorationType || 'Zirconia Crown') + '\n';
+    msg += '🎨 *VITA Shade:* ' + (order.shade || 'A2') + '\n';
+    msg += '📅 *Required By:* ' + (order.expectedDeliveryDate || 'Standard turnaround') + '\n';
+    if (order.specialInstructions) {
+        msg += '📝 *Clinical Notes:* ' + order.specialInstructions + '\n';
+    }
+    msg += '---------------------------------\n';
+    msg += '_Please acknowledge receipt of physical/digital impression. Thank you!_';
+
+    window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+async function updateLabStatus(orderId, newStatus) {
+    const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
+    if (!orderId || !newStatus) return;
+
+    try {
+        if (window.dbAPI && typeof window.dbAPI.updateDentalLabOrderStatus === 'function') {
+            await window.dbAPI.updateDentalLabOrderStatus(orderId, newStatus, pat ? pat.mobile : '');
+        }
+        if (pat) await loadPatientLabOrders(pat);
+    } catch(err) {
+        console.error('Update lab status error:', err);
+        alert('Failed to update status.');
+    }
+}
+
+async function loadPatientLabOrders(patient) {
+    const pat = patient || ((typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null));
+    const container = document.getElementById('patientLabOrdersList');
+    if (!container || !pat || !pat.mobile) return;
+
+    let orders = [];
+    try {
+        if (window.dbAPI && typeof window.dbAPI.getDentalLabOrders === 'function') {
+            orders = await window.dbAPI.getDentalLabOrders(pat.mobile);
+        }
+    } catch(e) {
+        console.warn('Lab orders fetch warning:', e);
+    }
+
+    if (!orders || orders.length === 0) {
+        container.innerHTML = '<div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.8rem;">No active dental lab orders recorded for this patient.</div>';
+        return;
+    }
+
+    const STATUS_COLORS = {
+        'Sent to Lab': { bg: '#FEF3C7', color: '#B45309', border: '#FDE68A' },
+        'In Fabrication': { bg: '#E0F2FE', color: '#0369A1', border: '#BAE6FD' },
+        'Received at Clinic': { bg: '#F3E8FF', color: '#7E22CE', border: '#E9D5FF' },
+        'Trial Fitting Done': { bg: '#ECFDF5', color: '#047857', border: '#A7F3D0' },
+        'Delivered & Cemented': { bg: '#DCFCE7', color: '#15803D', border: '#86EFAC' }
+    };
+
+    container.innerHTML = orders.map(ord => {
+        const sc = STATUS_COLORS[ord.status] || { bg: '#F1F5F9', color: '#475569', border: '#CBD5E1' };
+        const dateStr = ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '';
+        const expStr = ord.expectedDeliveryDate ? new Date(ord.expectedDeliveryDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : 'ASAP';
+
+        return '<div style="background: white; border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">' +
+            '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">' +
+                '<div>' +
+                    '<div style="font-weight: 800; font-size: 0.95rem; color: #0F172A; display: flex; align-items: center; gap: 6px;">' +
+                        '<span>🦷 Tooth ' + (ord.toothUnit || 'Restoration') + '</span>' +
+                        '<span style="background: #F8FAFC; border: 1px solid #CBD5E1; color: #475569; font-size: 0.7rem; font-weight: 700; padding: 1px 6px; border-radius: 4px;">' + (ord.shade || 'A2') + '</span>' +
+                    '</div>' +
+                    '<div style="color: #64748B; font-size: 0.78rem; margin-top: 2px;">' + ord.restorationType + ' &bull; Lab: <strong>' + (ord.labPartnerName || 'Lab') + '</strong></div>' +
+                '</div>' +
+                '<span style="background: ' + sc.bg + '; color: ' + sc.color + '; border: 1px solid ' + sc.border + '; padding: 3px 9px; border-radius: 99px; font-weight: 800; font-size: 0.72rem;">' +
+                    ord.status +
+                '</span>' +
+            '</div>' +
+            (ord.specialInstructions ? '<div style="font-size: 0.74rem; background: #F8FAFC; border-left: 3px solid #7C3AED; padding: 4px 8px; border-radius: 4px; color: #334155; margin-bottom: 0.5rem;">' + ord.specialInstructions + '</div>' : '') +
+            '<div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #F1F5F9; padding-top: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">' +
+                '<span style="font-size: 0.72rem; color: #94A3B8;">Delivery Due: <strong style="color: #0F172A;">' + expStr + '</strong></span>' +
+                '<div style="display: flex; gap: 4px; align-items: center;">' +
+                    '<select onchange="updateLabStatus(\'' + ord.id + '\', this.value)" style="height: 28px; font-size: 0.72rem; padding: 0 0.5rem; border-radius: 6px; border: 1px solid #CBD5E1; background: white; font-weight: 700; color: #334155;">' +
+                        '<option value="Sent to Lab"' + (ord.status === 'Sent to Lab' ? ' selected' : '') + '>Sent to Lab</option>' +
+                        '<option value="In Fabrication"' + (ord.status === 'In Fabrication' ? ' selected' : '') + '>In Fabrication</option>' +
+                        '<option value="Received at Clinic"' + (ord.status === 'Received at Clinic' ? ' selected' : '') + '>Received at Clinic</option>' +
+                        '<option value="Trial Fitting Done"' + (ord.status === 'Trial Fitting Done' ? ' selected' : '') + '>Trial Fitting Done</option>' +
+                        '<option value="Delivered & Cemented"' + (ord.status === 'Delivered & Cemented' ? ' selected' : '') + '>Delivered &amp; Cemented</option>' +
+                    '</select>' +
+                    '<button type="button" onclick="dispatchLabSlipWhatsApp(' + JSON.stringify(ord).replace(/"/g, '&quot;') + ')" style="height: 28px; padding: 0 8px; font-size: 0.72rem; background: #25D366; color: white; border: none; border-radius: 6px; font-weight: 800; cursor: pointer;" title="Share Slip on WhatsApp">' +
+                        '<i class="fab fa-whatsapp"></i>' +
+                    '</button>' +
+                '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
 }
