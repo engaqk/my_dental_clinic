@@ -2415,7 +2415,7 @@
 
     <!-- VIP First-Time Startup Concierge Modal (Strictly Single-Screen Zero-Scroll View) -->
     <div id="vipStartupBenefitsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.72); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 999999; align-items: center; justify-content: center; padding: 0.75rem; box-sizing: border-box;">
-        <div style="background: #FFFFFF; border-radius: 20px; width: 100%; max-width: 420px; max-height: 92vh; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.35); position: relative; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: 1.5px solid rgba(255,255,255,0.8); animation: vipModalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+        <div style="background: #FFFFFF; border-radius: 20px; width: calc(100% - 24px); max-width: 430px; max-height: 94vh; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.35); position: relative; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; border: 1.5px solid rgba(255,255,255,0.8); animation: vipModalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
             
             <!-- Dismiss ✕ Button -->
             <button type="button" onclick="closeVipStartupModal()" aria-label="Close" style="position: absolute; top: 10px; right: 12px; background: #F1F5F9; border: none; width: 28px; height: 28px; border-radius: 50%; color: #64748B; font-size: 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10;">&times;</button>
@@ -2429,84 +2429,84 @@
                 <div style="font-size: 0.72rem; color: #64748B; margin-top: 2px; font-weight: 600;">Your VIP Chairside Patient Ecosystem</div>
             </div>
 
-            <!-- Clinical Concierge Benefit 6-Feature Grid (Strict Zero-Scroll Layout) -->
-            <div style="padding: 0.35rem 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; flex-grow: 1; justify-content: space-around;">
+            <!-- Clinical Concierge Benefit 6-Feature Grid (Optimized Responsive Layout for Mobile & Desktop) -->
+            <div style="padding: 0.45rem 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-grow: 1; align-content: center;">
                 
                 <!-- 1. Interactive Visual Charting (Precision Odontogram USP) -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #F0FDFA; border: 1.5px solid #CCFBF1; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #CCFBF1; color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #F0FDFA; border: 1.5px solid #CCFBF1; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
+                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #CCFBF1; color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
                         🦷
                     </div>
-                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
                             <span>Visual Odontogram</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">FDI Pediatric &amp; Adult (USP)</div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">FDI Pediatric &amp; Adult (USP)</div>
                     </div>
                 </div>
 
                 <!-- 2. Medico-Legal E-Sign Consent (New Phase 1) -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #FEF2F2; border: 1.5px solid #FEE2E2; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #FEF2F2; border: 1.5px solid #FEE2E2; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
+                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
                         ✍️
                     </div>
-                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
                             <span>Digital E-Consent</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Paperless Medico-Legal</div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Paperless Medico-Legal</div>
                     </div>
                 </div>
 
                 <!-- 3. Digital Prescriptions & Transparent Plans -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #F0F9FF; border: 1.5px solid #E0F2FE; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #F0F9FF; border: 1.5px solid #E0F2FE; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
+                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
                         📋
                     </div>
-                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
                             <span>Digital Prescriptions</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Itemized Treatment Cost</div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Itemized Treatment Cost</div>
                     </div>
                 </div>
 
                 <!-- 4. Before / After Aesthetics Studio (New Phase 1) -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #FAF5FF; border: 1.5px solid #F3E8FF; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #F3E8FF; color: #8B5CF6; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #FAF5FF; border: 1.5px solid #F3E8FF; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
+                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #F3E8FF; color: #8B5CF6; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
                         📸
                     </div>
-                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
                             <span>Before &amp; After Studio</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Split Aesthetics Reveal</div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Split Aesthetics Reveal</div>
                     </div>
                 </div>
 
                 <!-- 5. Priority Same-Day Scheduling -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #FFFBEB; border: 1.5px solid #FEF3C7; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #FFFBEB; border: 1.5px solid #FEF3C7; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
+                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
                         ⚡
                     </div>
-                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
                             <span>Priority Scheduling</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Instant WhatsApp Support</div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Instant WhatsApp Support</div>
                     </div>
                 </div>
 
                 <!-- 6. 1-Tap Text-to-Pay (Instant UPI QR) (New Phase 1) -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #ECFDF5; border: 1.5px solid #D1FAE5; border-radius: 12px;">
-                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #ECFDF5; border: 1.5px solid #D1FAE5; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
+                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
                         💳
                     </div>
-                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
                             <span>1-Tap Text-to-Pay</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Instant Dynamic UPI QR</div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Instant Dynamic UPI QR</div>
                     </div>
                 </div>
 
