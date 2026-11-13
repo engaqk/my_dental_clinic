@@ -290,6 +290,8 @@ async function openPatientProfile(patient) {
     if (modal) {
         document.getElementById('profileName').innerText = patient.name;
         document.getElementById('profileMeta').innerText = `Mobile: ${patient.mobile} | Place: ${patient.place || 'Main'}`;
+        const avatarEl = document.getElementById('profileAvatarText');
+        if (avatarEl) avatarEl.innerText = (patient.name || 'P').trim().charAt(0).toUpperCase();
         renderTimeline(patient.history);
         await renderFinances(patient);
         if (window.resetChartingFeatures) await window.resetChartingFeatures();
@@ -330,7 +332,7 @@ function switchProfileTab(tab) {
         const text = (btn.innerText || btn.textContent || '').toLowerCase();
         if (tab === 'timeline') btn.classList.toggle('active', text.includes('history') || text.includes('clinical'));
         if (tab === 'diagnoses') btn.classList.toggle('active', text.includes('diagnosis') || text.includes('diagnostic'));
-        if (tab === 'finances') btn.classList.toggle('active', text.includes('financial') || text.includes('finances') || text.includes('finance'));
+        if (tab === 'finances') btn.classList.toggle('active', text.includes('financial') || text.includes('finances') || text.includes('finance') || text.includes('ledger'));
         if (tab === 'next-seating') btn.classList.toggle('active', text.includes('seating') || text.includes('next visit'));
         if (tab === 'charting') btn.classList.toggle('active', text.includes('charting') && !text.includes('consent'));
         if (tab === 'prescriptions') btn.classList.toggle('active', text.includes('prescription') || text.includes('rx'));
@@ -3993,15 +3995,15 @@ async function renderPatientMedicalAlerts(mobile) {
 
     if (!alertData.alerts || alertData.alerts.length === 0) {
         badgesContainer.innerHTML = `
-            <span style="font-size: 0.75rem; font-weight: 900; color: #16A34A;"><i class="fas fa-heartbeat"></i> HEALTH STATUS:</span>
-            <span style="font-size: 0.75rem; color: #64748B;">No medical alerts recorded (Fit for routine procedures)</span>
-            ${alertData.notes ? `<span class="medical-alert-tag alert-tag-warning" style="font-size: 0.72rem;"><i class="fas fa-sticky-note"></i> ${escapeHtml(alertData.notes)}</span>` : ''}
+            <span style="font-size: 0.7rem; font-weight: 800; color: #16A34A; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-shield-alt"></i> HEALTH:</span>
+            <span style="font-size: 0.7rem; color: #475569; font-weight: 600;">Fit for routine procedures</span>
+            ${alertData.notes ? `<span class="medical-alert-tag alert-tag-warning" style="font-size: 0.68rem; padding: 1px 6px;"><i class="fas fa-sticky-note"></i> ${escapeHtml(alertData.notes)}</span>` : ''}
         `;
     } else {
         badgesContainer.innerHTML = `
-            <span style="font-size: 0.75rem; font-weight: 900; color: #DC2626;"><i class="fas fa-exclamation-triangle"></i> CLINICAL WARNINGS:</span>
-            ${alertData.alerts.map(al => `<span class="medical-alert-tag alert-tag-danger"><i class="fas fa-heart"></i> ${escapeHtml(al)}</span>`).join('')}
-            ${alertData.notes ? `<span class="medical-alert-tag alert-tag-warning" style="font-size: 0.72rem;"><i class="fas fa-sticky-note"></i> Note: ${escapeHtml(alertData.notes)}</span>` : ''}
+            <span style="font-size: 0.7rem; font-weight: 800; color: #DC2626; display: inline-flex; align-items: center; gap: 4px;"><i class="fas fa-exclamation-triangle"></i> ALERT:</span>
+            ${alertData.alerts.map(al => `<span class="medical-alert-tag alert-tag-danger" style="font-size: 0.68rem; padding: 1px 6px;"><i class="fas fa-heart"></i> ${escapeHtml(al)}</span>`).join('')}
+            ${alertData.notes ? `<span class="medical-alert-tag alert-tag-warning" style="font-size: 0.68rem; padding: 1px 6px;"><i class="fas fa-sticky-note"></i> ${escapeHtml(alertData.notes)}</span>` : ''}
         `;
     }
 }

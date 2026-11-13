@@ -196,7 +196,7 @@
             } catch(e){}
         })();
     </script>
-    <link rel="stylesheet" href="style.css?v=47.0">
+    <link rel="stylesheet" href="style.css?v=47.1">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -1030,118 +1030,154 @@
     <div id="patientProfileModal" class="modal">
         <div class="modal-content profile-modal">
             <span class="close-modal" onclick="closeProfileModal()">×</span>
-            <div class="profile-header">
-                <h2 id="profileName" style="font-size: 1.35rem; font-weight: 800; margin: 0 0 2px 0;">Loading...</h2>
-                <p id="profileMeta" style="font-size: 0.82rem; color: var(--text-muted); margin: 0 0 6px 0;">Mobile: Loading...</p>
-                <!-- Medical Alerts Warning Banner -->
-                <div id="profileMedicalAlertsBar" class="profile-alerts-bar" style="margin-top: 4px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; background: rgba(239, 68, 68, 0.06); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; padding: 4px 10px;">
-                    <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;" id="profileAlertsBadges">
-                        <span style="font-size: 0.75rem; font-weight: 900; color: #DC2626;"><i class="fas fa-heartbeat"></i> CLINICAL ALERTS:</span>
-                        <span style="font-size: 0.75rem; color: #64748B;">None recorded</span>
+            <div class="profile-header modern-glance-header">
+                <!-- Top Row: Patient Avatar, Identity & Compact 1-Tap Quick Actions -->
+                <div class="profile-glance-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.65rem;">
+                    <div class="profile-avatar-block" style="display: flex; align-items: center; gap: 0.65rem;">
+                        <div class="profile-avatar-circle" id="profileAvatarBadge" style="width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(135deg, var(--primary, #0D9488), #0F766E); color: white; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; box-shadow: 0 3px 10px rgba(13,148,136,0.25); flex-shrink: 0;">
+                            <span id="profileAvatarText">P</span>
+                        </div>
+                        <div class="profile-identity">
+                            <div class="profile-name-line" style="display: flex; align-items: center; gap: 6px;">
+                                <h2 id="profileName" style="font-size: 1.18rem; font-weight: 800; margin: 0; color: #0F172A; line-height: 1.2;">Loading...</h2>
+                                <span class="profile-badge-patient" style="background: #F1F5F9; color: #475569; font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 5px;">Patient</span>
+                            </div>
+                            <p id="profileMeta" style="font-size: 0.76rem; color: #64748B; margin: 2px 0 0 0; font-weight: 600;">Mobile: Loading...</p>
+                        </div>
                     </div>
-                    <button onclick="openEditMedicalAlertsModal()" class="btn-edit-health" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; height: 26px; padding: 0 0.65rem; font-size: 0.72rem; font-weight: 700; border-radius: 6px; cursor: pointer;">
-                        <i class="fas fa-edit"></i> Edit Health
-                    </button>
+
+                    <!-- Compact Pill Actions (Replaces giant 3 buttons, saves 90px vertical height) -->
+                    <div class="action-grid profile-pill-actions" style="display: flex; align-items: center; gap: 6px; margin: 0;">
+                        <button type="button" onclick="quickWhatsApp()" class="btn-chat modern-pill-chat" title="Chat on WhatsApp" style="height: 32px; padding: 0 10px; border-radius: 8px; background: #25D366; color: white; border: none; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 2px 6px rgba(37,211,102,0.25);">
+                            <i class="fab fa-whatsapp"></i> <span>Chat</span>
+                        </button>
+                        <button type="button" onclick="openBookingForCurrentPatient()" class="btn-seating modern-pill-seating" title="Schedule Next Sitting" style="height: 32px; padding: 0 10px; border-radius: 8px; background: #0284C7; color: white; border: none; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 2px 6px rgba(2,132,199,0.25);">
+                            <i class="fas fa-calendar-plus"></i> <span>Sitting</span>
+                        </button>
+                        <button type="button" onclick="switchProfileTab('instant-pay')" class="btn-payment modern-pill-payment" title="Collect Instant Payment" style="height: 32px; padding: 0 10px; border-radius: 8px; background: #F59E0B; color: white; border: none; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 2px 6px rgba(245,158,11,0.25);">
+                            <i class="fas fa-rupee-sign"></i> <span>Pay</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="action-grid" style="margin-top: 6px; margin-bottom: 8px;">
-                    <button onclick="quickWhatsApp()" class="btn-chat">
-                        <i class="fab fa-whatsapp"></i> Chat
-                    </button>
-                    <button onclick="openBookingForCurrentPatient()" class="btn-seating">
-                        <i class="fas fa-calendar-plus"></i> Next Seating
-                    </button>
-                    <button onclick="showQuickPayment()" class="btn-payment">
-                        <i class="fas fa-rupee-sign"></i> Payment
+
+                <!-- Sleek Inline Medical Alert Bar -->
+                <div id="profileMedicalAlertsBar" class="profile-alerts-bar" style="margin-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 3px 8px;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="profileAlertsBadges">
+                        <span style="font-size: 0.7rem; font-weight: 800; color: #16A34A; display: inline-flex; align-items: center; gap: 3px;"><i class="fas fa-shield-alt"></i> HEALTH:</span>
+                        <span style="font-size: 0.7rem; color: #64748B; font-weight: 600;" id="profileHealthStatusText">Fit for routine procedures</span>
+                    </div>
+                    <button type="button" onclick="openEditMedicalAlertsModal()" class="btn-edit-health" style="background: white; color: var(--secondary); border: 1px solid #CBD5E1; height: 22px; padding: 0 0.5rem; font-size: 0.66rem; font-weight: 700; border-radius: 5px; cursor: pointer; flex-shrink: 0;">
+                        <i class="fas fa-edit"></i> Edit
                     </button>
                 </div>
             </div>
             <div class="tab-container" style="overflow-x: auto; white-space: nowrap; padding-bottom: 4px;">
-                <button class="profile-tab-btn active" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> 🦷 Dental Charting (USP)</button>
+                <button class="profile-tab-btn active" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> Charting</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('prescriptions')"><i class="fas fa-prescription"></i> Digital Rx</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('treatment-plans')"><i class="fas fa-clipboard-list"></i> Treatment Plan</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('consents')"><i class="fas fa-file-signature"></i> ✍️ E-Consent (Legal)</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('before-after')"><i class="fas fa-camera-retro"></i> 📸 Before/After</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('instant-pay')"><i class="fas fa-qrcode"></i> 💳 1-Tap Pay Link</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('consents')"><i class="fas fa-file-signature"></i> E-Consent</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('before-after')"><i class="fas fa-camera"></i> Before/After</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('instant-pay')"><i class="fas fa-qrcode"></i> Instant Pay</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('timeline')"><i class="fas fa-history"></i> History</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')"><i class="fas fa-calendar-check"></i> Next Visit</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('diagnoses')"><i class="fas fa-stethoscope"></i> Diagnostic</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('finances')"><i class="fas fa-rupee-sign"></i> Finance</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('diagnoses')"><i class="fas fa-stethoscope"></i> Diagnosis</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('finances')"><i class="fas fa-rupee-sign"></i> Ledger</button>
             </div>
             <div class="profile-content">
                 <!-- Visual Interactive Dental Charting & Consent (Clinic USP - Tab 1) -->
                 <div id="profileChartingSection" style="display: block;">
-                    <div style="display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 1rem; margin-bottom: 1.5rem;">
                         <!-- FDI Interactive Dental Charting (Odontogram) -->
                         <div class="dashboard-card fdi-chart-card">
-                            <!-- Top Badge & Title Row -->
-                            <div class="fdi-header-row">
-                                <div class="fdi-title-block">
-                                    <div class="fdi-usp-pill">
-                                        <i class="fas fa-crown"></i> CORE CLINICAL USP &bull; FDI TWO-DIGIT STANDARD
-                                    </div>
-                                    <h3 class="fdi-title">
-                                        <i class="fas fa-tooth" style="color: var(--primary, #0D9488);"></i> Interactive Anatomical Odontogram
+                            <!-- Top Compact Control Bar: Title + Dentition Switcher + Quadrant Jump -->
+                            <div class="fdi-header-row" style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                                    <h3 class="fdi-title" style="margin: 0; font-size: 1.05rem; font-weight: 800; display: inline-flex; align-items: center; gap: 6px; color: #0F172A;">
+                                        <i class="fas fa-tooth" style="color: var(--primary, #0D9488);"></i> Odontogram
                                     </h3>
-                                    <p class="fdi-subtitle">International FDI 2-Digit notation. 1-tap chairside diagnostic charting and procedure estimation.</p>
+                                    <!-- Compact Dentition Switcher -->
+                                    <div class="dentition-switcher" style="padding: 2px; border-radius: 8px; background: #F1F5F9; display: inline-flex; gap: 2px;">
+                                        <button type="button" id="btnDentitionAdult" class="btn-dentition active" onclick="setOdontogramDentition('adult')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 6px; font-weight: 700;">
+                                            <i class="fas fa-tooth"></i> Adult (32)
+                                        </button>
+                                        <button type="button" id="btnDentitionPediatric" class="btn-dentition" onclick="setOdontogramDentition('pediatric')" style="padding: 3px 8px; font-size: 0.72rem; border-radius: 6px; font-weight: 700;">
+                                            <i class="fas fa-baby"></i> Pedo (20)
+                                        </button>
+                                    </div>
                                 </div>
-                                <!-- Dentition Switcher -->
-                                <div class="dentition-switcher">
-                                    <button type="button" id="btnDentitionAdult" class="btn-dentition active" onclick="setOdontogramDentition('adult')">
-                                        <i class="fas fa-tooth"></i> Adult (32)
-                                    </button>
-                                    <button type="button" id="btnDentitionPediatric" class="btn-dentition" onclick="setOdontogramDentition('pediatric')">
-                                        <i class="fas fa-baby"></i> Pediatric (20)
-                                    </button>
+
+                                <!-- Mobile Quadrant Quick Jump Pills -->
+                                <div class="fdi-quadrant-quicknav" id="fdiQuadrantQuickNav" style="display: flex; align-items: center; gap: 4px; margin: 0; padding: 0;">
+                                    <span class="quicknav-label" style="font-size: 0.65rem; font-weight: 800; color: #64748B;"><i class="fas fa-compass"></i></span>
+                                    <button type="button" class="btn-quicknav active" onclick="jumpToQuadrant('all')">All</button>
+                                    <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q1')">Q1</button>
+                                    <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q2')">Q2</button>
+                                    <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q4')">Q4</button>
+                                    <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q3')">Q3</button>
                                 </div>
                             </div>
 
-                            <!-- Mobile Quadrant Quick Jump Pills -->
-                            <div class="fdi-quadrant-quicknav" id="fdiQuadrantQuickNav">
-                                <span class="quicknav-label"><i class="fas fa-compass"></i> Jump:</span>
-                                <button type="button" class="btn-quicknav active" onclick="jumpToQuadrant('all')">All Arches</button>
-                                <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q1')">Q1 (Upper R)</button>
-                                <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q2')">Q2 (Upper L)</button>
-                                <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q4')">Q4 (Lower R)</button>
-                                <button type="button" class="btn-quicknav" onclick="jumpToQuadrant('q3')">Q3 (Lower L)</button>
-                            </div>
-
-                            <!-- 1-Tap Condition Palette Bar -->
-                            <div class="fdi-palette-container">
-                                <div class="palette-header">
-                                    <span class="palette-label"><i class="fas fa-paint-brush"></i> 1-TAP CONDITION PALETTE:</span>
-                                    <span class="palette-tip" id="fdiPaletteTip">Active: <strong>Inspect &amp; Plan</strong> (Tap tooth for procedure options &amp; costs)</span>
+                            <!-- 1-Tap Condition Palette Bar (Single-Row Horizontal Kinetic Scroll) -->
+                            <div class="fdi-palette-container" style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 10px; padding: 5px 8px; margin-bottom: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <span style="font-size: 0.66rem; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
+                                        <i class="fas fa-paint-brush" style="color: var(--primary, #0D9488);"></i> Condition Tool:
+                                    </span>
+                                    <span class="palette-tip" id="fdiPaletteTip" style="font-size: 0.68rem; color: var(--primary, #0D9488); font-weight: 700;">Active: <strong>Inspect &amp; Plan</strong></span>
                                 </div>
-                                <div class="fdi-palette-buttons">
+                                <div class="fdi-palette-buttons" style="display: flex; gap: 5px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding-bottom: 1px;">
                                     <button type="button" class="fdi-tool-btn active" data-tool="inspect" onclick="setOdontogramTool('inspect')">
-                                        <i class="fas fa-search-plus"></i> Inspect &amp; Plan
+                                        <i class="fas fa-search-plus"></i> Inspect
                                     </button>
                                     <button type="button" class="fdi-tool-btn tool-cavity" data-tool="cavity" onclick="setOdontogramTool('cavity')">
-                                        <span class="color-dot dot-cavity"></span> Caries / Cavity
+                                        <span class="color-dot dot-cavity"></span> Caries
                                     </button>
                                     <button type="button" class="fdi-tool-btn tool-filling" data-tool="filling" onclick="setOdontogramTool('filling')">
-                                        <span class="color-dot dot-filling"></span> Filling / Restored
+                                        <span class="color-dot dot-filling"></span> Filling
                                     </button>
                                     <button type="button" class="fdi-tool-btn tool-crown" data-tool="crown" onclick="setOdontogramTool('crown')">
-                                        <span class="color-dot dot-crown"></span> Crown / Bridge
+                                        <span class="color-dot dot-crown"></span> Crown
                                     </button>
                                     <button type="button" class="fdi-tool-btn tool-rct" data-tool="rct" onclick="setOdontogramTool('rct')">
-                                        <span class="color-dot dot-rct"></span> Root Canal (RCT)
+                                        <span class="color-dot dot-rct"></span> RCT
                                     </button>
                                     <button type="button" class="fdi-tool-btn tool-missing" data-tool="missing" onclick="setOdontogramTool('missing')">
-                                        <span class="color-dot dot-missing"></span> Missing / Extracted
+                                        <span class="color-dot dot-missing"></span> Missing
                                     </button>
                                     <button type="button" class="fdi-tool-btn tool-implant" data-tool="implant" onclick="setOdontogramTool('implant')">
                                         <span class="color-dot dot-implant"></span> Implant
                                     </button>
                                     <button type="button" class="fdi-tool-btn tool-healthy" data-tool="healthy" onclick="setOdontogramTool('healthy')">
-                                        <span class="color-dot dot-healthy"></span> Sound / Healthy
+                                        <span class="color-dot dot-healthy"></span> Sound
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- Live Summary Metrics Bar -->
-                            <div class="fdi-metrics-bar" id="fdiMetricsBar">
-                                <div class="metric-pill pill-sound"><i class="fas fa-check-circle"></i> Sound: <strong id="metricSoundCount">32</strong></div>
+                            <!-- Odontogram Chart Canvas (Immediately visible chairside without scrolling!) -->
+                            <div class="fdi-chart-scrollable" id="fdiChartScrollContainer" style="padding: 2px 0; margin-bottom: 4px;">
+                                <div id="interactiveTeethChart" class="fdi-arch-canvas">
+                                    <!-- Dynamic FDI Anatomical Teeth Injected via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Live Feedback & Action Bar -->
+                            <div class="fdi-feedback-bar" style="margin-top: 4px; padding-top: 6px; border-top: 1px solid #F1F5F9; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                                <div id="toothStatusText" class="fdi-status-text" style="font-size: 0.72rem; color: #475569; font-weight: 600;">
+                                    <i class="fas fa-info-circle" style="color: var(--primary, #0D9488);"></i> Tap any tooth to chart conditions or add procedures to Treatment Plan.
+                                </div>
+                                <div class="fdi-chart-actions" style="display: flex; gap: 6px;">
+                                    <button type="button" class="btn-fdi-action btn-link-all" onclick="addAllChartedToTreatmentPlan()" style="height: 28px; padding: 0 9px; font-size: 0.72rem;">
+                                        <i class="fas fa-bolt"></i> + Add Marked to Plan
+                                    </button>
+                                    <button type="button" class="btn-fdi-action btn-clear-chart" onclick="clearOdontogramChart()" style="height: 28px; padding: 0 8px; font-size: 0.72rem;">
+                                        <i class="fas fa-undo"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Live Summary Micro-Metrics Bar -->
+                            <div class="fdi-metrics-bar" id="fdiMetricsBar" style="display: flex; gap: 4px; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; margin-top: 6px; padding-top: 4px;">
+                                <div class="metric-pill pill-sound"><i class="fas fa-check-circle" style="color:#16A34A;"></i> Sound: <strong id="metricSoundCount">32</strong></div>
                                 <div class="metric-pill pill-cavity"><i class="fas fa-circle" style="color:#EF4444;"></i> Caries: <strong id="metricCavityCount">0</strong></div>
                                 <div class="metric-pill pill-filling"><i class="fas fa-circle" style="color:#2563EB;"></i> Filling: <strong id="metricFillingCount">0</strong></div>
                                 <div class="metric-pill pill-crown"><i class="fas fa-circle" style="color:#F59E0B;"></i> Crown: <strong id="metricCrownCount">0</strong></div>
@@ -1149,33 +1185,7 @@
                                 <div class="metric-pill pill-missing"><i class="fas fa-times-circle" style="color:#64748B;"></i> Missing: <strong id="metricMissingCount">0</strong></div>
                                 <div class="metric-pill pill-implant"><i class="fas fa-circle" style="color:#0D9488;"></i> Implant: <strong id="metricImplantCount">0</strong></div>
                             </div>
-
-                            <!-- Mobile Scroll Guidance Notice -->
-                            <div class="fdi-scroll-hint">
-                                <i class="fas fa-arrows-alt-h"></i> Swipe horizontally to view full arch &bull; Tap tooth to inspect or paint
-                            </div>
-
-                            <!-- Odontogram Chart Canvas -->
-                            <div class="fdi-chart-scrollable" id="fdiChartScrollContainer">
-                                <div id="interactiveTeethChart" class="fdi-arch-canvas">
-                                    <!-- Dynamic FDI Anatomical Teeth Injected via JS -->
-                                </div>
-                            </div>
-
-                            <!-- Live Feedback Bar -->
-                            <div class="fdi-feedback-bar">
-                                <div id="toothStatusText" class="fdi-status-text">
-                                    <i class="fas fa-info-circle"></i> Click any tooth to chart conditions or add procedures to Treatment Plan.
-                                </div>
-                                <div class="fdi-chart-actions">
-                                    <button type="button" class="btn-fdi-action btn-link-all" onclick="addAllChartedToTreatmentPlan()">
-                                        <i class="fas fa-bolt"></i> + Add Marked to Treatment Plan
-                                    </button>
-                                    <button type="button" class="btn-fdi-action btn-clear-chart" onclick="clearOdontogramChart()">
-                                        <i class="fas fa-undo"></i> Reset Chart
-                                    </button>
-                                </div>
-                            </div>
+                        </div>
                         </div>
 
                         <!-- Digital E-Signature Pad -->
@@ -2012,11 +2022,11 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=47.0"></script>
-    <script src="auth.js?v=47.0"></script>
-    <script src="emailTemplates.js?v=47.0"></script>
-    <script src="script.js?v=47.0"></script>
-    <script src="premium-features.js?v=47.0"></script>
+    <script src="db-api.js?v=47.1"></script>
+    <script src="auth.js?v=47.1"></script>
+    <script src="emailTemplates.js?v=47.1"></script>
+    <script src="script.js?v=47.1"></script>
+    <script src="premium-features.js?v=47.1"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {
@@ -2182,53 +2192,84 @@
                 <div style="font-size: 0.72rem; color: #64748B; margin-top: 2px; font-weight: 600;">Your VIP Chairside Patient Ecosystem</div>
             </div>
 
-            <!-- Clinical Concierge Benefit Rows (Strict Zero-Scroll Layout) -->
-            <div style="padding: 0.35rem 0.85rem; display: flex; flex-direction: column; gap: 7px; flex-grow: 1; justify-content: space-around;">
+            <!-- Clinical Concierge Benefit 6-Feature Grid (Strict Zero-Scroll Layout) -->
+            <div style="padding: 0.35rem 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; flex-grow: 1; justify-content: space-around;">
                 
-                <!-- Row 1: Interactive Visual Charting (Precision Odontogram USP) -->
-                <div style="display: flex; align-items: center; gap: 10px; padding: 7px 11px; background: #F0FDFA; border: 1.5px solid #CCFBF1; border-radius: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #CCFBF1; color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0;">
+                <!-- 1. Interactive Visual Charting (Precision Odontogram USP) -->
+                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #F0FDFA; border: 1.5px solid #CCFBF1; border-radius: 12px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #CCFBF1; color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
                         🦷
                     </div>
-                    <div style="text-align: left; line-height: 1.25; flex: 1;">
-                        <div style="font-weight: 800; font-size: 0.8rem; color: #0F172A; display: flex; align-items: center; justify-content: space-between;">
-                            <span>Interactive Visual Charting</span>
-                            <span style="background: var(--primary, #0D9488); color: white; font-size: 0.58rem; font-weight: 900; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.5px;">USP</span>
+                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span>Visual Odontogram</span>
                         </div>
-                        <div style="font-size: 0.69rem; color: #475569; font-weight: 600;">Precision Odontogram &amp; Pediatric Mapping</div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">FDI Pediatric &amp; Adult (USP)</div>
                     </div>
                 </div>
 
-                <!-- Row 2: Digital Prescriptions & Transparent Cost -->
-                <div style="display: flex; align-items: center; gap: 10px; padding: 7px 11px; background: #F0F9FF; border: 1.5px solid #E0F2FE; border-radius: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0;">
+                <!-- 2. Medico-Legal E-Sign Consent (New Phase 1) -->
+                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #FEF2F2; border: 1.5px solid #FEE2E2; border-radius: 12px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                        ✍️
+                    </div>
+                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span>Digital E-Consent</span>
+                        </div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Paperless Medico-Legal</div>
+                    </div>
+                </div>
+
+                <!-- 3. Digital Prescriptions & Transparent Plans -->
+                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #F0F9FF; border: 1.5px solid #E0F2FE; border-radius: 12px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
                         📋
                     </div>
-                    <div style="text-align: left; line-height: 1.25; flex: 1;">
-                        <div style="font-weight: 800; font-size: 0.8rem; color: #0F172A;">Digital Prescriptions &amp; Transparent Cost</div>
-                        <div style="font-size: 0.69rem; color: #475569; font-weight: 600;">Itemized Treatment Plans &amp; Step-by-Step Milestones</div>
+                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span>Digital Prescriptions</span>
+                        </div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Itemized Treatment Cost</div>
                     </div>
                 </div>
 
-                <!-- Row 3: Priority Same-Day Scheduling -->
-                <div style="display: flex; align-items: center; gap: 10px; padding: 7px 11px; background: #FAF5FF; border: 1.5px solid #F3E8FF; border-radius: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #F3E8FF; color: #7E22CE; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0;">
+                <!-- 4. Before / After Aesthetics Studio (New Phase 1) -->
+                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #FAF5FF; border: 1.5px solid #F3E8FF; border-radius: 12px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #F3E8FF; color: #8B5CF6; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                        📸
+                    </div>
+                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span>Before &amp; After Studio</span>
+                        </div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Split Aesthetics Reveal</div>
+                    </div>
+                </div>
+
+                <!-- 5. Priority Same-Day Scheduling -->
+                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #FFFBEB; border: 1.5px solid #FEF3C7; border-radius: 12px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
                         ⚡
                     </div>
-                    <div style="text-align: left; line-height: 1.25; flex: 1;">
-                        <div style="font-weight: 800; font-size: 0.8rem; color: #0F172A;">Priority Same-Day Scheduling</div>
-                        <div style="font-size: 0.69rem; color: #475569; font-weight: 600;">Instant Confirmation &amp; Direct WhatsApp Support</div>
+                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span>Priority Scheduling</span>
+                        </div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Instant WhatsApp Support</div>
                     </div>
                 </div>
 
-                <!-- Row 4: Connected Clinic Practice & Ledger -->
-                <div style="display: flex; align-items: center; gap: 10px; padding: 7px 11px; background: #FFFBEB; border: 1.5px solid #FEF3C7; border-radius: 12px;">
-                    <div style="width: 32px; height: 32px; border-radius: 9px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0;">
-                        🏥
+                <!-- 6. 1-Tap Text-to-Pay (Instant UPI QR) (New Phase 1) -->
+                <div style="display: flex; align-items: center; gap: 8px; padding: 7px 9px; background: #ECFDF5; border: 1.5px solid #D1FAE5; border-radius: 12px;">
+                    <div style="width: 28px; height: 28px; border-radius: 8px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                        💳
                     </div>
-                    <div style="text-align: left; line-height: 1.25; flex: 1;">
-                        <div style="font-weight: 800; font-size: 0.8rem; color: #0F172A;">Connected Practice &amp; Financial Ledger</div>
-                        <div style="font-size: 0.69rem; color: #475569; font-weight: 600;">Doctor, Staff &amp; Reception Working in Total Harmony</div>
+                    <div style="text-align: left; line-height: 1.2; flex: 1; min-width: 0;">
+                        <div style="font-weight: 800; font-size: 0.73rem; color: #0F172A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            <span>1-Tap Text-to-Pay</span>
+                        </div>
+                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Instant Dynamic UPI QR</div>
                     </div>
                 </div>
 

@@ -1,10 +1,10 @@
 /**
  * sw.js - Service Worker for Dental Clinic PWA
- * Version: v47.0.0
+ * Version: v47.2.0
  * Features: Instant auto-update, Network-First strategy for fresh deployments, offline fallback.
  */
 
-const CACHE_NAME = 'dental-clinic-v47-0';
+const CACHE_NAME = 'dental-clinic-v47-2';
 
 const ASSETS = [
     './',

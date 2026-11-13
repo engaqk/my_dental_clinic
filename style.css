@@ -1141,39 +1141,93 @@ input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback { display:
 .profile-modal {
   display: flex !important;
   flex-direction: column !important;
-  max-height: 90vh !important;
+  max-height: 92vh !important;
   padding: 0 !important;
   overflow: hidden !important;
+  border-radius: 20px !important;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3) !important;
 }
 
 .profile-modal .close-modal {
-  top: 1.5rem !important;
-  right: 1.5rem !important;
+  top: 1rem !important;
+  right: 1.15rem !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  background: #F1F5F9 !important;
+  color: #64748B !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 1.1rem !important;
+  cursor: pointer !important;
   z-index: 10;
 }
 
 .profile-modal .profile-header {
-  padding: 2rem 2.5rem 1.5rem !important;
+  padding: 0.9rem 1.25rem 0.65rem !important;
   margin-bottom: 0 !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  border-bottom: 1px solid #E2E8F0 !important;
+  background: #FFFFFF !important;
   flex-shrink: 0;
 }
 
-.profile-modal .tab-container {
-  margin-bottom: 0 !important;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+.profile-modal .tab-container,
+#patientProfileModal .tab-container {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+  gap: 6px !important;
+  padding: 6px 1.25rem !important;
+  background: #F8FAFC !important;
+  border-bottom: 1px solid #E2E8F0 !important;
   border-radius: 0 !important;
-  background: white !important;
-  border-left: none !important;
-  border-right: none !important;
-  padding: 0.5rem 2.5rem !important;
+  margin-bottom: 0 !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch !important;
   flex-shrink: 0;
+}
+
+.profile-modal .tab-container::-webkit-scrollbar,
+#patientProfileModal .tab-container::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.profile-modal .profile-tab-btn,
+#patientProfileModal .profile-tab-btn {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  padding: 6px 12px !important;
+  font-size: 0.76rem !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  background: #FFFFFF !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #475569 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.profile-modal .profile-tab-btn.active,
+#patientProfileModal .profile-tab-btn.active {
+  background: var(--primary, #0D9488) !important;
+  color: #FFFFFF !important;
+  border-color: var(--primary, #0D9488) !important;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25) !important;
 }
 
 .profile-modal .profile-content {
   flex: 1 !important;
   overflow-y: auto !important;
-  padding: 2rem 2.5rem !important;
+  padding: 1rem 1.25rem !important;
+  background: #FFFFFF !important;
 }
 
 .profile-booking-grid {
@@ -2331,11 +2385,11 @@ body.modal-open .mobile-bottom-nav,
    ========================================================================== */
 
 .fdi-chart-card {
-    padding: 1.25rem !important;
-    border-radius: 16px !important;
-    border: 1.5px solid var(--primary-light, #CCFBF1) !important;
+    padding: 0.85rem !important;
+    border-radius: 14px !important;
+    border: 1px solid #E2E8F0 !important;
     background: #FFFFFF !important;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
     position: relative;
     overflow: hidden;
 }
@@ -2345,63 +2399,41 @@ body.modal-open .mobile-bottom-nav,
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-}
-
-.fdi-usp-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(var(--primary-rgb, 13, 148, 136), 0.12);
-    color: var(--primary, #0D9488);
-    font-size: 0.7rem;
-    font-weight: 800;
-    padding: 3px 10px;
-    border-radius: 99px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 4px;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
 }
 
 .fdi-title {
-    margin: 0 0 0.2rem 0;
+    margin: 0;
     color: var(--secondary, #0F172A);
-    font-size: 1.25rem;
+    font-size: 1.05rem;
     font-weight: 800;
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-.fdi-subtitle {
-    margin: 0;
-    color: var(--text-muted, #64748B);
-    font-size: 0.8rem;
-    line-height: 1.3;
-}
-
 .dentition-switcher {
     display: inline-flex;
     background: #F1F5F9;
-    padding: 3px;
-    border-radius: 10px;
-    gap: 4px;
+    padding: 2px;
+    border-radius: 8px;
+    gap: 3px;
 }
 
 .btn-dentition {
     border: none;
     background: transparent;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 0.78rem;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--text-muted, #64748B);
     cursor: pointer;
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
 }
 
 .btn-dentition.active {
@@ -2415,32 +2447,43 @@ body.modal-open .mobile-bottom-nav,
 .fdi-quadrant-quicknav {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     overflow-x: auto;
-    padding: 4px 0 8px 0;
-    margin-bottom: 0.5rem;
+    padding: 0;
+    margin: 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     -webkit-overflow-scrolling: touch;
 }
 
+.fdi-quadrant-quicknav::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
 .quicknav-label {
-    font-size: 0.7rem;
+    font-size: 0.66rem;
     font-weight: 800;
     color: var(--text-muted, #64748B);
     text-transform: uppercase;
     white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
 }
 
 .btn-quicknav {
     border: 1px solid #CBD5E1;
     background: #FFFFFF;
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 99px;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: var(--secondary, #0F172A);
     white-space: nowrap;
     cursor: pointer;
     transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 
 .btn-quicknav.active {
@@ -2453,9 +2496,9 @@ body.modal-open .mobile-bottom-nav,
 .fdi-palette-container {
     background: #F8FAFC;
     border: 1px solid #E2E8F0;
-    border-radius: 12px;
-    padding: 0.75rem;
-    margin-bottom: 0.75rem;
+    border-radius: 10px;
+    padding: 5px 8px;
+    margin-bottom: 0.5rem;
 }
 
 .palette-header {
@@ -2463,45 +2506,58 @@ body.modal-open .mobile-bottom-nav,
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 0.5rem;
+    gap: 4px;
+    margin-bottom: 4px;
 }
 
 .palette-label {
-    font-size: 0.7rem;
+    font-size: 0.66rem;
     font-weight: 800;
     color: var(--text-muted, #64748B);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.4px;
 }
 
 .palette-tip {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     color: var(--primary, #0D9488);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .fdi-palette-buttons {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    padding-bottom: 1px;
+}
+
+.fdi-palette-buttons::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 .fdi-tool-btn {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     border: 1.5px solid #CBD5E1;
     background: #FFFFFF;
-    padding: 5px 10px;
-    border-radius: 8px;
-    font-size: 0.74rem;
+    padding: 3px 8px;
+    border-radius: 7px;
+    font-size: 0.72rem;
     font-weight: 700;
     color: var(--secondary, #0F172A);
     cursor: pointer;
     transition: all 0.15s ease;
     user-select: none;
-    min-height: 34px;
+    min-height: 28px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .fdi-tool-btn:hover {
@@ -2520,8 +2576,8 @@ body.modal-open .mobile-bottom-nav,
 /* Color indicator dots */
 .color-dot {
     display: inline-block;
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
 }
@@ -2536,30 +2592,39 @@ body.modal-open .mobile-bottom-nav,
 /* Real-Time Metrics Summary Bar */
 .fdi-metrics-bar {
     display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 0.75rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px;
+    margin-top: 5px;
+    margin-bottom: 0;
+    padding: 2px 0;
+}
+
+.fdi-metrics-bar::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
 }
 
 .metric-pill {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-size: 0.72rem;
+    gap: 3px;
+    font-size: 0.66rem;
     font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 6px;
+    padding: 2px 6px;
+    border-radius: 5px;
     background: #F1F5F9;
     color: var(--secondary, #0F172A);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .fdi-scroll-hint {
-    display: none;
-    font-size: 0.7rem;
-    color: var(--text-muted, #64748B);
-    text-align: center;
-    margin-bottom: 4px;
-    font-weight: 600;
+    display: none !important;
 }
 
 /* Odontogram Arch Canvas */
@@ -2907,24 +2972,43 @@ body.modal-open .mobile-bottom-nav,
     align-items: center;
 }
 
-/* Mobile Responsiveness for Odontogram */
+/* Mobile Responsiveness for Odontogram & Patient Profile */
 @media (max-width: 767px) {
     .fdi-scroll-hint {
-        display: block !important;
+        display: none !important;
+    }
+    .profile-modal .profile-header {
+        padding: 0.75rem 0.85rem 0.45rem !important;
+    }
+    .profile-modal .profile-content {
+        padding: 0.65rem 0.75rem !important;
+    }
+    .fdi-chart-card {
+        padding: 0.65rem 0.6rem !important;
+        border-radius: 12px !important;
     }
     .fdi-header-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.6rem;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
     }
     .dentition-switcher {
-        width: 100%;
-        display: flex;
+        width: auto !important;
+        display: inline-flex !important;
     }
     .btn-dentition {
-        flex: 1;
-        text-align: center;
-        justify-content: center;
+        flex: 0 0 auto !important;
+        padding: 3px 7px !important;
+        font-size: 0.7rem !important;
+    }
+    .fdi-arch-canvas {
+        min-width: 580px !important;
+    }
+    .tooth-card {
+        min-width: 30px !important;
+        max-width: 36px !important;
+        padding: 2px 1px 2px 1px !important;
     }
     .custom-proc-inputs {
         grid-template-columns: 1fr 1fr;
