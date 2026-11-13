@@ -890,7 +890,7 @@
                     <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">Access your treatment history, scheduled appointments, and billing statements.</p>
                     
                     <!-- Google Login Button -->
-                    <button onclick="loginPatientGoogle()" class="btn-primary" style="background: white; color: #475569; border: 1px solid #CBD5E1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; height: 48px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1rem; transition: all 0.2s;">
+                    <button type="button" id="btnPatientGoogleLogin" onclick="loginPatientGoogle()" class="btn-primary" style="position: relative; overflow: hidden; background: white; color: #475569; border: 1.5px solid #CBD5E1; box-shadow: 0 2px 4px rgba(0,0,0,0.05); width: 100%; height: 48px; border-radius: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 1rem; transition: all 0.2s; cursor: pointer;">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google logo" style="width: 20px; height: 20px;">
                         Sign in with Google
                     </button>
@@ -2048,7 +2048,7 @@
             <div id="loginError" style="color: #dc3545; font-size: 0.82rem; text-align: center; display: none; margin-bottom: 0.85rem;">Invalid username or password.</div>
 
             <!-- Doctor / Staff Google (Gmail) Sign-In Button (Primary & Only Visible Login) -->
-            <button type="button" id="btnDoctorGoogleSignIn" onclick="handleDoctorGoogleSignIn()" style="width: 100%; height: 50px; border-radius: 12px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease;">
+            <button type="button" id="btnDoctorGoogleSignIn" onclick="handleDoctorGoogleSignIn()" style="position: relative; overflow: hidden; width: 100%; height: 50px; border-radius: 12px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #0F172A; font-weight: 800; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease;">
                 <svg width="22" height="22" viewBox="0 0 48 48">
                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                     <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
@@ -2430,83 +2430,83 @@
             </div>
 
             <!-- Clinical Concierge Benefit 6-Feature Grid (Optimized Responsive Layout for Mobile & Desktop) -->
-            <div style="padding: 0.45rem 0.85rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; flex-grow: 1; align-content: center;">
+            <div class="vip-startup-grid">
                 
                 <!-- 1. Interactive Visual Charting (Precision Odontogram USP) -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #F0FDFA; border: 1.5px solid #CCFBF1; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
-                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #CCFBF1; color: var(--primary, #0D9488); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div class="vip-startup-card" style="background: #F0FDFA; border: 1.5px solid #CCFBF1;">
+                    <div class="vip-startup-icon" style="background: #CCFBF1; color: var(--primary, #0D9488);">
                         🦷
                     </div>
-                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
+                    <div class="vip-startup-content">
+                        <div class="vip-startup-title">
                             <span>Visual Odontogram</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">FDI Pediatric &amp; Adult (USP)</div>
+                        <div class="vip-startup-sub">FDI Pediatric &amp; Adult (USP)</div>
                     </div>
                 </div>
 
                 <!-- 2. Medico-Legal E-Sign Consent (New Phase 1) -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #FEF2F2; border: 1.5px solid #FEE2E2; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
-                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #FEE2E2; color: #DC2626; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div class="vip-startup-card" style="background: #FEF2F2; border: 1.5px solid #FEE2E2;">
+                    <div class="vip-startup-icon" style="background: #FEE2E2; color: #DC2626;">
                         ✍️
                     </div>
-                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
+                    <div class="vip-startup-content">
+                        <div class="vip-startup-title">
                             <span>Digital E-Consent</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Paperless Medico-Legal</div>
+                        <div class="vip-startup-sub">Paperless Medico-Legal</div>
                     </div>
                 </div>
 
                 <!-- 3. Digital Prescriptions & Transparent Plans -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #F0F9FF; border: 1.5px solid #E0F2FE; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
-                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #E0F2FE; color: #0284C7; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div class="vip-startup-card" style="background: #F0F9FF; border: 1.5px solid #E0F2FE;">
+                    <div class="vip-startup-icon" style="background: #E0F2FE; color: #0284C7;">
                         📋
                     </div>
-                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
+                    <div class="vip-startup-content">
+                        <div class="vip-startup-title">
                             <span>Digital Prescriptions</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Itemized Treatment Cost</div>
+                        <div class="vip-startup-sub">Itemized Treatment Cost</div>
                     </div>
                 </div>
 
                 <!-- 4. Before / After Aesthetics Studio (New Phase 1) -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #FAF5FF; border: 1.5px solid #F3E8FF; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
-                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #F3E8FF; color: #8B5CF6; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div class="vip-startup-card" style="background: #FAF5FF; border: 1.5px solid #F3E8FF;">
+                    <div class="vip-startup-icon" style="background: #F3E8FF; color: #8B5CF6;">
                         📸
                     </div>
-                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
+                    <div class="vip-startup-content">
+                        <div class="vip-startup-title">
                             <span>Before &amp; After Studio</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Split Aesthetics Reveal</div>
+                        <div class="vip-startup-sub">Split Aesthetics Reveal</div>
                     </div>
                 </div>
 
                 <!-- 5. Priority Same-Day Scheduling -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #FFFBEB; border: 1.5px solid #FEF3C7; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
-                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #FEF3C7; color: #D97706; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div class="vip-startup-card" style="background: #FFFBEB; border: 1.5px solid #FEF3C7;">
+                    <div class="vip-startup-icon" style="background: #FEF3C7; color: #D97706;">
                         ⚡
                     </div>
-                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
+                    <div class="vip-startup-content">
+                        <div class="vip-startup-title">
                             <span>Priority Scheduling</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Instant WhatsApp Support</div>
+                        <div class="vip-startup-sub">Instant WhatsApp Support</div>
                     </div>
                 </div>
 
                 <!-- 6. 1-Tap Text-to-Pay (Instant UPI QR) (New Phase 1) -->
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 9px; background: #ECFDF5; border: 1.5px solid #D1FAE5; border-radius: 12px; min-height: 52px; box-sizing: border-box;">
-                    <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #D1FAE5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+                <div class="vip-startup-card" style="background: #ECFDF5; border: 1.5px solid #D1FAE5;">
+                    <div class="vip-startup-icon" style="background: #D1FAE5; color: #059669;">
                         💳
                     </div>
-                    <div style="text-align: left; line-height: 1.22; flex: 1; min-width: 0;">
-                        <div style="font-weight: 800; font-size: 0.72rem; color: #0F172A; margin-bottom: 1px;">
+                    <div class="vip-startup-content">
+                        <div class="vip-startup-title">
                             <span>1-Tap Text-to-Pay</span>
                         </div>
-                        <div style="font-size: 0.62rem; color: #475569; font-weight: 600;">Instant Dynamic UPI QR</div>
+                        <div class="vip-startup-sub">Instant Dynamic UPI QR</div>
                     </div>
                 </div>
 
@@ -2740,7 +2740,7 @@
             </p>
 
             <!-- Mandatory Google Sign-In Button -->
-            <button type="button" id="btnGoogleGateSignIn" onclick="handleFirstTimeGoogleSignIn()" style="width: 100%; height: 48px; border-radius: 12px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #1E293B; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease;">
+            <button type="button" id="btnGoogleGateSignIn" onclick="handleFirstTimeGoogleSignIn()" style="position: relative; overflow: hidden; width: 100%; height: 48px; border-radius: 12px; border: 1.5px solid #CBD5E1; background: #FFFFFF; color: #1E293B; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 12px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.2s ease;">
                 <svg width="20" height="20" viewBox="0 0 48 48">
                     <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
                     <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
