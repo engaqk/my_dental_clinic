@@ -2957,3 +2957,17 @@ body.modal-open .mobile-bottom-nav,
     }
 }
 
+
+/* Phase 1: Medico-Legal E-Signature & Before/After Aesthetics */
+#consentSignaturePad {
+    background-color: #FFFFFF;
+    background-image: radial-gradient(#E2E8F0 1px, transparent 1px);
+    background-size: 16px 16px;
+}
+.ba-slider-box {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+.ba-slider-box img {
+    pointer-events: none;
+    -webkit-user-drag: none;
+}

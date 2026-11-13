@@ -2099,6 +2099,172 @@ class DatabaseAPI {
         }
         return localProfile;
     }
+
+    // =========================================================================
+    // PHASE 1: MEDICO-LEGAL CONSENTS, INSTANT PAYMENTS & BEFORE/AFTER AESTHETICS
+    // =========================================================================
+
+    // 1. Medico-Legal E-Signature Consent Forms (Tenant-Scoped)
+    async saveConsentForm(consentData) {
+        const tenantId = this.tenantId || 'default';
+        const now = new Date();
+        const istDateOptions = { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' };
+        const istTimeOptions = { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true };
+        const dateStr = now.toLocaleDateString('en-IN', istDateOptions);
+        const timeStr = now.toLocaleTimeString('en-IN', istTimeOptions) + ' IST';
+
+        const consentId = 'consent_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        const payload = {
+            id: consentId,
+            ...consentData,
+            tenant_id: tenantId,
+            clinic_slug: tenantId,
+            date: dateStr,
+            time: timeStr,
+            createdAt: now.toISOString(),
+            status: 'SIGNED_VERIFIED'
+        };
+
+        try {
+            const cleanMobile = (consentData.patientMobile || '').replace(/[^0-9]/g, '');
+            const cacheKey = 'consents_' + tenantId + '_' + cleanMobile;
+            const existing = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+            existing.unshift(payload);
+            localStorage.setItem(cacheKey, JSON.stringify(existing.slice(0, 50)));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection('consents').doc(consentId).set(payload, { merge: true });
+                console.log('Saved Medico-Legal Consent [' + consentId + '] for patient ' + consentData.patientName + ' to Firestore.');
+            } catch (err) {
+                console.warn('Failed to save consent form to Firestore:', err);
+            }
+        }
+
+        return payload;
+    }
+
+    async getPatientConsents(mobile) {
+        const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+        const tenantId = this.tenantId || 'default';
+        const cacheKey = 'consents_' + tenantId + '_' + cleanMobile;
+        let localList = [];
+        try {
+            localList = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const snapshot = await this.getCollection('consents').get();
+                const fbList = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const docMobile = (data.patientMobile || '').replace(/[^0-9]/g, '');
+                    if (docMobile === cleanMobile || (!cleanMobile && (!data.tenant_id || data.tenant_id === tenantId))) {
+                        fbList.push({ id: doc.id, ...data });
+                    }
+                });
+                if (fbList.length > 0) {
+                    fbList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                    localStorage.setItem(cacheKey, JSON.stringify(fbList.slice(0, 50)));
+                    return fbList;
+                }
+            } catch (err) {
+                console.warn('Failed to fetch consents from Firestore:', err);
+            }
+        }
+        return localList;
+    }
+
+    // 2. Clinical Before / After Aesthetics Showcase (Tenant-Scoped)
+    async saveBeforeAfterCase(caseData) {
+        const tenantId = this.tenantId || 'default';
+        const caseId = 'case_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+        const payload = {
+            id: caseId,
+            ...caseData,
+            tenant_id: tenantId,
+            clinic_slug: tenantId,
+            createdAt: new Date().toISOString()
+        };
+
+        try {
+            const cleanMobile = (caseData.patientMobile || '').replace(/[^0-9]/g, '');
+            const cacheKey = 'before_after_' + tenantId + '_' + cleanMobile;
+            const existing = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+            existing.unshift(payload);
+            localStorage.setItem(cacheKey, JSON.stringify(existing.slice(0, 40)));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection('before_after_cases').doc(caseId).set(payload, { merge: true });
+            } catch (err) {
+                console.warn('Failed to save Before/After case to Firestore:', err);
+            }
+        }
+        return payload;
+    }
+
+    async getPatientBeforeAfterCases(mobile) {
+        const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+        const tenantId = this.tenantId || 'default';
+        const cacheKey = 'before_after_' + tenantId + '_' + cleanMobile;
+        let localList = [];
+        try {
+            localList = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const snapshot = await this.getCollection('before_after_cases').get();
+                const fbList = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const docMobile = (data.patientMobile || '').replace(/[^0-9]/g, '');
+                    if (docMobile === cleanMobile || (!cleanMobile && (!data.tenant_id || data.tenant_id === tenantId))) {
+                        fbList.push({ id: doc.id, ...data });
+                    }
+                });
+                if (fbList.length > 0) {
+                    fbList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                    localStorage.setItem(cacheKey, JSON.stringify(fbList.slice(0, 40)));
+                    return fbList;
+                }
+            } catch (err) {
+                console.warn('Failed to fetch Before/After cases from Firestore:', err);
+            }
+        }
+        return localList;
+    }
+
+    // 3. Instant Payment Link & Dynamic UPI Generator (Text-to-Pay)
+    generatePaymentPayload(amount, note, patientName = '', patientMobile = '') {
+        const settings = this.currentSettings || {};
+        const clinicName = settings.clinic_name || settings.name || 'Dental Clinic';
+        const rawPhone = settings.doctor_phone || settings.phone || '9999999999';
+        const cleanPhone = String(rawPhone).replace(/[^0-9]/g, '');
+        const vpa = (settings.upi_vpa || (cleanPhone + '@upi')).trim();
+
+        const amtNum = parseFloat(amount) || 0;
+        const cleanNote = (note || 'Dental Treatment Fee').replace(/[^\w\s-]/g, ' ').trim();
+        const encodedNote = encodeURIComponent(cleanNote);
+        const encodedClinic = encodeURIComponent(clinicName);
+
+        // Standard Universal NPCI / UPI Deep Link URI
+        const upiUri = 'upi://pay?pa=' + vpa + '&pn=' + encodedClinic + '&am=' + amtNum.toFixed(2) + '&cu=INR&tn=' + encodedNote;
+        
+        return {
+            amount: amtNum,
+            note: cleanNote,
+            vpa: vpa,
+            clinicName: clinicName,
+            upiUri: upiUri,
+            patientName: patientName,
+            patientMobile: patientMobile
+        };
+    }
 }
 
 // Export singleton instance

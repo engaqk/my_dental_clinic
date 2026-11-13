@@ -196,7 +196,7 @@
             } catch(e){}
         })();
     </script>
-    <link rel="stylesheet" href="style.css?v=46.4">
+    <link rel="stylesheet" href="style.css?v=47.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -1059,6 +1059,9 @@
                 <button class="profile-tab-btn active" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> 🦷 Dental Charting (USP)</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('prescriptions')"><i class="fas fa-prescription"></i> Digital Rx</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('treatment-plans')"><i class="fas fa-clipboard-list"></i> Treatment Plan</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('consents')"><i class="fas fa-file-signature"></i> ✍️ E-Consent (Legal)</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('before-after')"><i class="fas fa-camera-retro"></i> 📸 Before/After</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('instant-pay')"><i class="fas fa-qrcode"></i> 💳 1-Tap Pay Link</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('timeline')"><i class="fas fa-history"></i> History</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')"><i class="fas fa-calendar-check"></i> Next Visit</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('diagnoses')"><i class="fas fa-stethoscope"></i> Diagnostic</button>
@@ -1520,6 +1523,246 @@
                         </button>
                     </div>
                 </div>
+                <!-- =========================================================================
+                     PHASE 1 MODULE 1: MEDICO-LEGAL E-SIGNATURE CONSENT FORMS (LEGAL SHIELD)
+                     ========================================================================= -->
+                <div id="profileConsentsSection" style="display: none;">
+                    <div class="dashboard-card" style="padding: 1.25rem; border-radius: 12px; margin-bottom: 1.25rem; border: 1.5px solid #E2E8F0; background: #FFFFFF;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.75rem;">
+                            <div>
+                                <span style="font-size: 0.7rem; font-weight: 900; color: #DC2626; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(220,38,38,0.08); padding: 2px 8px; border-radius: 99px;">
+                                    <i class="fas fa-shield-alt"></i> Medico-Legal Protection &bull; Digital E-Sign
+                                </span>
+                                <h3 style="margin: 4px 0 0 0; color: var(--secondary); font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 0.4rem;">
+                                    <i class="fas fa-file-signature" style="color: var(--primary);"></i> Informed Treatment Consent Form
+                                </h3>
+                            </div>
+                            <span style="font-size: 0.78rem; color: #64748B; font-weight: 700;">Paperless iPad/Mobile Touch Signature</span>
+                        </div>
+
+                        <!-- Procedure Template Selector -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 4px;">SELECT CLINICAL PROCEDURE</label>
+                                <select id="consentTemplateSelect" onchange="onConsentTemplateChange(this.value)" class="form-control" style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; color: #0F172A; padding: 0 0.75rem;">
+                                    <option value="rct">🦷 Root Canal Treatment (RCT) &amp; Crown Prep</option>
+                                    <option value="extraction">🩸 Surgical Extraction &amp; Wisdom Impaction</option>
+                                    <option value="implant">🔩 Dental Implant &amp; Bone Augmentation</option>
+                                    <option value="whitening">✨ Teeth Whitening &amp; Cosmetic Veneers</option>
+                                    <option value="pediatric">👶 Pediatric Dental Care &amp; Sedation</option>
+                                    <option value="aligners">📐 Clear Orthodontic Aligners</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 4px;">TOOTH / QUADRANT NOTATION</label>
+                                <input type="text" id="consentToothNotation" placeholder="e.g. Tooth 16 (Upper Right Molar) or All Arches" class="form-control" style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; padding: 0 0.75rem;">
+                            </div>
+                        </div>
+
+                        <!-- Informed Risk Disclosure Box -->
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 4px;">PROCEDURE DESCRIPTION &amp; MEDICO-LEGAL RISK DISCLOSURE</label>
+                            <textarea id="consentLegalText" rows="4" class="form-control" style="width: 100%; border-radius: 8px; border: 1.5px solid #CBD5E1; font-size: 0.82rem; line-height: 1.45; color: #334155; padding: 0.6rem 0.75rem; font-family: inherit; background: #F8FAFC; resize: vertical;"></textarea>
+                        </div>
+
+                        <!-- Patient Acknowledgment Checklist -->
+                        <div style="background: #F1F5F9; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1rem;">
+                            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; font-weight: 700; color: #1E293B; cursor: pointer; margin-bottom: 6px;">
+                                <input type="checkbox" id="consentCheckRisks" checked style="margin-top: 3px; accent-color: var(--primary);">
+                                <span>I understand the nature of the proposed procedure, realistic success rates, potential risks, and available treatment alternatives.</span>
+                            </label>
+                            <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 0.8rem; font-weight: 700; color: #1E293B; cursor: pointer;">
+                                <input type="checkbox" id="consentCheckAnesthesia" checked style="margin-top: 3px; accent-color: var(--primary);">
+                                <span>I consent to local anesthesia, diagnostic radiographs, and chairside photography necessary for documentation.</span>
+                            </label>
+                        </div>
+
+                        <!-- Interactive Signature Pad Canvas -->
+                        <div style="margin-bottom: 1.25rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                <label style="font-size: 0.78rem; font-weight: 800; color: #0F172A; text-transform: uppercase;">
+                                    <i class="fas fa-pen-fancy" style="color: var(--primary);"></i> PATIENT / GUARDIAN DIGITAL SIGNATURE
+                                </label>
+                                <button type="button" onclick="clearConsentSignature()" style="background: #E2E8F0; border: none; border-radius: 6px; padding: 3px 10px; font-size: 0.72rem; font-weight: 800; color: #475569; cursor: pointer;">
+                                    <i class="fas fa-eraser"></i> Clear Pad
+                                </button>
+                            </div>
+                            <div style="border: 2px dashed #94A3B8; border-radius: 10px; background: #FFFFFF; overflow: hidden; position: relative;">
+                                <canvas id="consentSignaturePad" width="550" height="150" style="width: 100%; height: 150px; touch-action: none; cursor: crosshair; display: block;"></canvas>
+                                <span style="position: absolute; bottom: 8px; right: 12px; font-size: 0.7rem; color: #94A3B8; pointer-events: none;">Sign with Finger or Stylus</span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons Row -->
+                        <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
+                            <button type="button" onclick="saveSignedConsentForm()" class="btn-primary" style="flex: 1; min-width: 180px; height: 44px; font-size: 0.88rem; font-weight: 800; background: var(--primary); border-radius: 10px;">
+                                <i class="fas fa-save"></i> Save &amp; Issue Signed Consent
+                            </button>
+                            <button type="button" onclick="shareConsentWhatsApp()" class="btn-primary" style="height: 44px; padding: 0 1.15rem; font-size: 0.88rem; font-weight: 800; background: #25D366; border-radius: 10px;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp Copy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Past Signed Consents History List -->
+                    <div class="dashboard-card" style="padding: 1.25rem; border-radius: 12px; border: 1px solid #E2E8F0; background: #FFFFFF;">
+                        <h4 style="margin: 0 0 0.85rem 0; font-size: 0.95rem; font-weight: 800; color: var(--secondary); display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="fas fa-history" style="color: var(--primary);"></i> Executed Medico-Legal Consents for this Patient
+                        </h4>
+                        <div id="patientConsentsHistoryList" style="display: flex; flex-direction: column; gap: 0.65rem;">
+                            <div style="text-align: center; padding: 1rem; color: #64748B; font-size: 0.85rem;">No signed consents recorded yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =========================================================================
+                     PHASE 1 MODULE 2: BEFORE / AFTER CLINICAL AESTHETICS & CASE SHOWCASE
+                     ========================================================================= -->
+                <div id="profileBeforeAfterSection" style="display: none;">
+                    <div class="dashboard-card" style="padding: 1.25rem; border-radius: 12px; margin-bottom: 1.25rem; border: 1.5px solid #E2E8F0; background: #FFFFFF;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.75rem;">
+                            <div>
+                                <span style="font-size: 0.7rem; font-weight: 900; color: #8B5CF6; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(139,92,246,0.08); padding: 2px 8px; border-radius: 99px;">
+                                    <i class="fas fa-sparkles"></i> High-Conversion Clinical Aesthetics
+                                </span>
+                                <h3 style="margin: 4px 0 0 0; color: var(--secondary); font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 0.4rem;">
+                                    <i class="fas fa-camera-retro" style="color: #8B5CF6;"></i> Before &amp; After Comparison Studio
+                                </h3>
+                            </div>
+                            <span style="font-size: 0.78rem; color: #64748B; font-weight: 700;">Chairside Split Comparison &bull; Watermarked Showcase</span>
+                        </div>
+
+                        <!-- Case Details Selector -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 4px;">PROCEDURE CATEGORY</label>
+                                <select id="caseProcedureCategory" class="form-control" style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; color: #0F172A; padding: 0 0.75rem;">
+                                    <option value="Teeth Whitening">✨ Professional Laser Whitening</option>
+                                    <option value="Composite Veneers">💎 Composite / Ceramic Veneers</option>
+                                    <option value="Scaling &amp; Polishing">🫧 Ultrasonic Scaling &amp; Stain Removal</option>
+                                    <option value="Anterior Restoration">🦷 Anterior Tooth Re-alignment / RCT</option>
+                                    <option value="Full Arch Restoration">👑 Crown &amp; Bridge Smile Makeover</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 4px;">CASE TITLE / CLINICAL NOTE</label>
+                                <input type="text" id="caseTitleNote" placeholder="e.g. Upper Anterior Diastema Closure" class="form-control" style="width: 100%; height: 42px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; padding: 0 0.75rem;">
+                            </div>
+                        </div>
+
+                        <!-- Dual Image Upload Dropzones -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;">
+                            <!-- Before Photo Box -->
+                            <div style="border: 2px dashed #CBD5E1; border-radius: 10px; padding: 1rem; text-align: center; background: #F8FAFC;">
+                                <div style="font-size: 0.75rem; font-weight: 800; color: #DC2626; margin-bottom: 0.5rem;"><i class="fas fa-history"></i> BEFORE PHOTO (PRE-OP)</div>
+                                <div id="previewBeforeWrapper" style="width: 100%; height: 160px; border-radius: 8px; overflow: hidden; background: #E2E8F0; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+                                    <span style="font-size: 0.75rem; color: #94A3B8;"><i class="fas fa-image fa-2x"></i><br>No photo selected</span>
+                                </div>
+                                <input type="file" id="inputCaseBeforePhoto" accept="image/*" onchange="previewCaseImage(this, 'previewBeforeWrapper')" style="display: none;">
+                                <button type="button" onclick="document.getElementById('inputCaseBeforePhoto').click()" class="btn-primary" style="height: 32px; font-size: 0.75rem; padding: 0 0.75rem; background: #475569; border-radius: 6px;">
+                                    <i class="fas fa-upload"></i> Upload Before
+                                </button>
+                            </div>
+
+                            <!-- After Photo Box -->
+                            <div style="border: 2px dashed #CBD5E1; border-radius: 10px; padding: 1rem; text-align: center; background: #F8FAFC;">
+                                <div style="font-size: 0.75rem; font-weight: 800; color: #16A34A; margin-bottom: 0.5rem;"><i class="fas fa-check-circle"></i> AFTER PHOTO (POST-OP)</div>
+                                <div id="previewAfterWrapper" style="width: 100%; height: 160px; border-radius: 8px; overflow: hidden; background: #E2E8F0; display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
+                                    <span style="font-size: 0.75rem; color: #94A3B8;"><i class="fas fa-image fa-2x"></i><br>No photo selected</span>
+                                </div>
+                                <input type="file" id="inputCaseAfterPhoto" accept="image/*" onchange="previewCaseImage(this, 'previewAfterWrapper')" style="display: none;">
+                                <button type="button" onclick="document.getElementById('inputCaseAfterPhoto').click()" class="btn-primary" style="height: 32px; font-size: 0.75rem; padding: 0 0.75rem; background: #16A34A; border-radius: 6px;">
+                                    <i class="fas fa-upload"></i> Upload After
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Drag Before/After Comparison Slider (Visible when photos loaded) -->
+                        <div id="interactiveSliderContainer" style="display: none; margin-bottom: 1.25rem;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 4px;">INTERACTIVE REVEAL SLIDER (DRAG TO COMPARE)</label>
+                            <div class="ba-slider-box" id="baSliderBox" style="position: relative; width: 100%; max-width: 600px; height: 320px; margin: 0 auto; overflow: hidden; border-radius: 12px; border: 2px solid #CBD5E1; user-select: none;">
+                                <img id="sliderAfterImg" src="" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;">
+                                <div id="sliderBeforeClip" style="position: absolute; top: 0; left: 0; width: 50%; height: 100%; overflow: hidden; border-right: 3px solid #FFFFFF;">
+                                    <img id="sliderBeforeImg" src="" style="position: absolute; top: 0; left: 0; width: 600px; height: 320px; object-fit: cover; max-width: none;">
+                                </div>
+                                <div id="sliderHandle" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 2px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: ew-resize; font-size: 0.75rem; color: #0F172A; z-index: 10;">
+                                    <i class="fas fa-arrows-alt-h"></i>
+                                </div>
+                                <span style="position: absolute; top: 10px; left: 10px; background: rgba(220,38,38,0.85); color: white; padding: 2px 8px; border-radius: 99px; font-size: 0.68rem; font-weight: 900;">BEFORE</span>
+                                <span style="position: absolute; top: 10px; right: 10px; background: rgba(22,163,74,0.85); color: white; padding: 2px 8px; border-radius: 99px; font-size: 0.68rem; font-weight: 900;">AFTER</span>
+                            </div>
+                        </div>
+
+                        <!-- Actions Row -->
+                        <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
+                            <button type="button" onclick="saveCaseShowcase()" class="btn-primary" style="flex: 1; min-width: 180px; height: 44px; font-size: 0.88rem; font-weight: 800; background: #8B5CF6; border-radius: 10px;">
+                                <i class="fas fa-save"></i> Save Portfolio Case
+                            </button>
+                            <button type="button" onclick="shareCaseWhatsApp()" class="btn-primary" style="height: 44px; padding: 0 1.15rem; font-size: 0.88rem; font-weight: 800; background: #25D366; border-radius: 10px;">
+                                <i class="fab fa-whatsapp"></i> Share on WhatsApp
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Past Cases Portfolio -->
+                    <div class="dashboard-card" style="padding: 1.25rem; border-radius: 12px; border: 1px solid #E2E8F0; background: #FFFFFF;">
+                        <h4 style="margin: 0 0 0.85rem 0; font-size: 0.95rem; font-weight: 800; color: var(--secondary); display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="fas fa-images" style="color: #8B5CF6;"></i> Aesthetic Cases Portfolio for this Patient
+                        </h4>
+                        <div id="patientCasesHistoryList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.85rem;">
+                            <div style="grid-column: 1/-1; text-align: center; padding: 1rem; color: #64748B; font-size: 0.85rem;">No aesthetic cases saved yet.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- =========================================================================
+                     PHASE 1 MODULE 3: 1-TAP TEXT-TO-PAY & DYNAMIC UPI QR GATEWAY
+                     ========================================================================= -->
+                <div id="profileInstantPaySection" style="display: none;">
+                    <div class="dashboard-card" style="padding: 1.25rem; border-radius: 12px; margin-bottom: 1.25rem; border: 1.5px solid #E2E8F0; background: #FFFFFF;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; border-bottom: 1px solid #E2E8F0; padding-bottom: 0.75rem;">
+                            <div>
+                                <span style="font-size: 0.7rem; font-weight: 900; color: #0284C7; text-transform: uppercase; letter-spacing: 0.5px; background: rgba(2,132,199,0.08); padding: 2px 8px; border-radius: 99px;">
+                                    <i class="fas fa-bolt"></i> Instant Cash Acceleration &bull; Text-to-Pay
+                                </span>
+                                <h3 style="margin: 4px 0 0 0; color: var(--secondary); font-size: 1.15rem; font-weight: 800; display: flex; align-items: center; gap: 0.4rem;">
+                                    <i class="fas fa-qrcode" style="color: #0284C7;"></i> Dynamic UPI Payment QR &amp; WhatsApp Pay Link
+                                </h3>
+                            </div>
+                            <span style="font-size: 0.78rem; color: #64748B; font-weight: 700;">Zero POS Machine Rental &bull; Direct Settlement</span>
+                        </div>
+
+                        <!-- Amount & Purpose Row -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 4px;">BILLING AMOUNT (₹ INR)</label>
+                                <input type="number" id="instantPayAmount" placeholder="e.g. 2500" class="form-control" oninput="renderInstantPaymentQR()" style="width: 100%; height: 44px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-size: 1.15rem; font-weight: 900; color: #0F172A; padding: 0 0.85rem;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #475569; margin-bottom: 4px;">TREATMENT / BILLING NOTE</label>
+                                <input type="text" id="instantPayNote" placeholder="e.g. Root Canal Sitting 1" class="form-control" oninput="renderInstantPaymentQR()" style="width: 100%; height: 44px; border-radius: 8px; border: 1.5px solid #CBD5E1; font-weight: 700; padding: 0 0.85rem;">
+                            </div>
+                        </div>
+
+                        <!-- Dynamic QR Display Card -->
+                        <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1.25rem;">
+                            <div id="instantPayQRCodeContainer" style="display: inline-block; padding: 12px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 0.75rem;"></div>
+                            <div style="font-size: 0.95rem; font-weight: 900; color: #0F172A;" id="instantPayDisplayTotal">Amount: ₹0</div>
+                            <div style="font-size: 0.78rem; color: #64748B; margin-top: 2px;" id="instantPayDisplayVpa">Scan using Google Pay, PhonePe, Paytm, BHIM</div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
+                            <button type="button" onclick="sendPaymentLinkWhatsApp()" class="btn-primary" style="flex: 1; min-width: 180px; height: 44px; font-size: 0.88rem; font-weight: 800; background: #25D366; border-radius: 10px;">
+                                <i class="fab fa-whatsapp"></i> Send Payment Link via WhatsApp
+                            </button>
+                            <button type="button" onclick="recordInstantPaymentInLedger()" class="btn-primary" style="height: 44px; padding: 0 1.15rem; font-size: 0.88rem; font-weight: 800; background: #0284C7; border-radius: 10px;">
+                                <i class="fas fa-check-double"></i> Mark Paid &amp; Credit Ledger
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -1769,11 +2012,11 @@
         </div>
     </div>
 
-    <script src="db-api.js?v=46.4"></script>
-    <script src="auth.js?v=46.4"></script>
-    <script src="emailTemplates.js?v=46.4"></script>
-    <script src="script.js?v=46.4"></script>
-    <script src="premium-features.js?v=46.4"></script>
+    <script src="db-api.js?v=47.0"></script>
+    <script src="auth.js?v=47.0"></script>
+    <script src="emailTemplates.js?v=47.0"></script>
+    <script src="script.js?v=47.0"></script>
+    <script src="premium-features.js?v=47.0"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {
