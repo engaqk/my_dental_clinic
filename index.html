@@ -243,11 +243,11 @@
                     <li><a href="javascript:void(0)" onclick="scrollToBooking(); return false;">Book Appointment</a></li>
                     <li id="patient-nav-item" style="display: none;"><a href="javascript:void(0)" onclick="openPatientProfileView()" style="display: inline-flex; align-items: center; gap: 7px; font-weight: 700; color: var(--primary);"><img id="patientNavAvatar" src="" style="width: 22px; height: 22px; border-radius: 50%; object-fit: cover; display: none;"> <span id="patientNavName">My Profile</span></a></li>
                     <li id="patient-login-item"><a href="javascript:void(0)" onclick="triggerGoogleSignInPrompt()" style="font-weight: 700; color: #475569;"><i class="fab fa-google" style="color: #4285F4;"></i> Sign In</a></li>
-                    <li id="vip-concierge-nav-item"><a href="javascript:void(0)" onclick="openVipStartupModal(); return false;" style="font-weight: 700; color: #0F172A;"><i class="fas fa-sparkles" style="color: #F59E0B;"></i> Patient Concierge</a></li>
-                    <li id="portal-nav-item"><a href="javascript:void(0)" onclick="showSection('dashboard'); return false;" id="dashboard-nav">Clinical Portal (Admin/Staff)</a></li>
-                    <li id="superadmin-nav-item"><a href="superadmin.html" id="superadmin-nav" onclick="if(window.location.protocol!=='file:'){window.location.href='/superadmin'; return false;} else {window.location.href='superadmin.html'; return false;}" style="color: #8B5CF6; font-weight: 800; display: inline-flex; align-items: center; gap: 6px;"><i class="fas fa-crown" style="color: #F59E0B; font-size: 0.95rem;"></i> SuperAdmin</a></li>
-                    <li id="pwa-install-item"><a href="javascript:void(0)" id="pwaInstallBtn" onclick="triggerPWAInstall(); return false;" style="color: var(--primary); font-weight: 800;"><i class="fas fa-download"></i> Install App</a></li>
-                    <li id="logout-nav-item" style="display: none;"><a href="javascript:void(0)" onclick="logout(); return false;" style="color: #DC2626; font-weight: 800;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                    <li id="vip-concierge-nav-item" style="display: none !important;"></li>
+                    <li id="portal-nav-item"><a href="javascript:void(0)" onclick="showSection('dashboard'); return false;" id="dashboard-nav">Clinical Portal</a></li>
+                    <li id="superadmin-nav-item" style="display: none !important;"><a href="superadmin.html" id="superadmin-nav"></a></li>
+                    <li id="pwa-install-item" style="display: none !important;"><a href="javascript:void(0)" id="pwaInstallBtn" onclick="triggerPWAInstall(); return false;"></a></li>
+                    <li id="logout-nav-item" style="display: none !important;"><a href="javascript:void(0)" onclick="logout(); return false;" style="color: #DC2626; font-weight: 800;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
             
@@ -1052,7 +1052,7 @@
                             <i class="fab fa-whatsapp"></i> <span>Chat</span>
                         </button>
                         <button type="button" onclick="openBookingForCurrentPatient()" class="btn-seating modern-pill-seating" title="Schedule Next Sitting" style="height: 32px; padding: 0 10px; border-radius: 8px; background: #0284C7; color: white; border: none; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 2px 6px rgba(2,132,199,0.25);">
-                            <i class="fas fa-calendar-plus"></i> <span>Sitting</span>
+                            <i class="fas fa-calendar-plus"></i> <span>Next Sitting</span>
                         </button>
                         <button type="button" onclick="switchProfileTab('instant-pay')" class="btn-payment modern-pill-payment" title="Collect Instant Payment" style="height: 32px; padding: 0 10px; border-radius: 8px; background: #F59E0B; color: white; border: none; font-size: 0.75rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; box-shadow: 0 2px 6px rgba(245,158,11,0.25);">
                             <i class="fas fa-rupee-sign"></i> <span>Pay</span>
@@ -1079,7 +1079,7 @@
                 <button class="profile-tab-btn" onclick="switchProfileTab('before-after')"><i class="fas fa-camera"></i> Before/After</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('instant-pay')"><i class="fas fa-qrcode"></i> Instant Pay</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('timeline')"><i class="fas fa-history"></i> History</button>
-                <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')"><i class="fas fa-calendar-check"></i> Next Visit</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('next-seating')"><i class="fas fa-calendar-check"></i> Next Sitting</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('diagnoses')"><i class="fas fa-stethoscope"></i> Diagnosis</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('finances')"><i class="fas fa-rupee-sign"></i> Ledger</button>
             </div>

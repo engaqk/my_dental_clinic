@@ -333,7 +333,7 @@ function switchProfileTab(tab) {
         if (tab === 'timeline') btn.classList.toggle('active', text.includes('history') || text.includes('clinical'));
         if (tab === 'diagnoses') btn.classList.toggle('active', text.includes('diagnosis') || text.includes('diagnostic'));
         if (tab === 'finances') btn.classList.toggle('active', text.includes('financial') || text.includes('finances') || text.includes('finance') || text.includes('ledger'));
-        if (tab === 'next-seating') btn.classList.toggle('active', text.includes('seating') || text.includes('next visit'));
+        if (tab === 'next-seating') btn.classList.toggle('active', text.includes('seating') || text.includes('next visit') || text.includes('sitting'));
         if (tab === 'charting') btn.classList.toggle('active', text.includes('charting') && !text.includes('consent'));
         if (tab === 'prescriptions') btn.classList.toggle('active', text.includes('prescription') || text.includes('rx'));
         if (tab === 'treatment-plans') btn.classList.toggle('active', text.includes('treatment plan') || text.includes('plan'));
@@ -341,6 +341,12 @@ function switchProfileTab(tab) {
         if (tab === 'before-after') btn.classList.toggle('active', text.includes('before') || text.includes('after'));
         if (tab === 'instant-pay') btn.classList.toggle('active', text.includes('1-tap') || text.includes('pay'));
     });
+
+    // Reset scroll to top of the content view on tab switch
+    const pContent = document.querySelector('#patientProfileModal .profile-content');
+    if (pContent) pContent.scrollTop = 0;
+    const pModal = document.querySelector('#patientProfileModal .modal-content');
+    if (pModal) pModal.scrollTop = 0;
 
     const pat = (typeof currentPatient !== 'undefined' && currentPatient) ? currentPatient : (window.currentPatient || null);
     if (pat && pat.mobile) {

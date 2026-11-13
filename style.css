@@ -245,6 +245,12 @@ nav a.active { color: var(--primary); }
     position: relative !important;
     white-space: nowrap !important;
   }
+  #logout-nav-item,
+  #superadmin-nav-item,
+  #vip-concierge-nav-item,
+  #pwa-install-item {
+    display: none !important;
+  }
   nav a::after {
     content: '';
     position: absolute;
@@ -1223,9 +1229,13 @@ input:invalid:not(:focus):not(:placeholder-shown) ~ .invalid-feedback { display:
   box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25) !important;
 }
 
-.profile-modal .profile-content {
-  flex: 1 !important;
+.profile-modal .profile-content,
+#patientProfileModal .profile-content {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
   overflow-y: auto !important;
+  overscroll-behavior-y: contain !important;
+  -webkit-overflow-scrolling: touch !important;
   padding: 1rem 1.25rem !important;
   background: #FFFFFF !important;
 }
@@ -1706,17 +1716,20 @@ body.modal-open .mobile-bottom-nav,
 }
 
 @media (max-width: 767px) {
-    /* Full mobile clearance for Patient Profile Modal */
+    /* Full mobile clearance for Patient Profile Modal with Fixed Header & Tabs */
     #patientProfileModal {
         align-items: stretch !important;
         justify-content: stretch !important;
         padding: 0 !important;
         z-index: 10000 !important;
+        overflow: hidden !important;
     }
 
     #patientProfileModal .modal-content,
     #patientProfileModal.modal-content,
     .modal-content.profile-modal {
+        display: flex !important;
+        flex-direction: column !important;
         border-radius: 0 !important;
         height: 100vh !important;
         height: 100dvh !important;
@@ -1724,71 +1737,80 @@ body.modal-open .mobile-bottom-nav,
         width: 100% !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 1rem 0.85rem 100px 0.85rem !important;
-        overflow-y: auto !important;
-        -webkit-overflow-scrolling: touch !important;
+        padding: 0 !important;
+        overflow: hidden !important; /* Outer container NEVER scrolls */
         box-sizing: border-box !important;
+        position: relative !important;
     }
 
     #patientProfileModal .profile-header {
-        padding: 0 0 0.4rem 0 !important;
-    }
-    #patientProfileModal .profile-header h2 {
-        font-size: 1.25rem !important;
-        margin: 0 0 2px 0 !important;
-    }
-    #patientProfileModal .profile-header p {
-        font-size: 0.8rem !important;
-        margin: 0 0 6px 0 !important;
-        color: #64748B !important;
+        flex-shrink: 0 !important; /* Pinned at top */
+        padding: 0.75rem 0.9rem 0.5rem !important;
+        background: #FFFFFF !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+        position: relative !important;
+        z-index: 20 !important;
     }
 
-    .profile-alerts-bar {
-        margin: 4px 0 8px 0 !important;
+    #patientProfileModal .profile-header .close-modal,
+    .profile-modal .close-modal {
+        top: 0.65rem !important;
+        right: 0.75rem !important;
+        width: 30px !important;
+        height: 30px !important;
+        border-radius: 50% !important;
+        background: #F1F5F9 !important;
+        color: #64748B !important;
         display: flex !important;
         align-items: center !important;
-        justify-content: space-between !important;
-        gap: 6px !important;
-        background: rgba(239, 68, 68, 0.06) !important;
-        border: 1px solid rgba(239, 68, 68, 0.2) !important;
-        border-radius: 8px !important;
-        padding: 4px 8px !important;
-        min-height: 32px !important;
+        justify-content: center !important;
+        font-size: 1.1rem !important;
+        cursor: pointer !important;
+        position: absolute !important;
+        z-index: 25 !important;
     }
 
-    /* Action buttons in profile header */
-    #patientProfileModal .action-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 6px !important;
-        margin: 6px 0 8px 0 !important;
-    }
-
-    #patientProfileModal .action-grid button {
-        padding: 6px 4px !important;
-        font-size: 0.78rem !important;
-        min-height: 36px !important;
-        height: 36px !important;
-        border-radius: 8px !important;
-        font-weight: 800 !important;
-    }
-
-    #patientProfileModal .profile-content {
-        padding: 0.5rem 0 100px 0 !important;
-        min-height: auto !important;
-    }
-
-    /* Scrollable Profile Tabs on mobile */
+    /* Fixed Pinned Tabs on mobile */
+    #patientProfileModal .tab-container,
+    .profile-modal .tab-container,
     .tab-container {
+        flex-shrink: 0 !important; /* Pinned under the header */
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
         white-space: nowrap !important;
         gap: 6px !important;
-        padding: 4px 2px !important;
-        margin-bottom: 8px !important;
+        padding: 6px 0.75rem !important;
+        margin: 0 !important;
+        background: #F8FAFC !important;
+        border-bottom: 1px solid #E2E8F0 !important;
         scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
         -webkit-overflow-scrolling: touch !important;
+        position: relative !important;
+        z-index: 15 !important;
+    }
+
+    #patientProfileModal .tab-container::-webkit-scrollbar,
+    .profile-modal .tab-container::-webkit-scrollbar,
+    .tab-container::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+    }
+
+    /* ONLY .profile-content scrolls on mobile! Smooth touch scrolling */
+    #patientProfileModal .profile-content,
+    .profile-modal .profile-content {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain !important;
+        padding: 0.85rem 0.9rem 90px 0.9rem !important;
+        background: #FFFFFF !important;
+        box-sizing: border-box !important;
     }
 
     .profile-tab-btn {
@@ -2979,9 +3001,15 @@ body.modal-open .mobile-bottom-nav,
     }
     .profile-modal .profile-header {
         padding: 0.75rem 0.85rem 0.45rem !important;
+        flex-shrink: 0 !important;
     }
     .profile-modal .profile-content {
-        padding: 0.65rem 0.75rem !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        overscroll-behavior-y: contain !important;
+        padding: 0.75rem 0.85rem 90px 0.85rem !important;
     }
     .fdi-chart-card {
         padding: 0.65rem 0.6rem !important;
