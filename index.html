@@ -201,7 +201,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link rel="stylesheet" href="style.css?v=47.5">
+    <link rel="stylesheet" href="style.css?v=47.5.2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&amp;display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
@@ -537,65 +537,72 @@
 
 
                 <div class="stats-row">
-                    <div class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 1rem;">
-                        <i class="fas fa-user-check" style="margin-bottom:0.25rem; font-size: 1.2rem;"></i>
-                        <div style="display:flex; flex-direction:column; align-items:center;">
-                            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Total Patients</span>
-                            <span id="totalPatients" class="stat-val" style="font-size:1.25rem; font-weight: 800;">0</span>
+                    <div class="stat-box">
+                        <i class="fas fa-user-check"></i>
+                        <div>
+                            <span>Total Patients</span>
+                            <span id="totalPatients" class="stat-val">0</span>
                         </div>
                     </div>
-                    <div id="stats-earnings" class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 1rem;">
-                        <i class="fas fa-hand-holding-usd" style="color: var(--accent); background: rgba(245, 158, 11, 0.1); margin-bottom:0.25rem; font-size: 1.2rem;"></i>
-                        <div style="display:flex; flex-direction:column; align-items:center;">
-                            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Total Revenue</span>
-                            <span id="totalEarnings" class="stat-val" style="font-size:1.25rem; font-weight: 800;">₹0</span>
+                    <div id="stats-earnings" class="stat-box">
+                        <i class="fas fa-hand-holding-usd" style="color: var(--accent); background: rgba(245, 158, 11, 0.1);"></i>
+                        <div>
+                            <span>Total Revenue</span>
+                            <span id="totalEarnings" class="stat-val">₹0</span>
                         </div>
                     </div>
-                    <div class="stat-box" style="display:flex; flex-direction:column; align-items:center; text-align:center; padding: 1rem;">
-                        <i class="fas fa-hourglass-half" style="color: #64748b; background: rgba(100, 116, 139, 0.1); margin-bottom:0.25rem; font-size: 1.2rem;"></i>
-                        <div style="display:flex; flex-direction:column; align-items:center;">
-                            <span style="font-size:0.7rem; font-weight:800; text-transform:uppercase; color:var(--text-muted);">Pending Care</span>
-                            <span id="pendingVisits" class="stat-val" style="font-size:1.25rem; font-weight: 800;">0</span>
+                    <div class="stat-box">
+                        <i class="fas fa-hourglass-half" style="color: #64748b; background: rgba(100, 116, 139, 0.1);"></i>
+                        <div>
+                            <span>Pending Care</span>
+                            <span id="pendingVisits" class="stat-val">0</span>
                         </div>
                     </div>
                 </div>
 
                 <div id="patientsTab" class="dashboard-tab">
-                    <!-- Quick Clinical Highlights (Schedule & Recent) -->
-                    <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
-                        <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.25rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: var(--shadow-sm);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h4 style="font-size: 1rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-calendar-day" style="color: var(--primary); margin-right: 6px;"></i> Today's Schedule</h4>
-                                <a href="javascript:void(0)" onclick="showDashboardTab('schedule')" style="font-size: 0.75rem; font-weight: 800; color: var(--primary); text-decoration: none;">View Calendar &rarr;</a>
-                            </div>
-                            <div id="todayScheduleList" style="display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
-                                <i>Loading today's appointments...</i>
-                            </div>
-                        </div>
-                        <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.25rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 0.75rem; box-shadow: var(--shadow-sm);">
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h4 style="font-size: 1rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-user-clock" style="color: var(--primary); margin-right: 6px;"></i> Recent Patients</h4>
-                                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Live Feed</span>
-                            </div>
-                            <div id="recentPatientsList" style="display: flex; flex-direction: column; gap: 0.5rem; color: var(--text-muted); font-size: 0.85rem;">
-                                <i>Loading recent patients...</i>
-                            </div>
-                        </div>
+                    <!-- Full Patient Explorer Database (UP / PRIMARY VIEW) -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--secondary); margin: 0; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-folder-open" style="color: var(--primary);"></i> Patient Directory
+                        </h3>
+                        <span style="font-size: 0.76rem; color: var(--text-muted); font-weight: 700;">Tap any card to open profile &amp; clinical tools</span>
                     </div>
 
-                    <!-- Full Patient Explorer Database -->
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
-                        <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--secondary); margin: 0;"><i class="fas fa-folder-open" style="color: var(--primary); margin-right: 6px;"></i> Patient Directory</h3>
-                        <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 700;">Tap any card to view full records &amp; clinical tools</span>
-                    </div>
-
-                    <div class="search-box" style="margin-bottom: 1.25rem;">
+                    <div class="search-box" style="margin-bottom: 0.85rem;">
                         <i class="fas fa-search"></i>
                         <input type="text" id="searchInput" placeholder="Search by patient name, phone number or place..." onkeyup="filterPatients()">
                     </div>
                     <div id="patientExplorer" class="dashboard-grid"></div>
-                    <div id="noDataMessage" style="text-align: center; padding: 3rem; display: none;">
-                        <p style="color: var(--text-muted); font-weight: 600;">No matching patient records found.</p>
+                    <div id="noDataMessage" style="text-align: center; padding: 2rem; display: none;">
+                        <p style="color: var(--text-muted); font-weight: 600; font-size: 0.88rem;">No matching patient records found.</p>
+                    </div>
+
+                    <!-- Quick Clinical Highlights (Schedule & Recent - BELOW Patient Directory) -->
+                    <div style="margin-top: 1.5rem; margin-bottom: 0.65rem; display: flex; justify-content: space-between; align-items: center;">
+                        <h4 style="font-size: 0.95rem; font-weight: 800; color: #334155; margin: 0; display: flex; align-items: center; gap: 6px;">
+                            <i class="fas fa-bolt" style="color: var(--primary);"></i> Live Schedule &amp; Activity Feed
+                        </h4>
+                    </div>
+                    <div class="dashboard-grid clinical-highlights-grid" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.85rem; margin-bottom: 1.25rem;">
+                        <div class="dashboard-card" style="background: white; border-radius: 12px; padding: 1rem 1.15rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h4 style="font-size: 0.92rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-calendar-day" style="color: var(--primary); margin-right: 6px;"></i> Today's Schedule</h4>
+                                <a href="javascript:void(0)" onclick="showDashboardTab('schedule')" style="font-size: 0.72rem; font-weight: 800; color: var(--primary); text-decoration: none;">View Calendar &rarr;</a>
+                            </div>
+                            <div id="todayScheduleList" style="display: flex; flex-direction: column; gap: 0.45rem; color: var(--text-muted); font-size: 0.82rem;">
+                                <i>Loading today's appointments...</i>
+                            </div>
+                        </div>
+                        <div class="dashboard-card" style="background: white; border-radius: 12px; padding: 1rem 1.15rem; border: 1px solid #E2E8F0; display: flex; flex-direction: column; gap: 0.65rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h4 style="font-size: 0.92rem; font-weight: 800; color: #0F172A; margin: 0;"><i class="fas fa-user-clock" style="color: var(--primary); margin-right: 6px;"></i> Recent Patients</h4>
+                                <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">Live Feed</span>
+                            </div>
+                            <div id="recentPatientsList" style="display: flex; flex-direction: column; gap: 0.45rem; color: var(--text-muted); font-size: 0.82rem;">
+                                <i>Loading recent patients...</i>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

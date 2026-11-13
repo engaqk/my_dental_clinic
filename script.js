@@ -271,8 +271,8 @@ function renderPatientExplorer(patients) {
                     <span>${p.history.length}</span>
                 </div>
             </div>
-            <button style="width: 100%; margin-top: 1rem; background: var(--bg-soft); color: var(--primary); border: none; padding: 0.75rem; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s;">
-                View Profile <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
+            <button style="width: 100%; margin-top: 0.55rem; background: var(--bg-soft); color: var(--primary); border: none; padding: 0.45rem 0.65rem; border-radius: 7px; font-weight: 800; font-size: 0.78rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                View Profile <i class="fas fa-arrow-right"></i>
             </button>
         `;
         container.appendChild(card);
