@@ -209,7 +209,7 @@ function renderDashboardOverview(patients) {
             const initials = p.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
             const lastAppt = p.history[0];
             return `
-            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #F1F5F9; cursor: pointer;" onclick="openPatientProfile(patients.find(x => x.mobile === '${p.mobile}'))">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #F1F5F9; cursor: pointer;" onclick="openPatientProfile(patients.find(x => x.mobile === '${p.mobile}'))" title="Open Doctor Clinical Workplace for ${p.name}">
                 <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #3B82F6, #1E3A8A); display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 0.8rem; flex-shrink: 0;">${initials}</div>
                 <div style="flex: 1;">
                     <div style="font-size: 0.95rem; font-weight: 700; color: #0F172A;">${p.name}</div>
@@ -271,8 +271,10 @@ function renderPatientExplorer(patients) {
                     <span>${p.history.length}</span>
                 </div>
             </div>
-            <button style="width: 100%; margin-top: 0.55rem; background: var(--bg-soft); color: var(--primary); border: none; padding: 0.45rem 0.65rem; border-radius: 7px; font-weight: 800; font-size: 0.78rem; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                View Profile <i class="fas fa-arrow-right"></i>
+            <button class="btn-doctor-workplace" style="width: 100%; margin-top: 0.65rem; background: linear-gradient(135deg, var(--primary, #0D9488), #0F766E); color: #FFFFFF; border: none; padding: 0.52rem 0.85rem; border-radius: 8px; font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 3px 10px rgba(13, 148, 136, 0.28); letter-spacing: 0.2px;" title="Open Doctor Clinical Workplace: Odontogram Charting, Digital Rx, Treatment Plans, E-Consent &amp; VIP Club">
+                <i class="fas fa-user-md" style="font-size: 0.95rem;"></i>
+                <span>Doctor Clinical Workplace</span>
+                <i class="fas fa-arrow-right" style="font-size: 0.72rem; margin-left: 2px;"></i>
             </button>
         `;
         container.appendChild(card);

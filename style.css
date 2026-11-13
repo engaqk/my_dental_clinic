@@ -3397,3 +3397,19 @@ body.modal-open .mobile-bottom-nav,
     font-size: 0.68rem !important;
   }
 }
+
+
+/* Primary Doctor Clinical Workplace Action Button */
+.btn-doctor-workplace {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-doctor-workplace:hover {
+  filter: brightness(1.12) !important;
+  transform: translateY(-1.5px) !important;
+  box-shadow: 0 6px 16px rgba(13, 148, 136, 0.38) !important;
+}
+
+.btn-doctor-workplace:active {
+  transform: translateY(0) scale(0.98) !important;
+}
