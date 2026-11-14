@@ -2352,6 +2352,17 @@
             sessionStorage.setItem('app_banner_dismissed', 'true');
         }
 
+        function getAppMonogram(name) {
+            if (!name || typeof name !== 'string') return 'MC';
+            const clean = name.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
+            const words = clean.split(/\s+/).filter(w => w.length > 0);
+            const ignoreWords = ['the', 'a', 'an', 'and', 'of', '&'];
+            const filtered = words.filter(w => !ignoreWords.includes(w.toLowerCase()));
+            if (filtered.length >= 2) return (filtered[0][0] + filtered[1][0]).toUpperCase();
+            if (filtered.length === 1) return filtered[0].slice(0, 2).toUpperCase();
+            return 'MC';
+        }
+
         function openMobileAppDownloadModal() {
             const modal = document.getElementById('mobileAppDownloadModal');
             if (!modal) return;
@@ -2373,7 +2384,7 @@
                 }
             }
 
-            const monogram = typeof getClinicMonogram === 'function' ? getClinicMonogram(clinicName) : clinicName.slice(0, 2).toUpperCase();
+            const monogram = typeof getClinicMonogram === 'function' ? getClinicMonogram(clinicName) : getAppMonogram(clinicName);
             const themeColor = settings.primary_color || settings.primaryColor || '#0D9488';
 
             const nameEl = document.getElementById('modalAppClinicName');
@@ -2393,7 +2404,8 @@
             }
 
             // Auto-detect OS platform and activate appropriate tab
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const navUA = (window.navigator && window.navigator.userAgent) ? window.navigator.userAgent : (navigator.userAgent || '');
+            const isIOS = /iPad|iPhone|iPod/i.test(navUA) || (window.navigator && window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
             switchAppModalTab(isIOS ? 'ios' : 'android');
 
             modal.style.display = 'flex';
