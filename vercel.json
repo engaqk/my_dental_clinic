@@ -9,6 +9,8 @@
     { "source": "/favicon.ico", "destination": "/api/tenant-icon?size=64&format=png" },
     { "source": "/favicon.png", "destination": "/api/tenant-icon?size=64&format=png" },
     { "source": "/app-icon.png", "destination": "/api/tenant-icon?size=512&format=png" },
+    { "source": "/download", "destination": "/api/download-app" },
+    { "source": "/app", "destination": "/api/download-app" },
     { "source": "/superadmin", "destination": "/superadmin.html" },
     { "source": "/:slug([a-z0-9-]+)", "destination": "/?c=:slug" }
   ],

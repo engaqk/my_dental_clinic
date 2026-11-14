@@ -1,0 +1,31 @@
+{
+  "appId": "com.dentalclinic.app",
+  "appName": "Dental Clinic",
+  "webDir": ".",
+  "bundledWebRuntime": false,
+  "server": {
+    "url": "https://mydentalclinic01.vercel.app",
+    "cleartext": true,
+    "allowNavigation": [
+      "mydentalclinic01.vercel.app",
+      "*.vercel.app",
+      "*.firebaseapp.com",
+      "*.googleapis.com"
+    ]
+  },
+  "plugins": {
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0D9488"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2500,
+      "backgroundColor": "#0F172A",
+      "showSpinner": true,
+      "spinnerColor": "#0D9488"
+    },
+    "App": {
+      "launchUrl": "https://mydentalclinic01.vercel.app"
+    }
+  }
+}

@@ -3552,3 +3552,157 @@ body.modal-open .mobile-bottom-nav,
     line-height: 1.15 !important;
   }
 }
+
+
+/* ==========================================================================
+   Mobile App Center (Android & iOS Tenant-Specific Download & Installation)
+   ========================================================================== */
+.nav-app-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-weight: 700 !important;
+  color: #0F172A !important;
+  transition: all 0.2s ease !important;
+}
+
+.nav-app-link:hover {
+  color: var(--primary, #0D9488) !important;
+  transform: translateY(-1px) !important;
+}
+
+.nav-app-badge {
+  background: var(--primary-light, #CCFBF1);
+  color: var(--primary, #0D9488);
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 6px;
+  letter-spacing: 0.2px;
+}
+
+.app-modal-tab-group {
+  display: flex;
+  background: #F1F5F9;
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: 1.25rem;
+}
+
+.app-modal-tab-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #64748B;
+  border-radius: 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.app-modal-tab-btn.active {
+  background: #FFFFFF;
+  color: #0F172A;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.app-modal-tab-btn i {
+  font-size: 1rem;
+}
+
+.app-step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.app-step-num {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  background: var(--primary, #0D9488);
+  color: #FFFFFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.app-feature-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #F0FDFA;
+  border: 1px solid #CCFBF1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: #0F172A;
+}
+
+.btn-app-download {
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.92rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+  transition: all 0.2s ease;
+  border: none;
+  color: #FFFFFF;
+}
+
+.btn-app-download:hover {
+  transform: translateY(-1.5px);
+  filter: brightness(1.08);
+}
+
+.btn-app-download:active {
+  transform: translateY(0);
+}
+
+.btn-hero-app {
+  height: 48px;
+  padding: 0 1.25rem;
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: var(--secondary, #0F172A);
+  border: 2px solid #CBD5E1;
+  font-weight: 800;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.btn-hero-app:hover {
+  border-color: var(--primary, #0D9488);
+  color: var(--primary, #0D9488);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.15);
+}

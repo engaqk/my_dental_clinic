@@ -209,6 +209,10 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
     <link rel="manifest" href="manifest.webmanifest">
     <meta name="theme-color" content="#0D9488">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Dental Clinic">
+    <link rel="apple-touch-icon" id="appleTouchIconLink" href="/api/tenant-icon?size=512&amp;format=png">
 
     <!-- Open Graph & Social Sharing Previews (Strict PNG for WhatsApp, iMessage, SMS & Social Bots) -->
     <meta property="og:type" content="website">
@@ -251,7 +255,7 @@
                     <li id="vip-concierge-nav-item" style="display: none !important;"></li>
                     <li id="portal-nav-item"><a href="javascript:void(0)" onclick="showSection('dashboard'); return false;" id="dashboard-nav">Clinical Portal</a></li>
                     <li id="superadmin-nav-item" style="display: none !important;"><a href="superadmin.html" id="superadmin-nav"></a></li>
-                    <li id="pwa-install-item" style="display: none !important;"><a href="javascript:void(0)" id="pwaInstallBtn" onclick="triggerPWAInstall(); return false;"></a></li>
+                    <li id="mobile-app-nav-item"><a href="javascript:void(0)" onclick="openMobileAppDownloadModal(); return false;" id="mobile-app-nav" class="nav-app-link"><i class="fas fa-mobile-alt" style="color: var(--primary, #0D9488);"></i> <span>Mobile App</span></a></li>
                     <li id="logout-nav-item" style="display: none !important;"><a href="javascript:void(0)" onclick="logout(); return false;" style="color: #DC2626; font-weight: 800;"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
                 </ul>
             </nav>
@@ -270,9 +274,9 @@
                     <i class="fas fa-power-off"></i> <span class="hide-on-tiny">Logout</span>
                 </button>
 
-                <!-- 1-Click PWA App Install Button (Mobile Only) -->
-                <button type="button" id="headerPwaInstallBtn" onclick="triggerPWAInstall()" aria-label="Install App" title="Install App to Home Screen" class="nav-install-btn" style="display: inline-flex; align-items: center; gap: 4px; background: var(--primary-light, #CCFBF1); border: 1.5px solid var(--primary, #0D9488); color: var(--primary, #0D9488); font-weight: 800; font-size: 0.74rem; padding: 5px 9px; border-radius: 20px; cursor: pointer; white-space: nowrap;">
-                    <i class="fas fa-download"></i> <span class="hide-on-tiny">Install</span>
+                <!-- 1-Click Mobile App Center Trigger (Header) -->
+                <button type="button" id="headerAppDownloadBtn" onclick="openMobileAppDownloadModal()" aria-label="Mobile App" title="Download Android & iOS App" class="nav-install-btn" style="display: inline-flex; align-items: center; gap: 5px; background: var(--primary-light, #CCFBF1); border: 1.5px solid var(--primary, #0D9488); color: var(--primary, #0D9488); font-weight: 800; font-size: 0.74rem; padding: 5px 10px; border-radius: 20px; cursor: pointer; white-space: nowrap;">
+                    <i class="fas fa-mobile-alt"></i> <span class="hide-on-tiny">Get App</span>
                 </button>
 
                 <!-- Compact Language Selector without broken glyph -->
@@ -357,8 +361,8 @@
                         <button type="button" onclick="scrollToBookingForm()" class="btn-hero-book">
                             <i class="fas fa-calendar-alt"></i> Book Priority Visit
                         </button>
-                        <button type="button" onclick="triggerPWAInstall()" class="btn-hero-pwa" id="heroPwaInstallBtn">
-                            <i class="fas fa-download"></i> Install App
+                        <button type="button" onclick="openMobileAppDownloadModal()" class="btn-hero-app" id="heroAppDownloadBtn">
+                            <i class="fas fa-mobile-alt"></i> Mobile App
                         </button>
                         <button type="button" id="heroChatReceptionBtn" onclick="quickWhatsAppClinic()" class="btn-hero-chat" style="display: none;">
                             <i class="fab fa-whatsapp"></i> Chat Reception
@@ -2322,55 +2326,139 @@
         localStorage.setItem('clinic_welcome_popup_shown', 'true');
         localStorage.setItem('clinic_tour_completed', 'true');
 
-        // PWA Startup & Install Logic
+        // Mobile App Center & Install Logic (Android & iOS Tenant-Specific)
         let deferredPrompt = null;
         
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            showStartupPWABanner();
+            showStartupAppBanner();
+            const btnWeb = document.getElementById('androidWebInstallSection');
+            if (btnWeb) btnWeb.style.display = 'block';
         });
 
-        function showStartupPWABanner() {
-            // If running in standalone mode (already installed), hide banner
+        function showStartupAppBanner() {
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
             if (isStandalone) return;
+            if (sessionStorage.getItem('app_banner_dismissed') === 'true') return;
 
-            // If user dismissed in this session, don't show
-            if (sessionStorage.getItem('pwa_banner_dismissed') === 'true') return;
-
-            const banner = document.getElementById('pwaStartupBanner');
+            const banner = document.getElementById('appStartupBanner');
             if (banner) banner.style.display = 'block';
         }
 
-        function dismissPWABanner() {
-            const banner = document.getElementById('pwaStartupBanner');
+        function dismissAppBanner() {
+            const banner = document.getElementById('appStartupBanner');
             if (banner) banner.style.display = 'none';
-            sessionStorage.setItem('pwa_banner_dismissed', 'true');
+            sessionStorage.setItem('app_banner_dismissed', 'true');
         }
-        
-        function triggerPWAInstall() {
+
+        function openMobileAppDownloadModal() {
+            const modal = document.getElementById('mobileAppDownloadModal');
+            if (!modal) return;
+
+            const settings = window.currentClinicSettings || {};
+            const curTenant = (window.dbAPI?.tenantId || sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || 'default').toLowerCase().trim();
+            const isSlugTenant = curTenant && curTenant !== 'default';
+
+            let clinicName = settings.clinic_name || settings.name;
+            if (!clinicName) {
+                if (curTenant.includes('smile')) clinicName = 'Smile Dental Clinic';
+                else if (curTenant.includes('swastik')) clinicName = 'Swastik Dental Clinic';
+                else if (curTenant.includes('sumya')) clinicName = 'Sumya Dental Clinic';
+                else if (isSlugTenant) {
+                    const words = curTenant.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+                    clinicName = words.join(' ') + ' Dental Clinic';
+                } else {
+                    clinicName = 'Dental Practice';
+                }
+            }
+
+            const monogram = typeof getClinicMonogram === 'function' ? getClinicMonogram(clinicName) : clinicName.slice(0, 2).toUpperCase();
+            const themeColor = settings.primary_color || settings.primaryColor || '#0D9488';
+
+            const nameEl = document.getElementById('modalAppClinicName');
+            if (nameEl) nameEl.innerText = clinicName + ' Mobile App';
+
+            const badgeEl = document.getElementById('modalAppLogoBadge');
+            const monoEl = document.getElementById('modalAppMonogramText');
+            if (badgeEl) {
+                badgeEl.style.background = `linear-gradient(135deg, ${themeColor}, #0F766E)`;
+            }
+            if (monoEl) monoEl.innerText = monogram;
+
+            const btnText = document.getElementById('btnAndroidApkText');
+            if (btnText) {
+                const shortName = clinicName.replace(/Dental\s*Clinic/i, '').trim() || 'Clinic';
+                btnText.innerText = `Download ${shortName} App (.apk)`;
+            }
+
+            // Auto-detect OS platform and activate appropriate tab
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            switchAppModalTab(isIOS ? 'ios' : 'android');
+
+            modal.style.display = 'flex';
+        }
+
+        function closeMobileAppDownloadModal() {
+            const modal = document.getElementById('mobileAppDownloadModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function switchAppModalTab(platform) {
+            const btnAndroid = document.getElementById('btnTabAndroidApp');
+            const btnIos = document.getElementById('btnTabIosApp');
+            const panelAndroid = document.getElementById('panelAndroidApp');
+            const panelIos = document.getElementById('panelIosApp');
+
+            if (platform === 'ios') {
+                if (btnIos) btnIos.classList.add('active');
+                if (btnAndroid) btnAndroid.classList.remove('active');
+                if (panelIos) panelIos.style.display = 'block';
+                if (panelAndroid) panelAndroid.style.display = 'none';
+            } else {
+                if (btnAndroid) btnAndroid.classList.add('active');
+                if (btnIos) btnIos.classList.remove('active');
+                if (panelAndroid) panelAndroid.style.display = 'block';
+                if (panelIos) panelIos.style.display = 'none';
+            }
+        }
+
+        function downloadAndroidApk() {
+            const curTenant = (window.dbAPI?.tenantId || sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || 'default').toLowerCase().trim();
+            const downloadUrl = `/api/download-app?platform=android&c=${encodeURIComponent(curTenant)}`;
+            window.location.href = downloadUrl;
+        }
+
+        function triggerNativeInstall() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        dismissPWABanner();
+                        dismissAppBanner();
+                        closeMobileAppDownloadModal();
                     }
                     deferredPrompt = null;
                 });
             } else {
                 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
                 if (isIOS) {
-                    alert("To install on iOS Safari:\n\n1. Tap the Share button at the bottom of Safari.\n2. Tap 'Add to Home Screen'.");
+                    switchAppModalTab('ios');
                 } else {
-                    alert("To install this app:\n\n1. Tap your browser's menu (three dots ⋮ at the top right).\n2. Select 'Install app' or 'Add to Home screen'.");
+                    alert("To install directly from your browser:\n\n1. Tap the browser menu (⋮ at the top right).\n2. Select 'Install app' or 'Add to Home screen'.");
                 }
             }
         }
-        
-        function handlePWAInstall(btnId) {
-            triggerPWAInstall();
+
+        function triggerPWAInstall() {
+            openMobileAppDownloadModal();
         }
+
+        window.openMobileAppDownloadModal = openMobileAppDownloadModal;
+        window.closeMobileAppDownloadModal = closeMobileAppDownloadModal;
+        window.switchAppModalTab = switchAppModalTab;
+        window.downloadAndroidApk = downloadAndroidApk;
+        window.triggerNativeInstall = triggerNativeInstall;
+        window.dismissAppBanner = dismissAppBanner;
         
         function scrollToBooking() {
             showSection('home');
@@ -2528,15 +2616,24 @@
     </div>
 
 
-    <!-- Floating PWA Startup Banner -->
-    <div id="pwaStartupBanner" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 440px; background: #0F172A; color: white; padding: 0.85rem 1.15rem; border-radius: 16px; box-shadow: 0 12px 30px -5px rgba(0,0,0,0.35); z-index: 99999; animation: fadeInUp 0.4s ease-out; border: 1px solid rgba(255,255,255,0.1);">
+    <!-- Floating Mobile App Startup Banner -->
+    <div id="appStartupBanner" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 440px; background: #0F172A; color: white; padding: 0.85rem 1.15rem; border-radius: 16px; box-shadow: 0 12px 30px -5px rgba(0,0,0,0.35); z-index: 99999; animation: fadeInUp 0.4s ease-out; border: 1px solid rgba(255,255,255,0.1);">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <img id="pwaBannerAppIcon" src="app-icon.png" alt="App Icon" style="width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; object-fit: cover;">
+                <img id="appBannerAppIcon" src="/api/tenant-icon?size=128&format=png" alt="App Icon" style="width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; object-fit: cover;">
                 <div>
-                    <div id="pwaBannerAppTitle" style="font-weight: 800; font-size: 0.85rem; line-height: 1.2;">Install Dental Clinic App</div>
-                    <div style="font-size: 0.72rem; color: #94A3B8; margin-top: 2px;">Instant booking &amp; offline access</div>
+                    <div id="appBannerAppTitle" style="font-weight: 800; font-size: 0.85rem; line-height: 1.2;">Get Clinic Mobile App</div>
+                    <div style="font-size: 0.72rem; color: #94A3B8; margin-top: 2px;">Instant chairside booking &amp; fast access</div>
                 </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <button onclick="openMobileAppDownloadModal()" class="btn-primary" style="background: var(--primary); font-size: 0.8rem; font-weight: 800; padding: 0.4rem 0.85rem; height: 34px; border-radius: 8px; white-space: nowrap;">
+                    <i class="fas fa-mobile-alt"></i> Get App
+                </button>
+                <button onclick="dismissAppBanner()" style="background: transparent; border: none; color: #94A3B8; font-size: 1.2rem; cursor: pointer; padding: 0.2rem 0.4rem; line-height: 1;">&times;</button>
+            </div>
+        </div>
+    </div>
             </div>
             <div style="display: flex; align-items: center; gap: 0.4rem;">
                 <button onclick="triggerPWAInstall()" class="btn-primary" style="background: var(--primary); font-size: 0.8rem; font-weight: 800; padding: 0.4rem 0.85rem; height: 34px; border-radius: 8px; white-space: nowrap;">
@@ -2547,6 +2644,157 @@
         </div>
     </div>
 
+
+    
+    <!-- Dedicated Tenant-Specific Mobile App Center Modal (Android & iOS) -->
+    <div id="mobileAppDownloadModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 999999; align-items: center; justify-content: center; padding: 0.75rem; box-sizing: border-box;">
+        <div style="background: #FFFFFF; border-radius: 20px; width: calc(100% - 20px); max-width: 480px; max-height: 94vh; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.35); position: relative; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1.5px solid rgba(255,255,255,0.8); animation: vipModalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
+            
+            <!-- Dismiss ✕ Button -->
+            <button type="button" onclick="closeMobileAppDownloadModal()" aria-label="Close" style="position: absolute; top: 12px; right: 14px; background: #F1F5F9; border: none; width: 30px; height: 30px; border-radius: 50%; color: #64748B; font-size: 1.1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10;">&times;</button>
+
+            <!-- Header: Tenant Branding & Logo Monogram -->
+            <div style="padding: 1.25rem 1.25rem 0.75rem 1.25rem; text-align: center; border-bottom: 1px solid #F1F5F9; flex-shrink: 0;">
+                <div class="clinic-monogram-logo" id="modalAppLogoBadge" style="width: 48px; height: 48px; border-radius: 14px; font-size: 1.25rem; margin: 0 auto 8px auto; box-shadow: 0 4px 14px rgba(var(--primary-rgb, 13, 148, 136), 0.35);">
+                    <span id="modalAppMonogramText">DC</span>
+                </div>
+                <h3 id="modalAppClinicName" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0F172A; line-height: 1.25;">Smile Dental Clinic Mobile App</h3>
+                <div style="font-size: 0.76rem; color: #64748B; margin-top: 3px; font-weight: 600;">Official Chairside Mobile App for Android &amp; iOS</div>
+            </div>
+
+            <!-- Scrollable Content Area -->
+            <div style="padding: 1.1rem; overflow-y: auto; flex: 1;">
+                
+                <!-- Platform Switcher Tabs -->
+                <div class="app-modal-tab-group">
+                    <button type="button" class="app-modal-tab-btn active" id="btnTabAndroidApp" onclick="switchAppModalTab('android')">
+                        <i class="fab fa-android" style="color: #10B981;"></i> Android (APK)
+                    </button>
+                    <button type="button" class="app-modal-tab-btn" id="btnTabIosApp" onclick="switchAppModalTab('ios')">
+                        <i class="fab fa-apple" style="color: #0F172A;"></i> Apple iOS
+                    </button>
+                </div>
+
+                <!-- Android Panel -->
+                <div id="panelAndroidApp" style="display: block;">
+                    
+                    <!-- Direct APK Download Primary Action -->
+                    <div style="background: linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%); border: 1.5px solid #BBF7D0; border-radius: 14px; padding: 1.1rem; margin-bottom: 1rem; text-align: center;">
+                        <button type="button" onclick="downloadAndroidApk()" class="btn-app-download" style="background: linear-gradient(135deg, #059669 0%, #047857 100%); margin-bottom: 0.65rem;">
+                            <i class="fas fa-download"></i> <span id="btnAndroidApkText">Download Android App (.apk)</span>
+                        </button>
+                        <div style="font-size: 0.72rem; color: #059669; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                            <i class="fas fa-check-circle"></i> Direct Standalone Package • Works Offline
+                        </div>
+                    </div>
+
+                    <!-- 1-Tap Quick Install Shortcut for Android Chrome -->
+                    <div id="androidWebInstallSection" style="margin-bottom: 1rem; text-align: center;">
+                        <button type="button" onclick="triggerNativeInstall()" style="width: 100%; height: 42px; border-radius: 12px; background: #FFFFFF; border: 1.5px solid #CBD5E1; color: #0F172A; font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                            <i class="fas fa-bolt" style="color: var(--primary, #0D9488);"></i> 1-Tap Instant Browser Install
+                        </button>
+                    </div>
+
+                    <!-- Android 2-Step Quick Installation Instructions -->
+                    <div style="margin-bottom: 1rem;">
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Quick 2-Step Setup</div>
+                        
+                        <div class="app-step-row">
+                            <div class="app-step-num">1</div>
+                            <div style="font-size: 0.78rem; color: #334155; line-height: 1.35;">
+                                Tap <strong>Download Android App (.apk)</strong> above. The file downloads directly to your device.
+                            </div>
+                        </div>
+
+                        <div class="app-step-row">
+                            <div class="app-step-num">2</div>
+                            <div style="font-size: 0.78rem; color: #334155; line-height: 1.35;">
+                                Tap the downloaded file and select <strong>Install</strong>. (Allow unknown sources in settings if prompted).
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Clinical Features -->
+                    <div>
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">App Highlights</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            <div class="app-feature-pill"><i class="fas fa-tooth" style="color: var(--primary, #0D9488);"></i> Chairside Odontogram Charting</div>
+                            <div class="app-feature-pill"><i class="fas fa-camera" style="color: #8B5CF6;"></i> Camera Radiograph &amp; Photo Sync</div>
+                            <div class="app-feature-pill"><i class="fas fa-prescription" style="color: #0284C7;"></i> Digital Prescriptions &amp; Plans</div>
+                            <div class="app-feature-pill"><i class="fas fa-bell" style="color: #D97706;"></i> Instant Appointment Reminders</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Apple iOS Panel -->
+                <div id="panelIosApp" style="display: none;">
+                    
+                    <div style="background: linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%); border: 1.5px solid #E2E8F0; border-radius: 14px; padding: 1.1rem; margin-bottom: 1rem;">
+                        <div style="font-weight: 800; font-size: 0.88rem; color: #0F172A; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                            <i class="fab fa-apple"></i> Install on iPhone &amp; iPad
+                        </div>
+                        <p style="font-size: 0.76rem; color: #64748B; margin: 0 0 10px 0; line-height: 1.4;">
+                            Follow these simple steps in <strong>Safari</strong> to install the full-screen clinic app with zero browser bars:
+                        </p>
+
+                        <!-- Step 1 -->
+                        <div class="app-step-row">
+                            <div class="app-step-num">1</div>
+                            <div style="font-size: 0.78rem; color: #334155; line-height: 1.35;">
+                                Open this clinic portal in <strong>Safari</strong> on your Apple device.
+                            </div>
+                        </div>
+
+                        <!-- Step 2 -->
+                        <div class="app-step-row">
+                            <div class="app-step-num">2</div>
+                            <div style="font-size: 0.78rem; color: #334155; line-height: 1.35;">
+                                Tap the <strong>Share</strong> button <i class="fas fa-external-link-alt" style="color: #0284C7;"></i> at the bottom toolbar of Safari.
+                            </div>
+                        </div>
+
+                        <!-- Step 3 -->
+                        <div class="app-step-row">
+                            <div class="app-step-num">3</div>
+                            <div style="font-size: 0.78rem; color: #334155; line-height: 1.35;">
+                                Scroll down and tap <strong>"Add to Home Screen"</strong> <i class="far fa-plus-square" style="color: #0F172A;"></i>.
+                            </div>
+                        </div>
+
+                        <!-- Step 4 -->
+                        <div class="app-step-row">
+                            <div class="app-step-num">4</div>
+                            <div style="font-size: 0.78rem; color: #334155; line-height: 1.35;">
+                                Tap <strong>Add</strong> at the top right. The app will appear on your Home Screen with your custom clinic icon!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key iOS Features -->
+                    <div>
+                        <div style="font-size: 0.72rem; font-weight: 800; color: #64748B; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.5px;">Native Experience Highlights</div>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            <div class="app-feature-pill"><i class="fas fa-expand" style="color: #0284C7;"></i> Full-Screen Standalone (Zero Safari Bars)</div>
+                            <div class="app-feature-pill"><i class="fas fa-id-badge" style="color: var(--primary, #0D9488);"></i> Retina Clinic Icon Matching Your Practice</div>
+                            <div class="app-feature-pill"><i class="fas fa-feather-alt" style="color: #DC2626;"></i> Touch E-Sign Consent on iPad/iPhone</div>
+                            <div class="app-feature-pill"><i class="fas fa-bell" style="color: #D97706;"></i> Instant Appointment &amp; Sitting Alerts</div>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Footer Note -->
+            <div style="padding: 0.75rem 1.25rem; text-align: center; border-top: 1px solid #F1F5F9; background: #F8FAFC; flex-shrink: 0;">
+                <span style="font-size: 0.72rem; color: #64748B; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-shield-alt" style="color: var(--primary, #0D9488);"></i> Clinic Verified • High-Speed Chairside Security • HIPAA Compliant
+                </span>
+            </div>
+
+        </div>
+    </div>
 
     <!-- Edit Medical Alerts Modal -->
     <div id="editMedicalAlertsModal" class="modal" style="display: none;">

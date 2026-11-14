@@ -1521,8 +1521,8 @@ function closeVipStartupModal() {
 
 function handleVipModalInstall() {
     closeVipStartupModal();
-    if (typeof triggerPWAInstall === 'function') {
-        triggerPWAInstall();
+    if (typeof openMobileAppDownloadModal === 'function') {
+        openMobileAppDownloadModal();
     }
 }
 
@@ -1735,9 +1735,9 @@ async function handleDoctorGoogleSignIn() {
         if (errBox) {
             let errorMsg = err.message || 'Google sign-in could not be completed.';
             if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.toLowerCase().includes('unauthorized domain'))) {
-                errorMsg = '⚠️ Domain "' + window.location.hostname + '" is not authorized in Firebase Console. Please add it under Authentication > Settings > Authorized Domains.';
+                errorMsg = '⚠️ Domain "' + window.location.hostname + '" is not authorized in Cloud Security Console. Please ensure domain is authorized under Cloud Authentication Settings.';
             } else if (err.code === 'auth/popup-closed-by-user' || (err.message && err.message.toLowerCase().includes('popup has been closed'))) {
-                errorMsg = '⚠️ Popup closed before completion. If closed automatically, ensure "' + window.location.hostname + '" is in Firebase Authorized Domains.';
+                errorMsg = '⚠️ Popup closed before completion. If closed automatically, ensure "' + window.location.hostname + '" is in Cloud Security Authorized Domains.';
             }
             errBox.innerText = errorMsg;
             errBox.style.display = 'block';
@@ -1903,13 +1903,13 @@ async function handleFirstTimeGoogleSignIn() {
         if (alertBox) {
             let errorMsg = err.message || 'Google sign-in could not be completed. Please try again.';
             if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.toLowerCase().includes('unauthorized domain'))) {
-                errorMsg = '⚠️ Domain "' + window.location.hostname + '" is not authorized in Firebase Console. Please add it under Authentication > Settings > Authorized Domains.';
+                errorMsg = '⚠️ Domain "' + window.location.hostname + '" is not authorized in Cloud Security Console. Please ensure domain is authorized under Cloud Authentication Settings.';
             } else if (err.code === 'auth/operation-not-allowed' || (err.message && err.message.toLowerCase().includes('operation-not-allowed'))) {
-                errorMsg = '⚠️ Google Sign-in provider is disabled in Firebase Console. Please enable Google under Authentication > Sign-in method.';
+                errorMsg = '⚠️ Google Sign-in provider is not enabled in Cloud Security Settings. Please enable Google under Authentication providers.';
             } else if (err.code === 'auth/popup-closed-by-user' || (err.message && err.message.toLowerCase().includes('popup has been closed'))) {
-                errorMsg = '⚠️ Popup closed before completion. If closed automatically, please ensure "' + window.location.hostname + '" is added to Firebase Authorized Domains.';
+                errorMsg = '⚠️ Popup closed before completion. If closed automatically, please ensure "' + window.location.hostname + '" is added to Cloud Security Authorized Domains.';
             } else if (err.message && err.message.toLowerCase().includes('action is invalid')) {
-                errorMsg = '⚠️ Firebase error: Action invalid. Ensure "' + window.location.hostname + '" is added to Firebase Authorized Domains and Google Sign-in is enabled.';
+                errorMsg = '⚠️ Authentication service notice: Action invalid. Ensure "' + window.location.hostname + '" is added to Cloud Security Authorized Domains and Google Sign-in is enabled.';
             }
             alertBox.innerText = errorMsg;
             alertBox.style.display = 'block';
@@ -5862,7 +5862,7 @@ const MEMBERSHIP_TIERS = {
         fee: 1499,
         validityMonths: 12,
         perks: [
-            '1 Annual Ultrasonic Scaling & Polishing (Free)',
+            '1 Annual Ultrasonic Scaling & Polishing (Included)',
             '1 Comprehensive Dental Examination & Consultation',
             '10% Flat Discount on all Composite Fillings & Cleanings',
             'Priority Emergency Booking Window'
@@ -5874,7 +5874,7 @@ const MEMBERSHIP_TIERS = {
         fee: 2999,
         validityMonths: 12,
         perks: [
-            '2 Annual Ultrasonic Scalings & Fluoride Polishing (Free)',
+            '2 Annual Ultrasonic Scalings & Fluoride Polishing (Included)',
             '1 Digital Bitewing / Periapical X-Ray Examination',
             '15% Flat Discount on RCT, Extractions, and Restorations',
             'Zero Diagnostic / Consultation Fees for 12 Months',
@@ -6208,7 +6208,7 @@ const RECALL_TEMPLATES = {
             'Dear ' + pat.name + ',\n\n' +
             'It has been 1 year since your crown / bridge restoration at *' + clinic + '*.\n\n' +
             'We recommend a complimentary 5-minute chairside evaluation to verify margin seal, contact points, and bite harmony.\n\n' +
-            'Reply to schedule your free checkup sitting!'
+            'Reply to schedule your priority checkup sitting!'
     }
 };
 
