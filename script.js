@@ -1217,10 +1217,10 @@ function adjustColorBrightness(hex, percent) {
 
 // --- DYNAMIC 2-CHARACTER MONOGRAM & APP LOGO GENERATOR ([First Letter] + 'C') ---
 function getClinicMonogram(name) {
-    if (!name || typeof name !== 'string') return 'MC';
+    if (!name || typeof name !== 'string') return 'SC';
     // Clean string: remove non-alphanumeric except spaces
     let clean = name.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
-    if (!clean) return 'MC';
+    if (!clean) return 'SC';
 
     let words = clean.split(/\s+/).filter(w => w.length > 0);
     const ignoreWords = ['the', 'a', 'an', 'and', 'of', '&'];
@@ -1407,7 +1407,7 @@ function applyTenantTheme(colorHex, monogram) {
     if (metaTheme) metaTheme.setAttribute('content', primary);
 
     // Update dynamic SVG favicon with 2-character monogram ([Letter]C)
-    const activeMonogram = monogram || (window.currentClinicSettings ? getClinicMonogram(window.currentClinicSettings.clinic_name) : 'MC');
+    const activeMonogram = monogram || (window.currentClinicSettings ? getClinicMonogram(window.currentClinicSettings.clinic_name) : 'SC');
     updateDynamicFavicon(activeMonogram, primary, primaryDark);
 
     // Update preview swatch in settings form if present
@@ -2120,13 +2120,13 @@ function loadClinicSettings() {
                 const words = curTenant.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
                 clinicName = words.join(' ') + ' Dental Clinic';
             } else {
-                clinicName = 'MY DENTAL CLINIC';
+                clinicName = 'Smile Dental Clinic';
             }
         }
 
         const subtitle = settings.subtitle || 'Dental & Cosmetic Clinic';
         const doctorName = settings.doctor_name || (isSlugTenant ? `Dr. ${clinicName.replace(/Dental\s*Clinic/i, '').trim()} Specialist` : 'Clinic Specialist');
-        const themeColor = settings.primary_color || settings.primaryColor || (isSlugTenant ? '#0D9488' : '#10B981');
+        const themeColor = settings.primary_color || settings.primaryColor || '#0D9488';
         const monogram = getClinicMonogram(clinicName);
 
         // Update all text elements
@@ -2167,7 +2167,9 @@ function loadClinicSettings() {
             'heroMonogramText',
             'dashClinicMonogramText',
             'gateClinicMonogramText',
-            'vipStartupMonogramText'
+            'vipStartupMonogramText',
+            'appBannerMonogramText',
+            'modalAppMonogramText'
         ];
         monogramEls.forEach(id => {
             const el = document.getElementById(id);
@@ -2181,6 +2183,11 @@ function loadClinicSettings() {
         if (vipClinicTitle) vipClinicTitle.innerText = `Welcome to ${clinicName} Concierge`;
 
         document.title = `${clinicName} | ${doctorName}`;
+
+        const appBannerLogo = document.getElementById('appBannerLogoBadge');
+        if (appBannerLogo) appBannerLogo.style.background = `linear-gradient(135deg, ${themeColor}, #0F766E)`;
+        const appBannerTitle = document.getElementById('appBannerAppTitle');
+        if (appBannerTitle) appBannerTitle.innerText = `Get ${clinicName.replace(/Dental\s*Clinic/i, '').trim() || 'Clinic'} App`;
 
         applyTenantTheme(themeColor, monogram);
         updateTenantPWA(settings);

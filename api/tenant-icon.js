@@ -200,22 +200,22 @@ module.exports = (req, res) => {
     const size = parseInt(req.query.size) || 512;
 
     // Resolve tenant details
-    let clinicName = 'My Dental Clinic';
-    let primaryColor = '#10B981';
-    let primaryDark = '#059669';
+    let clinicName = 'Smile Dental Clinic';
+    let primaryColor = '#0D9488';
+    let primaryDark = '#0F766E';
 
     if (tenantId.includes('swastik')) {
         clinicName = 'Swastik Dental Clinic';
         primaryColor = '#0D9488';
-        primaryDark = '#115E59';
+        primaryDark = '#0F766E';
     } else if (tenantId.includes('sumya')) {
         clinicName = 'Sumya Dental Clinic';
         primaryColor = '#0D9488';
-        primaryDark = '#115E59';
-    } else if (tenantId.includes('smile')) {
+        primaryDark = '#0F766E';
+    } else if (tenantId.includes('smile') || tenantId === 'default' || !tenantId) {
         clinicName = 'Smile Dental Clinic';
         primaryColor = '#0D9488';
-        primaryDark = '#115E59';
+        primaryDark = '#0F766E';
     } else if (tenantId !== 'default' && tenantId) {
         const words = tenantId.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
         const formatted = words.join(' ');

@@ -21,9 +21,9 @@
                 localStorage.setItem('activeTenantId', tid);
                 const cached = JSON.parse(localStorage.getItem('clinicSettings_' + tid) || 'null');
                 
-                let clinicName = 'My Dental Clinic';
-                let color = '#10B981';
-                let doctorName = 'Clinic Specialist';
+                let clinicName = 'Smile Dental Clinic';
+                let color = '#0D9488';
+                let doctorName = 'Dr. Smile Specialist';
 
                 if (cached && (cached.clinic_name || cached.name)) {
                     clinicName = cached.clinic_name || cached.name;
@@ -173,10 +173,16 @@
                 }
 
                 document.addEventListener('DOMContentLoaded', function() {
-                    ['mainClinicMonogramText', 'dashClinicMonogramText', 'footerClinicMonogramText', 'gateClinicMonogramText', 'vipStartupMonogramText'].forEach(function(id) {
+                    ['mainClinicMonogramText', 'dashClinicMonogramText', 'footerClinicMonogramText', 'gateClinicMonogramText', 'vipStartupMonogramText', 'appBannerMonogramText', 'modalAppMonogramText'].forEach(function(id) {
                         var el = document.getElementById(id);
                         if (el) el.innerText = monogram;
                     });
+                    var appBannerBadge = document.getElementById('appBannerLogoBadge');
+                    if (appBannerBadge) appBannerBadge.style.background = 'linear-gradient(135deg, ' + color + ', #0F766E)';
+                    var modalAppBadge = document.getElementById('modalAppLogoBadge');
+                    if (modalAppBadge) modalAppBadge.style.background = 'linear-gradient(135deg, ' + color + ', #0F766E)';
+                    var appBannerTitleEl = document.getElementById('appBannerAppTitle');
+                    if (appBannerTitleEl) appBannerTitleEl.innerText = 'Get ' + clinicName.replace(/Dental\s*Clinic/i, '').trim() + ' App';
                     var nameEl = document.getElementById('mainClinicName');
                     if (nameEl) nameEl.innerText = clinicName;
                     var heroTag = document.getElementById('heroClinicTag');
@@ -237,10 +243,10 @@
             <div class="logo-section" onclick="showSection('home')" style="cursor: pointer;">
                 <!-- Dynamic 2-Character Monogram Badge (Instead of static tooth) -->
                 <div class="clinic-monogram-logo" id="mainClinicLogoBadge" aria-label="Clinic Monogram">
-                    <span id="mainClinicMonogramText">MD</span>
+                    <span id="mainClinicMonogramText">SC</span>
                 </div>
                 <div class="clinic-name">
-                    <h1 id="mainClinicName">MY DENTAL CLINIC</h1>
+                    <h1 id="mainClinicName">Smile Dental Clinic</h1>
                     <span id="mainClinicSubtitle">Dental &amp; Cosmetic Clinic</span>
                 </div>
             </div>
@@ -319,7 +325,7 @@
                             <i class="fas fa-user-md"></i>
                         </div>
                         <div class="doctor-badge-info">
-                            <div class="doctor-clinic-label" id="heroClinicTag">MY DENTAL CLINIC</div>
+                            <div class="doctor-clinic-label" id="heroClinicTag">SMILE DENTAL CLINIC</div>
                             <strong id="heroDoctorNameDisplay">Clinic Specialist</strong>
                             <span id="heroDoctorSpecialty">Comprehensive Oral Healthcare</span>
                         </div>
@@ -1024,7 +1030,7 @@
                     <span id="footerClinicMonogramText">MD</span>
                 </div>
                 <div style="text-align: left;">
-                    <span style="font-weight: 800; font-size: 1.25rem; letter-spacing: 0.5px; display: block;" id="footerClinicName">MY DENTAL CLINIC</span>
+                    <span style="font-weight: 800; font-size: 1.25rem; letter-spacing: 0.5px; display: block;" id="footerClinicName">Smile Dental Clinic</span>
                     <span style="font-size: 0.78rem; color: #94A3B8; font-weight: 600;" id="footerClinicDoctor">Dental &amp; Cosmetic Clinic</span>
                 </div>
             </div>
@@ -2338,9 +2344,39 @@
         });
 
         function showStartupAppBanner() {
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+            const isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
             if (isStandalone) return;
             if (sessionStorage.getItem('app_banner_dismissed') === 'true') return;
+
+            // Dynamically sync tenant monogram, theme color & clinic name for startup banner
+            const settings = window.currentClinicSettings || {};
+            const curTenant = (window.dbAPI?.tenantId || sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || 'default').toLowerCase().trim();
+            const isSlugTenant = curTenant && curTenant !== 'default';
+
+            let clinicName = settings.clinic_name || settings.name;
+            if (!clinicName) {
+                if (curTenant.includes('smile')) clinicName = 'Smile Dental Clinic';
+                else if (curTenant.includes('swastik')) clinicName = 'Swastik Dental Clinic';
+                else if (curTenant.includes('sumya')) clinicName = 'Sumya Dental Clinic';
+                else if (isSlugTenant) {
+                    const words = curTenant.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
+                    clinicName = words.join(' ') + ' Dental Clinic';
+                } else {
+                    clinicName = 'Smile Dental Clinic';
+                }
+            }
+
+            const monogram = typeof getClinicMonogram === 'function' ? getClinicMonogram(clinicName) : getAppMonogram(clinicName);
+            const themeColor = settings.primary_color || settings.primaryColor || '#0D9488';
+
+            const monoEl = document.getElementById('appBannerMonogramText');
+            if (monoEl) monoEl.innerText = monogram;
+
+            const badgeEl = document.getElementById('appBannerLogoBadge');
+            if (badgeEl) badgeEl.style.background = `linear-gradient(135deg, ${themeColor}, #0F766E)`;
+
+            const titleEl = document.getElementById('appBannerAppTitle');
+            if (titleEl) titleEl.innerText = `Get ${clinicName.replace(/Dental\s*Clinic/i, '').trim() || 'Clinic'} App`;
 
             const banner = document.getElementById('appStartupBanner');
             if (banner) banner.style.display = 'block';
@@ -2353,14 +2389,20 @@
         }
 
         function getAppMonogram(name) {
-            if (!name || typeof name !== 'string') return 'MC';
+            if (typeof getClinicMonogram === 'function') return getClinicMonogram(name);
+            if (!name || typeof name !== 'string') return 'SC';
             const clean = name.replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
+            if (!clean) return 'SC';
             const words = clean.split(/\s+/).filter(w => w.length > 0);
             const ignoreWords = ['the', 'a', 'an', 'and', 'of', '&'];
-            const filtered = words.filter(w => !ignoreWords.includes(w.toLowerCase()));
-            if (filtered.length >= 2) return (filtered[0][0] + filtered[1][0]).toUpperCase();
-            if (filtered.length === 1) return filtered[0].slice(0, 2).toUpperCase();
-            return 'MC';
+            let filtered = words.filter(w => !ignoreWords.includes(w.toLowerCase()));
+            if (filtered.length === 0) filtered = words;
+            if (filtered.length >= 2 && /^dr\.?$/i.test(filtered[0])) {
+                filtered = filtered.slice(1);
+            }
+            const firstWord = filtered[0] || 'Smile';
+            const firstChar = firstWord[0].toUpperCase();
+            return `${firstChar}C`;
         }
 
         function openMobileAppDownloadModal() {
@@ -2380,7 +2422,7 @@
                     const words = curTenant.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
                     clinicName = words.join(' ') + ' Dental Clinic';
                 } else {
-                    clinicName = 'Dental Practice';
+                    clinicName = 'Smile Dental Clinic';
                 }
             }
 
@@ -2523,9 +2565,9 @@
             <!-- Top Header & Tenant Monogram Badge ([FirstLetter]C) -->
             <div style="padding: 0.9rem 1.15rem 0.35rem 1.15rem; text-align: center; flex-shrink: 0;">
                 <div class="clinic-monogram-logo" id="vipStartupLogoBadge" style="width: 44px; height: 44px; border-radius: 12px; font-size: 1.15rem; margin: 0 auto 5px auto; box-shadow: 0 4px 14px rgba(var(--primary-rgb, 13, 148, 136), 0.35);">
-                    <span id="vipStartupMonogramText">MC</span>
+                    <span id="vipStartupMonogramText">SC</span>
                 </div>
-                <h3 id="vipStartupClinicTitle" style="margin: 0; font-size: 1rem; font-weight: 800; color: #0F172A; line-height: 1.25; letter-spacing: -0.2px;">Welcome to My Dental Clinic Concierge</h3>
+                <h3 id="vipStartupClinicTitle" style="margin: 0; font-size: 1rem; font-weight: 800; color: #0F172A; line-height: 1.25; letter-spacing: -0.2px;">Welcome to Smile Concierge</h3>
                 <div style="font-size: 0.72rem; color: #64748B; margin-top: 2px; font-weight: 600;">Your VIP Chairside Patient Ecosystem</div>
             </div>
 
@@ -2632,9 +2674,11 @@
     <div id="appStartupBanner" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 440px; background: #0F172A; color: white; padding: 0.85rem 1.15rem; border-radius: 16px; box-shadow: 0 12px 30px -5px rgba(0,0,0,0.35); z-index: 99999; animation: fadeInUp 0.4s ease-out; border: 1px solid rgba(255,255,255,0.1);">
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <img id="appBannerAppIcon" src="/api/tenant-icon?size=128&format=png" alt="App Icon" style="width: 38px; height: 38px; border-radius: 9px; flex-shrink: 0; object-fit: cover;">
+                <div class="clinic-monogram-logo" id="appBannerLogoBadge" style="width: 38px; height: 38px; min-width: 38px; border-radius: 10px; font-size: 0.95rem; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; color: white; background: linear-gradient(135deg, var(--primary, #0D9488), #0F766E); box-shadow: 0 3px 10px rgba(0,0,0,0.25);">
+                    <span id="appBannerMonogramText">SC</span>
+                </div>
                 <div>
-                    <div id="appBannerAppTitle" style="font-weight: 800; font-size: 0.85rem; line-height: 1.2;">Get Clinic Mobile App</div>
+                    <div id="appBannerAppTitle" style="font-weight: 800; font-size: 0.85rem; line-height: 1.2;">Get Smile App</div>
                     <div style="font-size: 0.72rem; color: #94A3B8; margin-top: 2px;">Instant chairside booking &amp; fast access</div>
                 </div>
             </div>
@@ -2646,15 +2690,7 @@
             </div>
         </div>
     </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.4rem;">
-                <button onclick="triggerPWAInstall()" class="btn-primary" style="background: var(--primary); font-size: 0.8rem; font-weight: 800; padding: 0.4rem 0.85rem; height: 34px; border-radius: 8px; white-space: nowrap;">
-                    <i class="fas fa-download"></i> Install
-                </button>
-                <button onclick="dismissPWABanner()" style="background: transparent; border: none; color: #94A3B8; font-size: 1.2rem; cursor: pointer; padding: 0.2rem 0.4rem; line-height: 1;">&times;</button>
-            </div>
-        </div>
-    </div>
+
 
 
     
@@ -2668,7 +2704,7 @@
             <!-- Header: Tenant Branding & Logo Monogram -->
             <div style="padding: 1.25rem 1.25rem 0.75rem 1.25rem; text-align: center; border-bottom: 1px solid #F1F5F9; flex-shrink: 0;">
                 <div class="clinic-monogram-logo" id="modalAppLogoBadge" style="width: 48px; height: 48px; border-radius: 14px; font-size: 1.25rem; margin: 0 auto 8px auto; box-shadow: 0 4px 14px rgba(var(--primary-rgb, 13, 148, 136), 0.35);">
-                    <span id="modalAppMonogramText">DC</span>
+                    <span id="modalAppMonogramText">SC</span>
                 </div>
                 <h3 id="modalAppClinicName" style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0F172A; line-height: 1.25;">Smile Dental Clinic Mobile App</h3>
                 <div style="font-size: 0.76rem; color: #64748B; margin-top: 3px; font-weight: 600;">Official Chairside Mobile App for Android &amp; iOS</div>
