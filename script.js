@@ -2103,10 +2103,7 @@ function triggerGoogleSignInPrompt() {
     handleFirstTimeGoogleSignIn();
 }
 
-function handleTenantNotFound(requestedSlug) {
-    const slug = (requestedSlug || '').trim();
-    console.warn(`[Practice Access] Clinic practice "${slug}" does not exist or was not created by SuperAdmin.`);
-    
+function handleTenantNotFound() {
     // Purge invalid slug from storage and cookies so it doesn't linger
     sessionStorage.removeItem('activeTenantSlug');
     localStorage.removeItem('activeTenantId');
@@ -2119,25 +2116,14 @@ function handleTenantNotFound(requestedSlug) {
         window.dbAPI.isTenantValid = true;
     }
 
-    const modal = document.getElementById('tenantNotFoundModal');
-    if (modal) {
-        const textEl = document.getElementById('tenantNotFoundSlugText');
-        if (textEl) textEl.innerText = slug ? `/${slug}` : 'the requested link';
-        modal.style.display = 'flex';
-
-        let count = 5;
-        const countdownEl = document.getElementById('tenantNotFoundCountdown');
-        const interval = setInterval(() => {
-            count--;
-            if (countdownEl) countdownEl.innerText = count;
-            if (count <= 0) {
-                clearInterval(interval);
-                window.location.href = '/';
-            }
-        }, 1000);
+    // Instantly and cleanly redirect to main hostname with zero errors or multi-tenant disclosure
+    if (window.location.pathname !== '/' || window.location.search) {
+        window.location.replace('/');
     } else {
-        alert(`Clinic Practice Not Found\n\nThe practice link "/${slug}" has not been created or registered by the clinic administration.\n\nReturning to main practice portal.`);
-        window.location.href = '/';
+        // If already on root, quietly load default practice settings
+        window.dbAPI?.getSettings().then(settings => {
+            window.currentClinicSettings = settings || {};
+        });
     }
 }
 
