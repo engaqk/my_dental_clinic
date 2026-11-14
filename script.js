@@ -2103,9 +2103,52 @@ function triggerGoogleSignInPrompt() {
     handleFirstTimeGoogleSignIn();
 }
 
+function handleTenantNotFound(requestedSlug) {
+    const slug = (requestedSlug || '').trim();
+    console.warn(`[Practice Access] Clinic practice "${slug}" does not exist or was not created by SuperAdmin.`);
+    
+    // Purge invalid slug from storage and cookies so it doesn't linger
+    sessionStorage.removeItem('activeTenantSlug');
+    localStorage.removeItem('activeTenantId');
+    try {
+        document.cookie = 'clinic_tenant=; path=/; max-age=0';
+    } catch(e){}
+
+    if (window.dbAPI) {
+        window.dbAPI.tenantId = 'default';
+        window.dbAPI.isTenantValid = true;
+    }
+
+    const modal = document.getElementById('tenantNotFoundModal');
+    if (modal) {
+        const textEl = document.getElementById('tenantNotFoundSlugText');
+        if (textEl) textEl.innerText = slug ? `/${slug}` : 'the requested link';
+        modal.style.display = 'flex';
+
+        let count = 5;
+        const countdownEl = document.getElementById('tenantNotFoundCountdown');
+        const interval = setInterval(() => {
+            count--;
+            if (countdownEl) countdownEl.innerText = count;
+            if (count <= 0) {
+                clearInterval(interval);
+                window.location.href = '/';
+            }
+        }, 1000);
+    } else {
+        alert(`Clinic Practice Not Found\n\nThe practice link "/${slug}" has not been created or registered by the clinic administration.\n\nReturning to main practice portal.`);
+        window.location.href = '/';
+    }
+}
+
 function loadClinicSettings() {
     if (!window.dbAPI) return;
     window.dbAPI.getSettings().then(settings => {
+        if (!settings || settings.notFound || window.dbAPI.isTenantValid === false) {
+            handleTenantNotFound(window.dbAPI.tenantId || settings?.requestedTenant);
+            return;
+        }
+
         window.currentClinicSettings = settings || {};
         
         const curTenant = (window.dbAPI.tenantId || sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || 'default').toLowerCase().trim();
@@ -2116,10 +2159,7 @@ function loadClinicSettings() {
             if (curTenant.includes('smile')) clinicName = 'Smile Dental Clinic';
             else if (curTenant.includes('swastik')) clinicName = 'Swastik Dental Clinic';
             else if (curTenant.includes('sumya')) clinicName = 'Sumya Dental Clinic';
-            else if (isSlugTenant) {
-                const words = curTenant.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-                clinicName = words.join(' ') + ' Dental Clinic';
-            } else {
+            else {
                 clinicName = 'Smile Dental Clinic';
             }
         }

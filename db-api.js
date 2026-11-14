@@ -34,11 +34,21 @@ class DatabaseAPI {
 
         this.tenantId = resolvedSlug;
         this.cacheVersion = '1.0.0';
-        sessionStorage.setItem('activeTenantSlug', this.tenantId);
-        localStorage.setItem('activeTenantId', this.tenantId);
-        try {
-            document.cookie = 'clinic_tenant=' + encodeURIComponent(this.tenantId) + '; path=/; max-age=31536000';
-        } catch(e){}
+        this.isTenantValid = null;
+
+        const isKnownTenant = this.tenantId === 'default' || 
+                              this.tenantId.includes('smile') || 
+                              this.tenantId.includes('swastik') || 
+                              this.tenantId.includes('sumya') ||
+                              !!localStorage.getItem('clinicSettings_' + this.tenantId);
+
+        if (isKnownTenant) {
+            sessionStorage.setItem('activeTenantSlug', this.tenantId);
+            localStorage.setItem('activeTenantId', this.tenantId);
+            try {
+                document.cookie = 'clinic_tenant=' + encodeURIComponent(this.tenantId) + '; path=/; max-age=31536000';
+            } catch(e){}
+        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyAW9f8YvUDWpTkaJiwjXSaancicOJcKnBk",
@@ -1008,7 +1018,7 @@ class DatabaseAPI {
         }
     }
 
-    // Pre-configured Tenant Blueprints
+    // Pre-configured Authorized System Tenant Blueprints
     getTenantBlueprint(tenantId) {
         const id = (tenantId || this.tenantId || '').toLowerCase().trim();
         if (id.includes('swastik')) {
@@ -1021,22 +1031,6 @@ class DatabaseAPI {
                 doctor_name: 'Dr. Chintal Baman (BDS)',
                 degrees: 'B.D.S.',
                 address: 'Main Clinic',
-                phone: '',
-                access_gate_enabled: true,
-                pin_required: false,
-                access_pin: '1234'
-            };
-        }
-        if (id.includes('smile')) {
-            return {
-                clinic_name: 'Smile Dental Clinic',
-                subtitle: 'Advanced Dental & Cosmetic Clinic',
-                primary_color: '#0D9488',
-                admin_user: 'smileadmin',
-                admin_pass: 'admin',
-                doctor_name: 'Dr. Smile Specialist',
-                degrees: 'M.D.S., B.D.S.',
-                address: 'Smile Dental Care Center',
                 phone: '',
                 access_gate_enabled: true,
                 pin_required: false,
@@ -1059,53 +1053,52 @@ class DatabaseAPI {
                 access_pin: '1234'
             };
         }
-        if (id !== 'default' && id) {
-            const words = id.split('-').filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase());
-            const formatted = words.join(' ');
-            const cName = formatted.toLowerCase().includes('clinic') || formatted.toLowerCase().includes('dental') ? formatted : `${formatted} Dental Clinic`;
+        if (!id || id === 'default' || id.includes('smile')) {
             return {
-                clinic_name: cName,
-                subtitle: 'Advanced Oral Care & Cosmetic Dentistry',
+                clinic_name: 'Smile Dental Clinic',
+                subtitle: 'Advanced Dental & Cosmetic Clinic',
                 primary_color: '#0D9488',
-                admin_user: id.replace(/[^a-z0-9]/g, '') + 'admin',
+                admin_user: 'smileadmin',
                 admin_pass: 'admin',
-                doctor_name: `Dr. ${formatted} Specialist`,
+                doctor_name: 'Dr. Smile Specialist',
                 degrees: 'M.D.S., B.D.S.',
-                address: `${formatted} Practice`,
+                address: 'Smile Dental Care Center',
                 phone: '',
                 access_gate_enabled: true,
                 pin_required: false,
                 access_pin: '1234'
             };
         }
-        return {
-            clinic_name: 'My Dental Clinic',
-            subtitle: 'Dental & Cosmetic Clinic',
-            primary_color: '#10B981',
-            admin_user: 'admin',
-            admin_pass: 'admin',
-            doctor_name: 'Dr. Dental Expert (MDS)',
-            degrees: 'M.D.S., B.D.S.',
-            address: 'Modern Dental Care Center',
-            phone: '',
-            access_gate_enabled: true,
-            pin_required: false,
-            access_pin: '1234'
-        };
+        // STRICT SECURITY: Do NOT fabricate dummy blueprints for unknown slugs!
+        // Only tenants created by SuperAdmin or built-in system practices are permitted.
+        return null;
     }
 
-    // Get App Settings (Authoritative Firestore Persistence with Local Fallback)
+    // Get App Settings (Strict SuperAdmin Authorization & Validation)
     async getSettings() {
         const tenantKey = 'clinicSettings_' + this.tenantId;
         const blueprint = this.getTenantBlueprint(this.tenantId);
+        const isBuiltinTenant = this.tenantId === 'default' || 
+                                this.tenantId.includes('smile') || 
+                                this.tenantId.includes('swastik') || 
+                                this.tenantId.includes('sumya');
 
         if (!this.useFirebase || !this.db) {
-            const cached = JSON.parse(localStorage.getItem(tenantKey) || localStorage.getItem('clinicSettings') || 'null');
-            return cached || blueprint || {};
+            const cached = JSON.parse(localStorage.getItem(tenantKey) || 'null');
+            if (cached && (cached.clinic_name || cached.name)) {
+                this.isTenantValid = true;
+                return cached;
+            }
+            if (isBuiltinTenant && blueprint) {
+                this.isTenantValid = true;
+                return blueprint;
+            }
+            this.isTenantValid = false;
+            return { notFound: true, requestedTenant: this.tenantId };
         }
 
         try {
-            console.log(`📡 Fetching authoritative settings from Firestore for tenant [${this.tenantId}]...`);
+            console.log(`📡 Verifying and fetching authoritative settings from Firestore for tenant [${this.tenantId}]...`);
             
             // Check both tenant subcollection and root tenant document in Firestore
             const [subDoc, rootDoc] = await Promise.all([
@@ -1135,14 +1128,21 @@ class DatabaseAPI {
             }
 
             if (mergedData) {
+                // Tenant genuinely created by SuperAdmin or verified in database!
+                this.isTenantValid = true;
                 localStorage.setItem(tenantKey, JSON.stringify(mergedData));
+                sessionStorage.setItem('activeTenantSlug', this.tenantId);
+                localStorage.setItem('activeTenantId', this.tenantId);
+                try {
+                    document.cookie = 'clinic_tenant=' + encodeURIComponent(this.tenantId) + '; path=/; max-age=31536000';
+                } catch(e){}
                 this.currentSettings = mergedData;
                 return mergedData;
             }
 
-            // Auto-seed preconfigured tenant into Firestore persistent database
-            if (blueprint) {
-                console.log(`🌱 Auto-seeding persistent tenant in Firestore: ${this.tenantId}`);
+            // Auto-seed ONLY genuine pre-configured built-in practices into Firestore
+            if (isBuiltinTenant && blueprint) {
+                console.log(`🌱 Auto-seeding persistent built-in tenant in Firestore: ${this.tenantId}`);
                 await Promise.all([
                     this.getCollection('settings').doc('clinic').set(blueprint, { merge: true }),
                     this.db.collection('tenants').doc(this.tenantId).set({
@@ -1161,19 +1161,34 @@ class DatabaseAPI {
                         role: 'admin'
                     }, { merge: true })
                 ]);
+                this.isTenantValid = true;
                 localStorage.setItem(tenantKey, JSON.stringify(blueprint));
                 this.currentSettings = blueprint;
                 return blueprint;
             }
 
-            const fallback = JSON.parse(localStorage.getItem(tenantKey) || 'null') || blueprint || {};
-            this.currentSettings = fallback;
-            return fallback;
+            // CRITICAL SECURITY: Unrecognized tenant! NOT created by SuperAdmin!
+            console.warn(`[dbAPI] Access Denied: Tenant "${this.tenantId}" was NOT created by SuperAdmin.`);
+            this.isTenantValid = false;
+            sessionStorage.removeItem('activeTenantSlug');
+            localStorage.removeItem('activeTenantId');
+            try {
+                document.cookie = 'clinic_tenant=; path=/; max-age=0';
+            } catch(e){}
+            return { notFound: true, requestedTenant: this.tenantId };
         } catch (error) {
-            console.error('Error fetching settings from Firestore (using local fallback):', error);
-            const cached = JSON.parse(localStorage.getItem(tenantKey) || 'null') || blueprint || {};
-            this.currentSettings = cached;
-            return cached;
+            console.error('Error validating tenant from Firestore:', error);
+            const cached = JSON.parse(localStorage.getItem(tenantKey) || 'null');
+            if (cached && (cached.clinic_name || cached.name)) {
+                this.isTenantValid = true;
+                return cached;
+            }
+            if (isBuiltinTenant && blueprint) {
+                this.isTenantValid = true;
+                return blueprint;
+            }
+            this.isTenantValid = false;
+            return { notFound: true, requestedTenant: this.tenantId };
         }
     }
 
