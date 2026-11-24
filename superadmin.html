@@ -1974,13 +1974,16 @@
                 if (progressText) progressText.innerHTML = `<i class="fas fa-check-circle" style="color: #16A34A;"></i> Campaign Dispatched! ${result.sentCount} emails sent successfully.`;
 
                 // Log campaign event in Firestore & SuperAdmin Activity Logs
+                const tenantScope = document.getElementById('campaignTenantSelect')?.value || document.getElementById('saTenantFilter')?.value || (tenant && tenant.id) || 'all';
                 if (window.dbAPI && typeof window.dbAPI.logActivity === 'function') {
                     window.dbAPI.logActivity('campaign', 'Email Campaign Blast', `Dispatched "${tplKey}" blast to ${result.sentCount} recipients (Failed: ${result.failedCount || 0})`, {
                         templateKey: tplKey,
                         subject: subject,
                         sentCount: result.sentCount,
                         failedCount: result.failedCount,
-                        tenantScope: activeFilter
+                        tenantScope: tenantScope,
+                        tenantId: tenant.id || 'default',
+                        clinicName: tenant.name || tenant.clinic_name || 'Dental Clinic'
                     });
                 }
                 if (window.dbAPI && window.dbAPI.db) {
