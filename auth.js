@@ -130,6 +130,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionStorage.setItem('staffLoggedIn', 'true');
                     sessionStorage.setItem('staffUser', JSON.stringify(user));
                     
+                    // Comprehensive activity log & admin email alert
+                    try {
+                        if (window.dbAPI && typeof window.dbAPI.logActivity === 'function') {
+                            const clinicName = (window.currentClinicSettings && (window.currentClinicSettings.clinic_name || window.currentClinicSettings.name)) || 'Smile Dental Clinic';
+                            const tenantId = window.dbAPI.tenantId || sessionStorage.getItem('activeTenantSlug') || 'default';
+                            const userEmail = user.email || user.username || '';
+                            const userName = user.name || user.displayName || user.username || 'Staff';
+                            const userRole = user.role || 'staff';
+                            window.dbAPI.logActivity('auth', 'Staff Login', `${userName} (${userEmail}) logged into Clinical Portal as ${userRole}`, {
+                                actor: userName,
+                                email: userEmail,
+                                role: userRole,
+                                page: 'Clinical Portal / Login',
+                                clinicName: clinicName,
+                                tenantId: tenantId
+                            });
+                        }
+                    } catch(e) {}
+
                     if (user && user.role === 'super_admin') {
                         sessionStorage.setItem('isSuperAdmin', 'true');
                     } else {

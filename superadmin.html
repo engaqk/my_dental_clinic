@@ -540,7 +540,7 @@
                                     🔐 Logins &amp; Gate
                                 </button>
                                 <button type="button" onclick="filterActivityLogsByCategory('navigation')" class="sa-cat-pill" data-cat="navigation" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 99px; border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569; cursor: pointer;">
-                                    🧭 Desks &amp; Routes
+                                    ⏱️ Page Visits &amp; Dwell
                                 </button>
                                 <button type="button" onclick="filterActivityLogsByCategory('campaign')" class="sa-cat-pill" data-cat="campaign" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 99px; border: 1px solid #E2E8F0; background: #FFFFFF; color: #475569; cursor: pointer;">
                                     📢 Campaigns
@@ -1587,6 +1587,11 @@
                             <div style="color: #334155; line-height: 1.45; font-size: 0.81rem;">
                                 ${details}
                             </div>
+                            ${(l.page || l.time_spent_seconds > 0 || l.time_spent_display) ? `
+                            <div style="margin-top: 5px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                                ${l.page ? `<span style="background: #EEF2FF; color: #4338CA; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;"><i class="fas fa-compass"></i> ${l.page}</span>` : ''}
+                                ${(l.time_spent_seconds > 0 || (l.time_spent_display && l.time_spent_display !== '0s')) ? `<span style="background: #FEF3C7; color: #B45309; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 800;"><i class="far fa-clock"></i> ⏱️ ${l.time_spent_display || (l.time_spent_seconds + 's')}</span>` : ''}
+                            </div>` : ''}
                         </td>
                         <td style="padding: 10px 12px; white-space: nowrap;">
                             ${mobile !== '-' ? `<div style="font-family: monospace; font-size: 0.76rem; color: #475569;"><i class="fas fa-phone-alt" style="color: #10B981; margin-right: 4px; font-size: 0.7rem;"></i>${mobile}</div>` : ''}
@@ -1612,7 +1617,7 @@
                 return;
             }
 
-            const headers = ['Date', 'Time', 'Timestamp', 'Clinic', 'Category', 'Event Type', 'Actor', 'Role', 'Activity Details', 'Mobile', 'Email', 'Device', 'IP Address'];
+            const headers = ['Date', 'Time', 'Timestamp', 'Clinic', 'Category', 'Event Type', 'Actor', 'Role', 'Page Clicked', 'Time Spent (Dwell)', 'Activity Details', 'Mobile', 'Email', 'Device', 'IP Address'];
             const rows = logs.map(l => {
                 const dt = l.timestamp ? new Date(l.timestamp) : new Date();
                 const dStr = l.dateStr || dt.toLocaleDateString('en-IN');
@@ -1628,6 +1633,8 @@
                     clean(l.type || 'Activity'),
                     clean(l.actor || l.name || ''),
                     clean(l.role || ''),
+                    clean(l.page || 'Home'),
+                    clean(l.time_spent_display || (l.time_spent_seconds ? `${l.time_spent_seconds}s` : '0s')),
                     clean(l.details || ''),
                     clean(l.mobile || ''),
                     clean(l.email || ''),

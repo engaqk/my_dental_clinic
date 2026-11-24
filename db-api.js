@@ -635,9 +635,27 @@ class DatabaseAPI {
             globalLogs.unshift(logEntry);
             localStorage.setItem('superadmin_logs_cache', JSON.stringify(globalLogs.slice(0, 300)));
         } catch(e){}
+
+        // Asynchronously notify admin via universal activity dispatcher
+        try {
+            if (typeof fetch === 'function') {
+                fetch('/api/activity-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ...logEntry,
+                        category: 'auth',
+                        page: 'Login Portal',
+                        timeSpentSeconds: 0,
+                        timeSpentDisplay: '0s',
+                        sendEmail: true
+                    })
+                }).catch(() => {});
+            }
+        } catch(e) {}
     }
 
-    // --- COMPREHENSIVE MULTI-TENANT ACTIVITY AUDIT LOGGING ---
+    // --- COMPREHENSIVE MULTI-TENANT ACTIVITY AUDIT LOGGING & DWELL TIME TRACKING ---
     async logActivity(category, type, details, meta = {}) {
         const tenantId = meta.tenantId || meta.tenant_id || this.tenantId || 'default';
         const now = new Date();
@@ -651,7 +669,8 @@ class DatabaseAPI {
         let mobile = meta.mobile || meta.phone || '';
 
         try {
-            if (!actor || !role) {
+            // Resolve actor, email, and role from session / local storage if not provided
+            if (!actor || !role || !email) {
                 const staffStr = sessionStorage.getItem('staffUser') || localStorage.getItem('clinic_current_user');
                 if (staffStr) {
                     const u = JSON.parse(staffStr);
@@ -660,8 +679,30 @@ class DatabaseAPI {
                     email = email || u.email || '';
                     mobile = mobile || u.mobile || u.phone || '';
                 }
+                if (!email) {
+                    const ptEmail = sessionStorage.getItem('patientEmail') || localStorage.getItem('patientEmail') || (window.currentPatient ? window.currentPatient.email : '');
+                    if (ptEmail) {
+                        email = ptEmail;
+                        actor = actor || sessionStorage.getItem('patientName') || localStorage.getItem('patientName') || (window.currentPatient ? window.currentPatient.name : 'Patient');
+                        role = role || 'patient';
+                    }
+                }
             }
         } catch(e) {}
+
+        const page = meta.page || window.currentTrackedPage || 'Home';
+        const prevPage = meta.previousPage || meta.previous_page || '';
+        const timeSpentSec = parseInt(meta.timeSpentSeconds) || parseInt(meta.duration) || 0;
+        let timeSpentDisp = meta.timeSpentDisplay || '';
+        if (!timeSpentDisp && timeSpentSec > 0) {
+            timeSpentDisp = (typeof ActivityTracker !== 'undefined' && ActivityTracker.formatDuration) 
+                ? ActivityTracker.formatDuration(timeSpentSec) 
+                : timeSpentSec + 's';
+        } else if (!timeSpentDisp) {
+            timeSpentDisp = '0s';
+        }
+
+        const clinicName = meta.clinicName || meta.clinic_name || (window.currentClinicSettings && (window.currentClinicSettings.clinic_name || window.currentClinicSettings.name)) || 'Smile Dental Clinic';
 
         const logEntry = {
             id: 'act_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
@@ -670,11 +711,16 @@ class DatabaseAPI {
             details: details || '',
             tenant_id: tenantId,
             clinic_slug: tenantId,
-            actor: actor || 'Visitor / System',
-            role: role || (category === 'auth' ? 'user' : 'staff'),
+            clinic_name: clinicName,
+            actor: actor || 'Visitor',
             name: actor || meta.name || 'User',
-            email: email,
-            mobile: mobile,
+            email: email || '',
+            mobile: mobile || '',
+            role: role || (category === 'auth' ? 'user' : 'visitor'),
+            page: page,
+            previous_page: prevPage,
+            time_spent_seconds: timeSpentSec,
+            time_spent_display: timeSpentDisp,
             dateStr: dateStr,
             timeStr: timeStr,
             ist_date: dateStr,
@@ -686,29 +732,80 @@ class DatabaseAPI {
             meta: meta
         };
 
+        // 1. Cloud Firestore Persistence
         if (this.useFirebase && this.db) {
             try {
-                // 1. Tenant-scoped activity collection for strict multi-tenant isolation
+                // Tenant-scoped activity collection for strict multi-tenant isolation
                 await this.getCollection('activity_logs').add(logEntry);
-                // 2. Global SuperAdmin activity audit log
+                // Global SuperAdmin activity audit log
                 await this.db.collection('superadmin_logs').add(logEntry);
             } catch (err) {
                 console.warn('Failed to log activity to Firestore:', err);
             }
         }
 
-        // Local cache (both tenant-scoped and global)
+        // 2. Local cache (both tenant-scoped and global)
         try {
             const tenantLogs = this.getLocalData('tenantActivityLogs', []);
             tenantLogs.unshift(logEntry);
-            this.setLocalData('tenantActivityLogs', tenantLogs.slice(0, 100));
+            this.setLocalData('tenantActivityLogs', tenantLogs.slice(0, 150));
 
             const globalLogs = JSON.parse(localStorage.getItem('superadmin_logs_cache') || '[]');
             globalLogs.unshift(logEntry);
             localStorage.setItem('superadmin_logs_cache', JSON.stringify(globalLogs.slice(0, 300)));
         } catch(e) {}
 
+        // 3. Universal Admin Notification (Async non-blocking dispatch)
+        try {
+            if (typeof fetch === 'function') {
+                fetch('/api/activity-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(logEntry)
+                }).catch(() => {});
+            }
+        } catch(e) {}
+
         return logEntry;
+    }
+
+    // Fetch Clinic Activity Logs for Clinical Admin Dashboard
+    async getClinicActivityLogs(tenantId) {
+        const tId = tenantId || this.tenantId || 'default';
+        let logs = [];
+
+        if (this.useFirebase && this.db) {
+            try {
+                const snap = await this.db.collection('tenants').doc(tId).collection('activity_logs').orderBy('timestamp', 'desc').limit(250).get();
+                if (!snap.empty) {
+                    logs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                }
+            } catch (err) {
+                // Fallback to superadmin_logs filtered by tenant_id
+                try {
+                    const snap2 = await this.db.collection('superadmin_logs').where('tenant_id', '==', tId).orderBy('timestamp', 'desc').limit(250).get();
+                    if (!snap2.empty) {
+                        logs = snap2.docs.map(d => ({ id: d.id, ...d.data() }));
+                    }
+                } catch(e2) {}
+            }
+        }
+
+        // Merge with local tenant cache
+        try {
+            const local = this.getLocalData('tenantActivityLogs', []);
+            const combined = [...logs, ...local];
+            const seen = new Set();
+            logs = combined.filter(l => {
+                const key = l.id || `${l.timestamp || ''}_${l.type || ''}_${l.email || ''}_${l.page || ''}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+        } catch(e) {}
+
+        logs.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+        return logs;
     }
 
     // Record Visitor First-Time Access & Capture Marketing Lead

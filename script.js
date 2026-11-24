@@ -307,6 +307,12 @@ async function openPatientProfile(patient) {
         }, 150);
         // Open with Interactive Dental Charting (Clinic USP) as Tab 1
         switchProfileTab('charting');
+
+        try {
+            if (window.ActivityTracker && typeof window.ActivityTracker.onPageChange === 'function') {
+                window.ActivityTracker.onPageChange('Patient Profile: ' + (patient.name || 'Patient'));
+            }
+        } catch(e) {}
     }
 }
 
@@ -392,6 +398,12 @@ function switchProfileTab(tab) {
         if (tab === 'recalls' && typeof initRecallsTab === 'function') initRecallsTab(pat);
         if (tab === 'dental-lab' && typeof initDentalLabTab === 'function') initDentalLabTab(pat);
     }
+
+    try {
+        if (window.ActivityTracker && typeof window.ActivityTracker.onPageChange === 'function') {
+            window.ActivityTracker.onPageChange('Clinical Profile: ' + tab);
+        }
+    } catch(e) {}
 }
 
 let currentTxnType = 'payment';
@@ -1148,8 +1160,13 @@ function showDashboardTab(name) {
     if (name === 'settings') {
         populateSettingsForm();
     }
+    if (name === 'activity-logs') {
+        loadClinicActivityLogs();
+    }
     try {
-        if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
+        if (window.ActivityTracker && typeof window.ActivityTracker.onPageChange === 'function') {
+            window.ActivityTracker.onPageChange('dashboard:' + name);
+        } else if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
             window.dbAPI.trackRouteVisit('dashboard:' + name);
         }
     } catch(e) {}
@@ -2602,41 +2619,285 @@ async function checkForAppDeploymentUpdate() {
     }
 }
 
-// Security Logs Modal logic
+// --- CLINIC ACTIVITY LOGS & PAGE DWELL AUDIT TRAIL ENGINE ---
+window.clinicActivityLogsCache = [];
+window.activeClinicLogCat = 'all';
+
+async function loadClinicActivityLogs() {
+    const tbody = document.getElementById('clinicActivityLogsTableBody');
+    if (tbody) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #94A3B8;"><i class="fas fa-spinner fa-spin"></i> Loading real-time activity and dwell logs...</td></tr>';
+    }
+
+    try {
+        const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : (sessionStorage.getItem('activeTenantSlug') || 'default');
+        let logs = [];
+        if (window.dbAPI && typeof window.dbAPI.getClinicActivityLogs === 'function') {
+            logs = await window.dbAPI.getClinicActivityLogs(tenantId);
+        } else if (window.dbAPI && typeof window.dbAPI.getAdminLoginHistory === 'function') {
+            logs = await window.dbAPI.getAdminLoginHistory();
+        }
+
+        window.clinicActivityLogsCache = logs || [];
+        
+        // Update total counter
+        const countAll = document.getElementById('clinicLogCountAll');
+        if (countAll) countAll.innerText = (logs || []).length;
+
+        filterClinicActivityLogs(window.activeClinicLogCat || 'all');
+    } catch (err) {
+        console.error('[ActivityLogs] Error loading logs:', err);
+        if (tbody) {
+            tbody.innerHTML = `<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #EF4444;"><i class="fas fa-exclamation-triangle"></i> Failed to load activity logs: ${err.message}</td></tr>`;
+        }
+    }
+}
+
+function filterClinicActivityLogs(category) {
+    window.activeClinicLogCat = category || 'all';
+
+    // Update active tab styling on category filter buttons
+    const catBtns = document.querySelectorAll('.clinic-log-cat-btn');
+    catBtns.forEach(btn => {
+        const cat = btn.getAttribute('data-cat');
+        if (cat === window.activeClinicLogCat) {
+            btn.style.background = 'var(--primary, #0D9488)';
+            btn.style.color = '#FFFFFF';
+            btn.style.borderColor = 'var(--primary, #0D9488)';
+            btn.style.fontWeight = '800';
+        } else {
+            btn.style.background = '#FFFFFF';
+            btn.style.color = '#475569';
+            btn.style.borderColor = '#CBD5E1';
+            btn.style.fontWeight = '700';
+        }
+    });
+
+    let logs = window.clinicActivityLogsCache || [];
+
+    // Filter by Category
+    if (window.activeClinicLogCat !== 'all') {
+        logs = logs.filter(l => {
+            const lCat = (l.category || '').toLowerCase();
+            const lType = (l.type || '').toLowerCase();
+            if (window.activeClinicLogCat === 'navigation') {
+                return lCat === 'navigation' || lType.includes('dwell') || lType.includes('visit') || lType.includes('page') || lType.includes('route');
+            }
+            if (window.activeClinicLogCat === 'auth') {
+                return lCat === 'auth' || lType.includes('login') || lType.includes('session');
+            }
+            if (window.activeClinicLogCat === 'clinical') {
+                return lCat === 'clinical' || lType.includes('chart') || lType.includes('rx') || lType.includes('prescription') || lType.includes('consent') || lType.includes('treatment');
+            }
+            if (window.activeClinicLogCat === 'appointment') {
+                return lCat === 'appointment' || lType.includes('appointment') || lType.includes('booking');
+            }
+            return lCat === window.activeClinicLogCat;
+        });
+    }
+
+    // Filter by Search Query
+    const searchInput = document.getElementById('clinicActivitySearchInput');
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    if (query) {
+        logs = logs.filter(l => {
+            const email = (l.email || '').toLowerCase();
+            const actor = (l.actor || l.name || '').toLowerCase();
+            const page = (l.page || '').toLowerCase();
+            const details = (l.details || '').toLowerCase();
+            const type = (l.type || '').toLowerCase();
+            const role = (l.role || '').toLowerCase();
+            const device = (l.device || '').toLowerCase();
+            const ip = (l.ipAddress || '').toLowerCase();
+            const dwell = (l.time_spent_display || '').toLowerCase();
+            return email.includes(query) || actor.includes(query) || page.includes(query) || details.includes(query) || type.includes(query) || role.includes(query) || device.includes(query) || ip.includes(query) || dwell.includes(query);
+        });
+    }
+
+    renderClinicActivityLogsTable(logs);
+}
+
+function renderClinicActivityLogsTable(logs) {
+    const tbody = document.getElementById('clinicActivityLogsTableBody');
+    if (!tbody) return;
+
+    if (!logs || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="padding: 2.5rem; text-align: center; color: #94A3B8;">No activity or navigation logs matching this filter.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = logs.slice(0, 200).map(l => {
+        const dt = l.timestamp ? new Date(l.timestamp) : new Date();
+        const dateStr = l.ist_date || l.dateStr || dt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
+        const timeStr = l.ist_time || l.timeStr || (dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }) + ' IST');
+        const actor = l.actor || l.name || 'Visitor';
+        const email = l.email || '';
+        const role = l.role || (l.category === 'auth' ? 'user' : 'visitor');
+        const page = l.page || 'Home';
+        const dwellSec = parseInt(l.time_spent_seconds) || 0;
+        const dwellDisp = l.time_spent_display || (dwellSec > 0 ? (typeof ActivityTracker !== 'undefined' ? ActivityTracker.formatDuration(dwellSec) : `${dwellSec}s`) : '0s');
+        const details = l.details || `${actor} performed ${l.type || 'Activity'}`;
+        const device = l.device || 'Desktop';
+        const ip = l.ipAddress || '127.0.0.1';
+
+        // Role Badge Styling
+        let roleBg = '#F1F5F9';
+        let roleColor = '#475569';
+        const rLow = role.toLowerCase();
+        if (rLow.includes('doctor')) { roleBg = '#CCFBF1'; roleColor = '#0D9488'; }
+        else if (rLow.includes('admin')) { roleBg = '#EEF2FF'; roleColor = '#4338CA'; }
+        else if (rLow.includes('patient')) { roleBg = '#FEF3C7'; roleColor = '#B45309'; }
+        else if (rLow.includes('staff') || rLow.includes('reception')) { roleBg = '#E0F2FE'; roleColor = '#0284C7'; }
+
+        return `
+        <tr style="border-bottom: 1px solid #F1F5F9; transition: background 0.15s ease;" onmouseover="this.style.background='#F8FAFC'" onmouseout="this.style.background='transparent'">
+            <td style="padding: 10px 12px; white-space: nowrap;">
+                <div style="font-weight: 800; color: #0F172A; font-size: 0.82rem;">${dateStr}</div>
+                <div style="font-size: 0.72rem; color: #64748B; font-family: monospace; margin-top: 2px;">${timeStr}</div>
+            </td>
+            <td style="padding: 10px 12px; white-space: nowrap;">
+                <div style="font-weight: 800; color: #0F172A; font-size: 0.82rem;">${actor}</div>
+                ${email ? `<div style="font-size: 0.74rem; color: #0284C7; font-weight: 600; margin-top: 1px;"><i class="far fa-envelope" style="margin-right: 3px;"></i>${email}</div>` : '<div style="font-size: 0.72rem; color: #94A3B8;">Guest Session</div>'}
+            </td>
+            <td style="padding: 10px 12px; white-space: nowrap;">
+                <span style="background: ${roleBg}; color: ${roleColor}; font-weight: 800; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; text-transform: uppercase;">
+                    ${role}
+                </span>
+            </td>
+            <td style="padding: 10px 12px; white-space: nowrap;">
+                <span style="background: #EEF2FF; color: #4338CA; padding: 3px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700;">
+                    🧭 ${page}
+                </span>
+                ${(dwellSec > 0 || (dwellDisp && dwellDisp !== '0s')) ? `
+                    <div style="margin-top: 4px;">
+                        <span style="background: #FEF3C7; color: #B45309; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 800;">
+                            ⏱️ ${dwellDisp}
+                        </span>
+                    </div>
+                ` : ''}
+            </td>
+            <td style="padding: 10px 12px;">
+                <div style="font-weight: 700; color: #0F172A; font-size: 0.8rem; margin-bottom: 2px;">
+                    ${l.type || 'Activity'}
+                </div>
+                <div style="font-size: 0.76rem; color: #475569; line-height: 1.35;">
+                    ${details}
+                </div>
+            </td>
+            <td style="padding: 10px 12px; white-space: nowrap;">
+                <div style="font-size: 0.74rem; color: #475569;">
+                    <i class="fas fa-desktop" style="color: #94A3B8; margin-right: 4px;"></i>${device}
+                </div>
+                <div style="font-size: 0.7rem; color: #94A3B8; font-family: monospace; margin-top: 2px;">
+                    ${ip}
+                </div>
+            </td>
+        </tr>
+        `;
+    }).join('');
+}
+
+function exportClinicActivityLogsCSV() {
+    const logs = window.clinicActivityLogsCache || [];
+    if (!logs || logs.length === 0) {
+        alert('No activity logs available to export for this clinic.');
+        return;
+    }
+
+    const headers = ['Date (IST)', 'Time (IST)', 'Timestamp', 'Clinic Practice', 'User', 'Login Email', 'Role', 'Page Clicked', 'Dwell Time (Seconds)', 'Dwell Time (Display)', 'Event Type', 'Details', 'Device', 'IP Address'];
+    const rows = logs.map(l => {
+        const dt = l.timestamp ? new Date(l.timestamp) : new Date();
+        const dStr = l.ist_date || l.dateStr || dt.toLocaleDateString('en-IN');
+        const tStr = l.ist_time || l.timeStr || dt.toLocaleTimeString('en-IN');
+        const clean = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+
+        return [
+            clean(dStr),
+            clean(tStr),
+            clean(l.timestamp || ''),
+            clean(l.clinic_name || window.currentClinicSettings?.clinic_name || 'Smile Dental Clinic'),
+            clean(l.actor || l.name || 'Visitor'),
+            clean(l.email || ''),
+            clean(l.role || 'visitor'),
+            clean(l.page || 'Home'),
+            clean(l.time_spent_seconds || 0),
+            clean(l.time_spent_display || '0s'),
+            clean(l.type || 'Activity'),
+            clean(l.details || ''),
+            clean(l.device || 'Desktop'),
+            clean(l.ipAddress || '127.0.0.1')
+        ].join(',');
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    const tenantSlug = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : 'clinic';
+    link.setAttribute('download', `${tenantSlug}_activity_dwell_logs_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Updated Security Logs Modal logic with Page & Dwell Time
 async function openSecurityLogsModal() {
-    document.getElementById('securityLogsModal').style.display = 'flex';
+    const modal = document.getElementById('securityLogsModal');
+    if (modal) modal.style.display = 'flex';
     const tbody = document.getElementById('securityLogsTableBody');
-    tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">Loading logs...</td></tr>';
+    if (!tbody) return;
+
+    tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);"><i class="fas fa-spinner fa-spin"></i> Loading real-time security and activity trail...</td></tr>';
     
     try {
-        const logs = await window.dbAPI.getAdminLoginHistory();
+        const tenantId = (window.dbAPI && window.dbAPI.tenantId) ? window.dbAPI.tenantId : (sessionStorage.getItem('activeTenantSlug') || 'default');
+        let logs = [];
+        if (window.dbAPI && typeof window.dbAPI.getClinicActivityLogs === 'function') {
+            logs = await window.dbAPI.getClinicActivityLogs(tenantId);
+        } else if (window.dbAPI && typeof window.dbAPI.getAdminLoginHistory === 'function') {
+            logs = await window.dbAPI.getAdminLoginHistory();
+        }
+
         if (!logs || logs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--text-muted);">No login history found for this clinic tenant.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">No activity history found for this clinic.</td></tr>';
             return;
         }
         
-        tbody.innerHTML = logs.map(log => {
+        tbody.innerHTML = logs.slice(0, 100).map(log => {
             const istDateStr = log.ist_timestamp || (log.dateStr ? `${log.dateStr} ${log.timeStr || ''}` : new Date(log.timestamp).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST');
             const userName = log.name || log.actor || 'User';
             const userEmail = log.email || '-';
             const roleBadge = log.role || log.type || 'Staff';
+            const page = log.page || 'Home';
+            const dwellSec = parseInt(log.time_spent_seconds) || 0;
+            const dwellDisp = log.time_spent_display || (dwellSec > 0 ? `${dwellSec}s` : '');
+            const details = log.details || `${userName} performed ${log.type || 'Activity'}`;
+
             return `
             <tr>
-                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem; font-weight: 600; white-space: nowrap;">${istDateStr}</td>
-                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem;"><span style="background: #E2E8F0; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${log.ipAddress || 'Unknown'}</span></td>
-                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem;"><strong>${userName}</strong><br><span style="font-size: 0.75rem; color: #64748B;">${userEmail}</span></td>
-                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.85rem;"><span style="background: #CCFBF1; color: #0D9488; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 0.75rem;">${roleBadge}</span></td>
+                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.82rem; font-weight: 600; white-space: nowrap;">${istDateStr}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.82rem;"><strong>${userName}</strong><br><span style="font-size: 0.74rem; color: #0284C7;">${userEmail}</span></td>
+                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.82rem;"><span style="background: #CCFBF1; color: #0D9488; padding: 2px 7px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; text-transform: uppercase;">${roleBadge}</span></td>
+                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.82rem; white-space: nowrap;">
+                    <span style="background: #EEF2FF; color: #4338CA; padding: 2px 6px; border-radius: 4px; font-size: 0.74rem; font-weight: 700;">🧭 ${page}</span>
+                    ${(dwellSec > 0 || (dwellDisp && dwellDisp !== '0s')) ? `<br><span style="display:inline-block; margin-top:3px; background: #FEF3C7; color: #B45309; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 800;">⏱️ ${dwellDisp}</span>` : ''}
+                </td>
+                <td style="padding: 10px; border-bottom: 1px solid #F1F5F9; color: var(--text-main); font-size: 0.8rem;">
+                    <strong>${log.type || 'Activity'}</strong><br>
+                    <span style="color: #64748B; font-size: 0.76rem;">${details}</span>
+                </td>
             </tr>
             `;
         }).join('');
     } catch (err) {
-        tbody.innerHTML = '<tr><td colspan="4" style="padding: 20px; text-align: center; color: var(--danger);">Failed to load logs.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--danger);">Failed to load logs.</td></tr>';
         console.error(err);
     }
 }
 
 function closeSecurityLogsModal() {
-    document.getElementById('securityLogsModal').style.display = 'none';
+    const modal = document.getElementById('securityLogsModal');
+    if (modal) modal.style.display = 'none';
 }
 
 // --- PATIENT PORTAL PORTLET CONTROLLER ---

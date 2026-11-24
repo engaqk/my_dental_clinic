@@ -544,6 +544,7 @@
                     <div style="display:flex; gap:0.5rem; flex-wrap: wrap; align-items: center;">
                         <button onclick="showDashboardTab('patients')" class="btn-primary" style="height: 38px; padding: 0 1rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Patient Database"><i class="fas fa-users"></i> Patients</button>
                         <button onclick="showDashboardTab('schedule')" class="btn-primary" style="background: #0284C7; height: 38px; padding: 0 1rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Appointment Calendar"><i class="fas fa-calendar-alt"></i> Schedule</button>
+                        <button id="activityLogsTabBtn" onclick="showDashboardTab('activity-logs')" class="btn-primary" style="background: #475569; height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Activity & Dwell Time Logs"><i class="fas fa-clipboard-list"></i> Activity Logs</button>
                         <button onclick="showDashboardTab('qr')" class="btn-primary" style="background: var(--accent); height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Get Booking QR"><i class="fas fa-qrcode"></i> QR</button>
                         <button id="settingsBtn" onclick="showDashboardTab('settings')" class="btn-primary" style="background: var(--primary-dark); height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Settings"><i class="fas fa-sliders-h"></i> Settings</button>
                         <button id="securityLogsBtn" onclick="openSecurityLogsModal()" class="btn-primary" style="background: #475569; height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Logs"><i class="fas fa-shield-alt"></i> Logs</button>
@@ -836,7 +837,83 @@
                 <button type="submit" class="btn-primary" style="width:100%;">Create Staff Account</button>
             </form>
         </div>
-        </div></div><div id="superadminTab" class="dashboard-tab" style="display: none;"><div class="card" style="max-width: 1000px; margin: 0px auto 2rem;">
+        </div></div><!-- Clinic Activity Logs & Dwell Time Audit Trail Tab -->
+        <div id="activity-logsTab" class="dashboard-tab" style="display: none;">
+            <div class="card" style="max-width: 1100px; margin: 0 auto 2rem; padding: 1.5rem;">
+                
+                <!-- Tab Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h3 style="margin: 0; color: var(--secondary); font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-clipboard-list" style="color: var(--primary);"></i> Clinic Activity &amp; Page Dwell Trail
+                        </h3>
+                        <p style="color: var(--text-muted); font-size: 0.82rem; margin: 4px 0 0 0;">
+                            Real-time audit log recording every user login email, section clicked, time spent per page, and clinical interaction.
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button type="button" onclick="exportClinicActivityLogsCSV()" class="btn-primary" style="background: #EEF2FF; color: #4338CA; border: 1.5px solid #C7D2FE; height: 36px; padding: 0 0.85rem; font-size: 0.8rem; font-weight: 700; border-radius: 8px; cursor: pointer;">
+                            <i class="fas fa-file-csv"></i> Export CSV
+                        </button>
+                        <button type="button" onclick="loadClinicActivityLogs()" class="btn-primary" style="background: #F1F5F9; color: #0F172A; border: 1.5px solid #CBD5E1; height: 36px; padding: 0 0.85rem; font-size: 0.8rem; font-weight: 700; border-radius: 8px; cursor: pointer;">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter & Search Controls -->
+                <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 0.85rem; margin-bottom: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                        <!-- Category Filters -->
+                        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="clinicLogCatFilterGroup">
+                            <button type="button" onclick="filterClinicActivityLogs('all')" class="clinic-log-cat-btn" data-cat="all" style="font-size: 0.76rem; font-weight: 800; padding: 4px 10px; border-radius: 99px; border: 1px solid var(--primary, #0D9488); background: var(--primary, #0D9488); color: white; cursor: pointer;">
+                                All (<span id="clinicLogCountAll">0</span>)
+                            </button>
+                            <button type="button" onclick="filterClinicActivityLogs('navigation')" class="clinic-log-cat-btn" data-cat="navigation" style="font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; border: 1px solid #CBD5E1; background: white; color: #475569; cursor: pointer;">
+                                ⏱️ Page Dwell &amp; Clicks
+                            </button>
+                            <button type="button" onclick="filterClinicActivityLogs('auth')" class="clinic-log-cat-btn" data-cat="auth" style="font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; border: 1px solid #CBD5E1; background: white; color: #475569; cursor: pointer;">
+                                🔐 Logins &amp; Access
+                            </button>
+                            <button type="button" onclick="filterClinicActivityLogs('clinical')" class="clinic-log-cat-btn" data-cat="clinical" style="font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; border: 1px solid #CBD5E1; background: white; color: #475569; cursor: pointer;">
+                                🦷 Clinical Care (Rx/Odontogram)
+                            </button>
+                            <button type="button" onclick="filterClinicActivityLogs('appointment')" class="clinic-log-cat-btn" data-cat="appointment" style="font-size: 0.76rem; font-weight: 700; padding: 4px 10px; border-radius: 99px; border: 1px solid #CBD5E1; background: white; color: #475569; cursor: pointer;">
+                                📅 Appointments
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search input -->
+                    <div style="position: relative;">
+                        <input type="text" id="clinicActivitySearchInput" oninput="filterClinicActivityLogs(window.activeClinicLogCat || 'all')" placeholder="🔎 Search by user, login email, page clicked, dwell time, or event..." style="width: 100%; height: 38px; padding: 0 1rem 0 2.2rem; font-size: 0.82rem; border-radius: 8px; border: 1.5px solid #CBD5E1; background: #FFFFFF; outline: none; box-sizing: border-box;">
+                        <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: #94A3B8; font-size: 0.8rem;"></i>
+                    </div>
+                </div>
+
+                <!-- Activity Table -->
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid #E2E8F0;">
+                    <table style="width: 100%; min-width: 850px; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
+                        <thead>
+                            <tr style="background: #F1F5F9; border-bottom: 2px solid #E2E8F0; color: #475569;">
+                                <th style="padding: 10px 12px; white-space: nowrap;">Date &amp; Time (IST)</th>
+                                <th style="padding: 10px 12px; white-space: nowrap;">User / Login Email</th>
+                                <th style="padding: 10px 12px; white-space: nowrap;">Role</th>
+                                <th style="padding: 10px 12px; white-space: nowrap;">Page Clicked &amp; Dwell Time</th>
+                                <th style="padding: 10px 12px; min-width: 200px;">Event &amp; Details</th>
+                                <th style="padding: 10px 12px; white-space: nowrap;">Device &amp; IP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clinicActivityLogsTableBody">
+                            <tr><td colspan="6" style="padding: 2rem; text-align: center; color: #94A3B8;">Loading activity logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="superadminTab" class="dashboard-tab" style="display: none;"><div class="card" style="max-width: 1000px; margin: 0px auto 2rem;">
             <span class="close" onclick="closeManageClinicsModal()">×</span>
             <h2 style="margin-top:0; color:var(--secondary);"><i class="fas fa-building"></i> Clinic Branches &amp; Locations</h2>
             <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:1.5rem;">Create new isolated clinic environments. Each clinic has its own patients, settings, and appointments.</p>
@@ -2280,6 +2357,7 @@
     <script src="db-api.js?v=47.5"></script>
     <script src="auth.js?v=47.5"></script>
     <script src="emailTemplates.js?v=47.5"></script>
+    <script src="activityTracker.js?v=47.5"></script>
     <script src="script.js?v=47.5"></script>
     <script src="premium-features.js?v=47.5"></script>
     <script>
@@ -2290,9 +2368,11 @@
                 return;
             }
 
-            // Track route/section click analytics
+            // Track route/section click analytics & dwell time
             try {
-                if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
+                if (window.ActivityTracker && typeof window.ActivityTracker.onPageChange === 'function') {
+                    window.ActivityTracker.onPageChange(id);
+                } else if (window.dbAPI && typeof window.dbAPI.trackRouteVisit === 'function') {
                     window.dbAPI.trackRouteVisit(id);
                 }
             } catch(e){}
@@ -3057,6 +3137,39 @@
 
             <div id="gateErrorAlert" style="display: none; background: #FEF2F2; color: #DC2626; border: 1px solid #FCA5A5; border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.78rem; font-weight: 600; margin-top: 0.85rem; text-align: center;"></div>
 
+        </div>
+    </div>
+
+    <!-- Dedicated Security & Activity Logs Modal -->
+    <div id="securityLogsModal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 999999; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box;">
+        <div style="background: #FFFFFF; border-radius: 20px; width: calc(100% - 24px); max-width: 900px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 60px -15px rgba(0,0,0,0.4); border: 1.5px solid rgba(255,255,255,0.8);">
+            <div style="padding: 1.25rem 1.5rem; border-bottom: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; background: #F8FAFC;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.15rem; font-weight: 800; color: #0F172A; display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-shield-alt" style="color: #475569;"></i> Security &amp; Activity Audit Log
+                    </h3>
+                    <div style="font-size: 0.78rem; color: #64748B; margin-top: 2px;">Real-time stream of all user logins, page dwell times, and interactions</div>
+                </div>
+                <button type="button" onclick="closeSecurityLogsModal()" style="background: #F1F5F9; border: none; width: 32px; height: 32px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; color: #64748B;">&times;</button>
+            </div>
+            <div style="padding: 1rem 1.5rem; overflow-y: auto; flex: 1;">
+                <div style="overflow-x: auto; border-radius: 8px; border: 1px solid #E2E8F0;">
+                    <table style="width: 100%; min-width: 750px; border-collapse: collapse; text-align: left; font-size: 0.82rem;">
+                        <thead>
+                            <tr style="background: #F1F5F9; border-bottom: 2px solid #E2E8F0; color: #475569;">
+                                <th style="padding: 10px; white-space: nowrap;">Date / Time (IST)</th>
+                                <th style="padding: 10px; white-space: nowrap;">User / Login Email</th>
+                                <th style="padding: 10px; white-space: nowrap;">Role</th>
+                                <th style="padding: 10px; white-space: nowrap;">Page &amp; Dwell Time</th>
+                                <th style="padding: 10px;">Event &amp; Details</th>
+                            </tr>
+                        </thead>
+                        <tbody id="securityLogsTableBody">
+                            <tr><td colspan="5" style="padding: 20px; text-align: center; color: var(--text-muted);">Loading logs...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </body></html>
