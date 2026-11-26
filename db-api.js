@@ -2610,6 +2610,110 @@ class DatabaseAPI {
         }
         return true;
     }
+
+    // --- CLINICAL SUITE PRO: TENANT-ISOLATED ADDITIVE HELPERS ---
+    async _saveTenantRecord(collectionName, cachePrefix, record, mobile = '', maxCache = 60) {
+        const tenantId = this.tenantId || 'default';
+        const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+        const cacheKey = `${cachePrefix}_${tenantId}${cleanMobile ? '_' + cleanMobile : ''}`;
+        const docId = record.id || `${cachePrefix}_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        const payload = {
+            ...record,
+            id: docId,
+            tenant_id: tenantId,
+            patientMobile: cleanMobile || record.patientMobile || '',
+            updatedAt: new Date().toISOString(),
+            createdAt: record.createdAt || new Date().toISOString()
+        };
+
+        try {
+            let existing = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+            const idx = existing.findIndex(x => x.id === docId);
+            if (idx >= 0) existing[idx] = payload;
+            else existing.unshift(payload);
+            localStorage.setItem(cacheKey, JSON.stringify(existing.slice(0, maxCache)));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection(collectionName).doc(docId).set(payload, { merge: true });
+            } catch (err) {
+                console.warn(`Failed to save ${collectionName}:`, err);
+            }
+        }
+        return payload;
+    }
+
+    async _getTenantRecords(collectionName, cachePrefix, mobile = '', maxCache = 60) {
+        const tenantId = this.tenantId || 'default';
+        const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+        const cacheKey = `${cachePrefix}_${tenantId}${cleanMobile ? '_' + cleanMobile : ''}`;
+        let localList = [];
+        try {
+            localList = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                const snapshot = await this.getCollection(collectionName).get();
+                const fbList = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const docMobile = (data.patientMobile || '').replace(/[^0-9]/g, '');
+                    if (!cleanMobile || docMobile === cleanMobile) {
+                        fbList.push({ id: doc.id, ...data });
+                    }
+                });
+                fbList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+                localStorage.setItem(cacheKey, JSON.stringify(fbList.slice(0, maxCache)));
+                return fbList;
+            } catch (err) {
+                console.warn(`Failed to fetch ${collectionName}:`, err);
+            }
+        }
+        return localList;
+    }
+
+    async _deleteTenantRecord(collectionName, cachePrefix, docId, mobile = '') {
+        const tenantId = this.tenantId || 'default';
+        const cleanMobile = (mobile || '').replace(/[^0-9]/g, '');
+        const cacheKey = `${cachePrefix}_${tenantId}${cleanMobile ? '_' + cleanMobile : ''}`;
+        try {
+            let existing = JSON.parse(localStorage.getItem(cacheKey) || '[]');
+            existing = existing.filter(x => x.id !== docId);
+            localStorage.setItem(cacheKey, JSON.stringify(existing));
+        } catch(e) {}
+
+        if (this.useFirebase && this.db) {
+            try {
+                await this.getCollection(collectionName).doc(docId).delete();
+            } catch (err) {
+                console.warn(`Failed to delete from ${collectionName}:`, err);
+            }
+        }
+        return true;
+    }
+
+    saveEndoRecord(record) { return this._saveTenantRecord('endo_records', 'endo_rec', record, record.patientMobile); }
+    getEndoRecords(mobile) { return this._getTenantRecords('endo_records', 'endo_rec', mobile); }
+
+    saveTreatmentOptionQuote(quote) { return this._saveTenantRecord('treatment_option_quotes', 'tx_quote', quote, quote.patientMobile); }
+    getTreatmentOptionQuotes(mobile) { return this._getTenantRecords('treatment_option_quotes', 'tx_quote', mobile); }
+
+    saveXrayAnnotation(item) { return this._saveTenantRecord('xray_annotations', 'xray_ann', item, item.patientMobile, 30); }
+    getXrayAnnotations(mobile) { return this._getTenantRecords('xray_annotations', 'xray_ann', mobile, 30); }
+    deleteXrayAnnotation(id, mobile) { return this._deleteTenantRecord('xray_annotations', 'xray_ann', id, mobile); }
+
+    saveSterilizationLog(log) { return this._saveTenantRecord('sterilization_logs', 'steril_log', log, '', 120); }
+    getSterilizationLogs() { return this._getTenantRecords('sterilization_logs', 'steril_log', '', 120); }
+
+    saveInventoryItem(item) { return this._saveTenantRecord('inventory_items', 'inv_item', item, '', 150); }
+    getInventoryItems() { return this._getTenantRecords('inventory_items', 'inv_item', '', 150); }
+    deleteInventoryItem(id) { return this._deleteTenantRecord('inventory_items', 'inv_item', id, ''); }
+
+    saveDoctorPayoutRule(rule) { return this._saveTenantRecord('doctor_payout_rules', 'doc_payout', rule, '', 50); }
+    getDoctorPayoutRules() { return this._getTenantRecords('doctor_payout_rules', 'doc_payout', '', 50); }
+    deleteDoctorPayoutRule(id) { return this._deleteTenantRecord('doctor_payout_rules', 'doc_payout', id, ''); }
 }
 
 // Export singleton instance

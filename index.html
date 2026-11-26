@@ -549,6 +549,7 @@
                         <button onclick="showDashboardTab('patients')" class="btn-primary" style="height: 38px; padding: 0 1rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Patient Database"><i class="fas fa-users"></i> Patients</button>
                         <button onclick="showDashboardTab('schedule')" class="btn-primary" style="background: #0284C7; height: 38px; padding: 0 1rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Appointment Calendar"><i class="fas fa-calendar-alt"></i> Schedule</button>
                         <button id="activityLogsTabBtn" onclick="showDashboardTab('activity-logs')" class="btn-primary" style="background: #475569; height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Activity & Dwell Time Logs"><i class="fas fa-clipboard-list"></i> Activity Logs</button>
+                        <button id="clinicOpsTabBtn" onclick="showDashboardTab('clinic-ops')" class="btn-primary" style="background: #0F766E; height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Sterilization, Stock &amp; Doctor Payouts"><i class="fas fa-clinic-medical"></i> Clinic Ops</button>
                         <button onclick="showDashboardTab('qr')" class="btn-primary" style="background: var(--accent); height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px;" title="Get Booking QR"><i class="fas fa-qrcode"></i> QR</button>
                         <button id="settingsBtn" onclick="showDashboardTab('settings')" class="btn-primary" style="background: var(--primary-dark); height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Settings"><i class="fas fa-sliders-h"></i> Settings</button>
                         <button id="securityLogsBtn" onclick="openSecurityLogsModal()" class="btn-primary" style="background: #475569; height: 38px; padding: 0 0.85rem; font-size: 0.85rem; font-weight: 800; border-radius: 10px; display: none;" title="Logs"><i class="fas fa-shield-alt"></i> Logs</button>
@@ -917,6 +918,128 @@
             </div>
         </div>
 
+        <!-- Clinic Operations Hub: Sterilization, Consumables Inventory & Associate Payouts -->
+        <div id="clinic-opsTab" class="dashboard-tab" style="display: none;">
+            <div class="card" style="max-width: 1100px; margin: 0 auto 2rem; padding: 1.5rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem;">
+                    <div>
+                        <h3 style="margin:0; color:var(--secondary); font-size:1.25rem; font-weight:800;"><i class="fas fa-clinic-medical" style="color:var(--primary);"></i> Clinic Operations &amp; Compliance Hub</h3>
+                        <p style="margin:4px 0 0; font-size:0.82rem; color:var(--text-muted);">Autoclave sterilization compliance, dental consumables stock/expiry alerts &amp; doctor payout splits.</p>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <button type="button" id="clinicOpsBtn_sterilization" onclick="ClinicalSuitePro.switchClinicOpsTab('sterilization')" class="btn-primary" style="background:var(--primary); color:white; height:36px; padding:0 0.9rem; font-size:0.8rem; font-weight:800; border-radius:8px;">🧼 Autoclave Log</button>
+                        <button type="button" id="clinicOpsBtn_inventory" onclick="ClinicalSuitePro.switchClinicOpsTab('inventory')" class="btn-primary" style="background:white; color:#475569; border:1px solid #CBD5E1; height:36px; padding:0 0.9rem; font-size:0.8rem; font-weight:700; border-radius:8px;">📦 Stock &amp; Expiry</button>
+                        <button type="button" id="clinicOpsBtn_payouts" onclick="ClinicalSuitePro.switchClinicOpsTab('payouts')" class="btn-primary" style="background:white; color:#475569; border:1px solid #CBD5E1; height:36px; padding:0 0.9rem; font-size:0.8rem; font-weight:700; border-radius:8px;">💸 Doctor Payouts</button>
+                    </div>
+                </div>
+
+                <!-- Sub-tab 1: Sterilization & Autoclave Cycle Log -->
+                <div id="clinicOps_sterilization" style="display:block;">
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:1rem; margin-bottom:1rem; display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:0.65rem; align-items:end;">
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">BATCH / CYCLE #</label>
+                            <input type="text" id="sterilBatchInput" placeholder="e.g. AUT-01" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">TEMP / PRESSURE</label>
+                            <input type="text" id="sterilTempInput" value="134°C / 30 PSI" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">SPORE / INDICATOR</label>
+                            <select id="sterilIndicatorSelect" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.5rem; width:100%; box-sizing:border-box;">
+                                <option value="Pass">✅ Pass (Verified)</option>
+                                <option value="Fail">❌ Fail (Re-run)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">POUCHES</label>
+                            <input type="number" id="sterilPouchesInput" value="12" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">VERIFIED BY</label>
+                            <input type="text" id="sterilStaffInput" placeholder="Doctor / Assistant" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <button type="button" onclick="ClinicalSuitePro.saveSterilizationCycle()" class="btn-primary" style="height:36px; font-size:0.82rem; font-weight:800; border-radius:8px;">+ Log Cycle</button>
+                    </div>
+                    <div style="overflow-x:auto; border:1px solid #E2E8F0; border-radius:10px;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem;">
+                            <thead><tr style="background:#F1F5F9; color:#475569;"><th style="padding:8px 10px;">Batch #</th><th style="padding:8px 10px;">Date &amp; Time (IST)</th><th style="padding:8px 10px;">Temp / PSI</th><th style="padding:8px 10px;">Spore Strip</th><th style="padding:8px 10px;">Pouches</th><th style="padding:8px 10px;">Verified By</th></tr></thead>
+                            <tbody id="sterilizationTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Sub-tab 2: Consumables Stock & Expiry Alerts -->
+                <div id="clinicOps_inventory" style="display:none;">
+                    <div id="inventoryAlertSummary" style="background:#FEF3C7; color:#92400E; padding:0.65rem 1rem; border-radius:8px; font-size:0.82rem; margin-bottom:0.85rem;">Loading stock status...</div>
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:1rem; margin-bottom:1rem; display:grid; grid-template-columns:repeat(auto-fit, minmax(145px, 1fr)); gap:0.65rem; align-items:end;">
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">ITEM NAME</label>
+                            <input type="text" id="invNameInput" placeholder="e.g. Nitrile Gloves (M)" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">CATEGORY</label>
+                            <select id="invCategorySelect" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.5rem; width:100%; box-sizing:border-box;">
+                                <option value="Gloves &amp; PPE">Gloves &amp; PPE</option>
+                                <option value="Anesthesia">Anesthesia</option>
+                                <option value="Restorative">Restorative / Composite</option>
+                                <option value="Endo Files">Endo Files / GP</option>
+                                <option value="Impression">Impression Material</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">CURRENT QTY</label>
+                            <input type="number" id="invQtyInput" value="10" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">MIN ALERT</label>
+                            <input type="number" id="invMinInput" value="5" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">EXPIRY DATE</label>
+                            <input type="date" id="invExpiryInput" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.5rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <button type="button" onclick="ClinicalSuitePro.saveConsumableItem()" class="btn-primary" style="height:36px; font-size:0.82rem; font-weight:800; border-radius:8px;">+ Add Stock</button>
+                    </div>
+                    <div style="overflow-x:auto; border:1px solid #E2E8F0; border-radius:10px;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem;">
+                            <thead><tr style="background:#F1F5F9; color:#475569;"><th style="padding:8px 10px;">Item</th><th style="padding:8px 10px;">Category</th><th style="padding:8px 10px;">Qty (Adjust)</th><th style="padding:8px 10px;">Expiry</th><th style="padding:8px 10px;">Status</th></tr></thead>
+                            <tbody id="inventoryTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Sub-tab 3: Associate Doctor Payout Split Calculator -->
+                <div id="clinicOps_payouts" style="display:none;">
+                    <div style="background:#ECFDF5; border:1px solid #A7F3D0; padding:0.75rem 1rem; border-radius:8px; margin-bottom:0.85rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                        <span style="font-size:0.82rem; color:#065F46; font-weight:700;">Total Clinic Collected Revenue (Read-Only):</span>
+                        <strong id="payoutGrossCollectionVal" style="font-size:1.1rem; color:#047857;">₹0</strong>
+                    </div>
+                    <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:1rem; margin-bottom:1rem; display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:0.65rem; align-items:end;">
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">DOCTOR / SPECIALIST</label>
+                            <input type="text" id="payoutDocNameInput" placeholder="e.g. Dr. Mehta (Endo)" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">COMMISSION (%)</label>
+                            <input type="number" id="payoutPercentInput" value="40" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.72rem; font-weight:800; color:#475569;">LAB DEDUCTION (₹)</label>
+                            <input type="number" id="payoutLabDeductionInput" value="0" class="form-control" style="height:36px; font-size:0.82rem; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                        </div>
+                        <button type="button" onclick="ClinicalSuitePro.saveDoctorRule()" class="btn-primary" style="height:36px; font-size:0.82rem; font-weight:800; border-radius:8px;">+ Add Doctor Split</button>
+                    </div>
+                    <div style="overflow-x:auto; border:1px solid #E2E8F0; border-radius:10px;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.82rem;">
+                            <thead><tr style="background:#F1F5F9; color:#475569;"><th style="padding:8px 10px;">Doctor</th><th style="padding:8px 10px;">Gross Base</th><th style="padding:8px 10px;">Lab Deduction</th><th style="padding:8px 10px;">Split %</th><th style="padding:8px 10px;">Net Payout</th></tr></thead>
+                            <tbody id="doctorPayoutsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="superadminTab" class="dashboard-tab" style="display: none;"><div class="card" style="max-width: 1000px; margin: 0px auto 2rem;">
             <span class="close" onclick="closeManageClinicsModal()">×</span>
             <h2 style="margin-top:0; color:var(--secondary);"><i class="fas fa-building"></i> Clinic Branches &amp; Locations</h2>
@@ -1189,6 +1312,8 @@
                 </button>
                 <div class="tab-container" id="clinicalTabsContainer" onscroll="updateClinicalTabsScrollControls()">
                 <button class="profile-tab-btn active" onclick="switchProfileTab('charting')"><i class="fas fa-tooth"></i> Charting</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('endo-rct')"><i class="fas fa-microscope"></i> Endo / RCT</button>
+                <button class="profile-tab-btn" onclick="switchProfileTab('xray-annotator')"><i class="fas fa-x-ray"></i> X-Ray / RVG</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('prescriptions')"><i class="fas fa-prescription"></i> Digital Rx</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('treatment-plans')"><i class="fas fa-clipboard-list"></i> Treatment Plan</button>
                 <button class="profile-tab-btn" onclick="switchProfileTab('consents')"><i class="fas fa-file-signature"></i> E-Consent</button>
@@ -1566,6 +1691,46 @@
                         </div>
                     </div>
 
+                    <!-- Case Acceptance Builder: Good / Better / Best + Milestone Splitter -->
+                    <div class="dashboard-card" style="background: #F8FAFC; border-radius: 14px; padding: 1.15rem; border: 1px solid #CBD5E1; margin-bottom: 1rem;">
+                        <h4 style="margin: 0 0 0.75rem; font-weight: 800; color: var(--secondary); display: flex; align-items: center; gap: 0.5rem; font-size: 0.95rem;">
+                            <i class="fas fa-gem" style="color: var(--primary);"></i> Case Acceptance Builder (Good / Better / Best &amp; Milestones)
+                        </h4>
+                        <input type="text" id="cbCaseTitle" placeholder="Case Title (e.g. Tooth #46 Crown Options)" class="form-control" style="width:100%; height:36px; border-radius:8px; border:1px solid #CBD5E1; padding:0 0.75rem; font-size:0.84rem; margin-bottom:0.65rem; box-sizing:border-box;">
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:0.6rem; margin-bottom:0.75rem;">
+                            <div style="background:white; padding:0.65rem; border-radius:8px; border:1px solid #E2E8F0;">
+                                <div style="font-size:0.7rem; font-weight:800; color:#64748B;">GOOD (STANDARD)</div>
+                                <input type="text" id="cbGoodName" value="PFM Crown" style="width:100%; margin:4px 0; height:32px; font-size:0.8rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.5rem; box-sizing:border-box;">
+                                <input type="number" id="cbGoodPrice" value="4500" oninput="ClinicalSuitePro.updateMilestoneSplitPreview()" style="width:100%; height:32px; font-size:0.82rem; font-weight:700; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.5rem; box-sizing:border-box;">
+                            </div>
+                            <div style="background:white; padding:0.65rem; border-radius:8px; border:2px solid var(--primary, #0D9488);">
+                                <div style="font-size:0.7rem; font-weight:800; color:var(--primary, #0D9488);">BETTER (RECOMMENDED)</div>
+                                <input type="text" id="cbBetterName" value="Monolithic Zirconia" style="width:100%; margin:4px 0; height:32px; font-size:0.8rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.5rem; box-sizing:border-box;">
+                                <input type="number" id="cbBetterPrice" value="8500" oninput="ClinicalSuitePro.updateMilestoneSplitPreview()" style="width:100%; height:32px; font-size:0.82rem; font-weight:700; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.5rem; box-sizing:border-box;">
+                            </div>
+                            <div style="background:white; padding:0.65rem; border-radius:8px; border:1px solid #E2E8F0;">
+                                <div style="font-size:0.7rem; font-weight:800; color:#7C3AED;">BEST (PREMIUM)</div>
+                                <input type="text" id="cbBestName" value="Layered E-Max / Imported" style="width:100%; margin:4px 0; height:32px; font-size:0.8rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.5rem; box-sizing:border-box;">
+                                <input type="number" id="cbBestPrice" value="12500" oninput="ClinicalSuitePro.updateMilestoneSplitPreview()" style="width:100%; height:32px; font-size:0.82rem; font-weight:700; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.5rem; box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;">
+                            <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.78rem; font-weight:700;">
+                                <span>Split Milestones:</span>
+                                <select id="cbMilestoneCount" onchange="ClinicalSuitePro.updateMilestoneSplitPreview()" style="height:30px; border-radius:6px; border:1px solid #CBD5E1; padding:0 0.4rem;">
+                                    <option value="2">2 Stages (50/50)</option>
+                                    <option value="3" selected>3 Stages (40/40/20)</option>
+                                    <option value="4">4 Stages (30/30/20/20)</option>
+                                </select>
+                            </div>
+                            <div style="display:flex; gap:0.4rem;">
+                                <button type="button" onclick="ClinicalSuitePro.saveAndShareCaseOptions(false)" class="btn-primary" style="height:32px; padding:0 0.75rem; font-size:0.76rem; font-weight:800; border-radius:6px;">Save Options</button>
+                                <button type="button" onclick="ClinicalSuitePro.saveAndShareCaseOptions(true)" class="btn-primary" style="background:#16A34A; height:32px; padding:0 0.75rem; font-size:0.76rem; font-weight:800; border-radius:6px;"><i class="fab fa-whatsapp"></i> Send to Patient</button>
+                            </div>
+                        </div>
+                        <div id="cbMilestonePreview" style="background:white; border:1px solid #E2E8F0; border-radius:8px; padding:0.5rem 0.75rem; font-size:0.78rem;"></div>
+                    </div>
+
                     <!-- Past Treatment Plans History -->
                     <div class="dashboard-card" style="background: white; border-radius: 14px; padding: 1.5rem; border: 1px solid #E2E8F0;">
                         <h4 style="margin: 0 0 1.25rem; font-weight: 800; color: var(--secondary); display: flex; align-items: center; gap: 0.5rem;">
@@ -1577,11 +1742,100 @@
                     </div>
                 </div>
 
+                <!-- Endo / RCT Canal & Working Length Section -->
+                <div id="profileEndoRctSection" style="display: none;">
+                    <div class="seating-card" style="background:white; border-radius:12px; padding:1rem; border:1px solid #E2E8F0; margin-bottom:1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.85rem;">
+                            <h3 style="margin:0; color:var(--primary-dark); font-size:1.15rem;"><i class="fas fa-microscope"></i> Endo / RCT Working-Length Sheet</h3>
+                            <div style="display:flex; gap:0.35rem; flex-wrap:wrap;">
+                                <button type="button" onclick="ClinicalSuitePro.presetEndoCanals('anterior')" class="rx-pill-btn">Anterior (1)</button>
+                                <button type="button" onclick="ClinicalSuitePro.presetEndoCanals('premolar')" class="rx-pill-btn">Premolar (2)</button>
+                                <button type="button" onclick="ClinicalSuitePro.presetEndoCanals('lower_molar')" class="rx-pill-btn">Lower Molar (3)</button>
+                                <button type="button" onclick="ClinicalSuitePro.presetEndoCanals('upper_molar')" class="rx-pill-btn">Upper Molar (4)</button>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:0.6rem; margin-bottom:0.75rem;">
+                            <div>
+                                <label style="font-size:0.72rem; font-weight:800; color:#475569;">TOOTH # (FDI)</label>
+                                <input type="text" id="endoToothInput" placeholder="e.g. 46" class="form-control" style="height:36px; font-size:0.84rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.6rem; width:100%; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="font-size:0.72rem; font-weight:800; color:#475569;">PULPAL DIAGNOSIS</label>
+                                <select id="endoDiagnosisSelect" class="form-control" style="height:36px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.5rem; width:100%; box-sizing:border-box;">
+                                    <option value="Symptomatic Irreversible Pulpitis">Irreversible Pulpitis</option>
+                                    <option value="Pulp Necrosis / Periapical Abscess">Pulp Necrosis / Abscess</option>
+                                    <option value="Re-RCT / Failed Endo">Re-RCT</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.72rem; font-weight:800; color:#475569;">SITTING STAGE</label>
+                                <select id="endoStageSelect" class="form-control" style="height:36px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.5rem; width:100%; box-sizing:border-box;">
+                                    <option value="Access Opening &amp; Pulpectomy">Sitting 1: Access &amp; Pulpectomy</option>
+                                    <option value="Working Length &amp; BMP">Sitting 2: Working Length &amp; BMP</option>
+                                    <option value="Obturation Completed">Sitting 3: Obturation Completed</option>
+                                    <option value="Post-Endo Restoration">Post-Endo Core / Crown Prep</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:0.65rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
+                                <label style="font-size:0.72rem; font-weight:800; color:#475569;">CANAL MEASUREMENTS (CANAL | REF | WL mm | MAF | OBTURATION)</label>
+                                <button type="button" onclick="ClinicalSuitePro.addEndoCanalRow()" style="background:#EEF2FF; color:#4338CA; border:none; padding:2px 8px; border-radius:5px; font-size:0.72rem; font-weight:800; cursor:pointer;">+ Add Canal</button>
+                            </div>
+                            <div id="endoCanalsContainer"></div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.6rem; margin-bottom:0.75rem;">
+                            <input type="text" id="endoIrrigantInput" value="NaOCl 3% + EDTA 17% + Saline" placeholder="Irrigant Protocol" style="height:36px; font-size:0.8rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.6rem;">
+                            <input type="text" id="endoNotesInput" placeholder="Intracanal medicament / sitting notes..." style="height:36px; font-size:0.8rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.6rem;">
+                        </div>
+                        <button type="button" onclick="ClinicalSuitePro.saveEndoRecord()" class="btn-primary" style="width:100%; height:40px; border-radius:8px; font-weight:800;">Save Endo / RCT Canal Sheet</button>
+                    </div>
+                    <div class="dashboard-card" style="background:white; border-radius:12px; padding:1rem; border:1px solid #E2E8F0;">
+                        <h4 style="margin:0 0 0.75rem; font-size:0.92rem; font-weight:800;">Saved Endo / RCT Sheets</h4>
+                        <div id="endoRecordsList"></div>
+                    </div>
+                </div>
+
+                <!-- Dental X-Ray / RVG & Intraoral Image Annotator Section -->
+                <div id="profileXrayAnnotatorSection" style="display: none;">
+                    <div class="seating-card" style="background:white; border-radius:12px; padding:1rem; border:1px solid #E2E8F0; margin-bottom:1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
+                            <h3 style="margin:0; color:var(--primary-dark); font-size:1.15rem;"><i class="fas fa-x-ray"></i> Chairside X-Ray / RVG Annotator</h3>
+                            <input type="file" id="xrayFileUpload" accept="image/*" onchange="ClinicalSuitePro.loadXrayFile(this)" style="font-size:0.78rem;">
+                        </div>
+                        <div style="display:flex; gap:0.4rem; flex-wrap:wrap; align-items:center; margin-bottom:0.65rem; background:#F8FAFC; padding:0.5rem; border-radius:8px; border:1px solid #E2E8F0;">
+                            <button type="button" class="xray-tool-btn rx-pill-btn" data-tool="circle" onclick="ClinicalSuitePro.setXrayTool('circle', '#EF4444')">⭕ Circle</button>
+                            <button type="button" class="xray-tool-btn rx-pill-btn" data-tool="arrow" onclick="ClinicalSuitePro.setXrayTool('arrow', '#F59E0B')">↗️ Arrow</button>
+                            <button type="button" class="xray-tool-btn rx-pill-btn" data-tool="pen" onclick="ClinicalSuitePro.setXrayTool('pen', '#38BDF8')">✏️ Draw</button>
+                            <button type="button" class="xray-tool-btn rx-pill-btn" data-tool="text" onclick="ClinicalSuitePro.setXrayTool('text', '#FACC15')">🔤 Label</button>
+                            <button type="button" class="rx-pill-btn" onclick="ClinicalSuitePro.undoXrayAnnotation()">↩️ Undo</button>
+                            <button type="button" class="rx-pill-btn" onclick="ClinicalSuitePro.clearXrayCanvas()">🧹 Reset</button>
+                        </div>
+                        <canvas id="xrayAnnotatorCanvas" width="720" height="400" style="width:100%; max-height:360px; border-radius:10px; background:#0F172A; cursor:crosshair; touch-action:none; display:block; margin-bottom:0.65rem;"></canvas>
+                        <div style="display:grid; grid-template-columns:120px 1fr auto; gap:0.5rem; align-items:center;">
+                            <input type="text" id="xrayToothInput" placeholder="Tooth #" style="height:36px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.6rem;">
+                            <input type="text" id="xrayCaptionInput" placeholder="Annotation note (e.g. Periapical radiolucency #46)" style="height:36px; font-size:0.82rem; border:1px solid #CBD5E1; border-radius:6px; padding:0 0.6rem;">
+                            <button type="button" onclick="ClinicalSuitePro.saveXrayAnnotationRecord()" class="btn-primary" style="height:36px; padding:0 1rem; font-size:0.82rem; font-weight:800; border-radius:8px;">Save X-Ray</button>
+                        </div>
+                    </div>
+                    <div class="dashboard-card" style="background:white; border-radius:12px; padding:1rem; border:1px solid #E2E8F0;">
+                        <h4 style="margin:0 0 0.75rem; font-size:0.92rem; font-weight:800;">Saved Radiographs &amp; Annotations</h4>
+                        <div id="xraySavedGallery" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.75rem;"></div>
+                    </div>
+                </div>
+
                 <div id="profileDiagnosisSection" style="display: none;">
                     <div class="seating-card" style="padding: 1.1rem; border-radius: 12px; margin-bottom: 1rem; border: 1px solid #E2E8F0; background: white;">
-                        <h3 style="margin-bottom: 0.75rem; color: var(--primary-dark); font-size: 1.15rem; display: flex; align-items: center; gap: 0.4rem;">
-                            <i class="fas fa-stethoscope"></i> Add New Diagnosis
-                        </h3>
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.75rem;">
+                            <h3 style="margin:0; color: var(--primary-dark); font-size: 1.15rem; display: flex; align-items: center; gap: 0.4rem;">
+                                <i class="fas fa-stethoscope"></i> Add New Diagnosis
+                            </h3>
+                            <button type="button" id="voiceDictateBtn" onclick="ClinicalSuitePro.toggleVoiceDictation()" class="btn-primary" style="background: var(--primary, #0D9488); height:34px; padding:0 0.85rem; font-size:0.78rem; font-weight:800; border-radius:99px;">
+                                <i class="fas fa-microphone"></i> Dictate Clinical Note
+                            </button>
+                        </div>
+                        <div id="voiceDictateStatus" style="font-size:0.74rem; color:#64748B; margin-bottom:0.5rem;"></div>
+                        <textarea id="voiceDictatePreview" readonly rows="2" style="display:none; width:100%; border-radius:8px; border:1px dashed #94A3B8; background:#F8FAFC; padding:0.5rem; font-size:0.78rem; margin-bottom:0.65rem;"></textarea>
                         <div class="form-group" style="margin-bottom: 0.75rem;">
                             <label style="display:block; margin-bottom:0.35rem; font-weight:800; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">CONDITION / DIAGNOSIS</label>
                             <input type="text" id="diagTitle" placeholder="e.g. Chronic Periodontitis, Impacted Molar" class="form-control" style="width:100%; height:40px; border-radius:8px; border:1.5px solid #CBD5E1; padding:0 0.85rem; font-size: 0.9rem;">
@@ -2364,6 +2618,7 @@
     <script src="activityTracker.js?v=47.5"></script>
     <script src="script.js?v=47.5"></script>
     <script src="premium-features.js?v=47.5"></script>
+    <script src="clinical-suite-pro.js?v=47.8"></script>
     <script>
         function showSection(id) {
             if (id === 'dashboard' && !sessionStorage.getItem('staffUser')) {

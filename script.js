@@ -348,6 +348,10 @@ function switchProfileTab(tab) {
     if (membership) membership.style.display = tab === 'membership' ? 'block' : 'none';
     if (recalls) recalls.style.display = tab === 'recalls' ? 'block' : 'none';
     if (dentalLab) dentalLab.style.display = tab === 'dental-lab' ? 'block' : 'none';
+    const endoSec = document.getElementById('profileEndoRctSection');
+    const xraySec = document.getElementById('profileXrayAnnotatorSection');
+    if (endoSec) endoSec.style.display = tab === 'endo-rct' ? 'block' : 'none';
+    if (xraySec) xraySec.style.display = tab === 'xray-annotator' ? 'block' : 'none';
     
     document.querySelectorAll('.profile-tab-btn').forEach(btn => {
         const text = (btn.innerText || btn.textContent || '').toLowerCase();
@@ -364,6 +368,8 @@ function switchProfileTab(tab) {
         if (tab === 'membership') btn.classList.toggle('active', text.includes('vip') || text.includes('club') || text.includes('membership'));
         if (tab === 'recalls') btn.classList.toggle('active', text.includes('recall') || text.includes('crm'));
         if (tab === 'dental-lab') btn.classList.toggle('active', text.includes('lab') || text.includes('prosthetic'));
+        if (tab === 'endo-rct') btn.classList.toggle('active', text.includes('endo') || text.includes('rct'));
+        if (tab === 'xray-annotator') btn.classList.toggle('active', text.includes('x-ray') || text.includes('rvg'));
     });
 
     // Reset scroll to top of the content view on tab switch
@@ -397,6 +403,9 @@ function switchProfileTab(tab) {
         if (tab === 'membership' && typeof initMembershipTab === 'function') initMembershipTab(pat);
         if (tab === 'recalls' && typeof initRecallsTab === 'function') initRecallsTab(pat);
         if (tab === 'dental-lab' && typeof initDentalLabTab === 'function') initDentalLabTab(pat);
+        if (tab === 'endo-rct' && window.ClinicalSuitePro) window.ClinicalSuitePro.loadEndoRecords(pat.mobile);
+        if (tab === 'xray-annotator' && window.ClinicalSuitePro) window.ClinicalSuitePro.loadXrayAnnotations(pat.mobile);
+        if (tab === 'treatment-plans' && window.ClinicalSuitePro) window.ClinicalSuitePro.updateMilestoneSplitPreview();
     }
 
     try {
@@ -1162,6 +1171,9 @@ function showDashboardTab(name) {
     }
     if (name === 'activity-logs') {
         loadClinicActivityLogs();
+    }
+    if (name === 'clinic-ops' && window.ClinicalSuitePro) {
+        window.ClinicalSuitePro.switchClinicOpsTab('sterilization');
     }
     try {
         if (window.ActivityTracker && typeof window.ActivityTracker.onPageChange === 'function') {
