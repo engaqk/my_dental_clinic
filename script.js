@@ -1160,6 +1160,9 @@ async function updateStatus(id, stat) { await window.dbAPI.updateAppointment(id,
 async function updateFee(id, val) { await window.dbAPI.updateAppointment(id, { fee: parseFloat(val) || 0 }); refreshDashboard(); }
 
 function showDashboardTab(name) {
+    if (name === 'activity-logs' && !isSuperAdminUser()) {
+        name = 'patients';
+    }
     document.querySelectorAll('.dashboard-tab').forEach(t => t.style.display='none');
     const target = document.getElementById(name+'Tab');
     if (target) {
@@ -2285,6 +2288,7 @@ function loadClinicSettings() {
 function checkSuperAdmin() {
     const btn = document.getElementById('settingsBtn');
     const logsBtn = document.getElementById('securityLogsBtn');
+    const activityTabBtn = document.getElementById('activityLogsTabBtn');
     const fields = document.getElementById('superAdminFields');
     const logoutNav = document.getElementById('logout-nav-item');
     const headerLogout = document.getElementById('headerLogoutBtn');
@@ -2292,16 +2296,19 @@ function checkSuperAdmin() {
     const userStr = sessionStorage.getItem('staffUser');
     const user = userStr ? JSON.parse(userStr) : null;
     const isStaff = !!(user || sessionStorage.getItem('staffLoggedIn') === 'true');
+    const isSuper = isSuperAdminUser();
 
     if (user && (user.role === 'super_admin' || user.role === 'admin' || user.email === 'abdulqadir.galaxy53@gmail.com')) {
         if (btn) btn.style.display = 'inline-block';
-        if (logsBtn) logsBtn.style.display = 'inline-block';
         if (fields) fields.style.display = 'block';
     } else {
         if (btn) btn.style.display = 'none';
-        if (logsBtn) logsBtn.style.display = 'none';
         if (fields) fields.style.display = 'none';
     }
+
+    // Activity & Security Logs strictly visible only to SuperAdmin, never to tenant clinic users
+    if (logsBtn) logsBtn.style.display = isSuper ? 'inline-block' : 'none';
+    if (activityTabBtn) activityTabBtn.style.display = isSuper ? 'inline-block' : 'none';
 
     if (isStaff) {
         if (logoutNav) logoutNav.style.display = 'block';
@@ -2636,6 +2643,7 @@ window.clinicActivityLogsCache = [];
 window.activeClinicLogCat = 'all';
 
 async function loadClinicActivityLogs() {
+    if (!isSuperAdminUser()) return;
     const tbody = document.getElementById('clinicActivityLogsTableBody');
     if (tbody) {
         tbody.innerHTML = '<tr><td colspan="6" style="padding: 2rem; text-align: center; color: #94A3B8;"><i class="fas fa-spinner fa-spin"></i> Loading real-time activity and dwell logs...</td></tr>';
@@ -2854,6 +2862,7 @@ function exportClinicActivityLogsCSV() {
 
 // Updated Security Logs Modal logic with Page & Dwell Time
 async function openSecurityLogsModal() {
+    if (!isSuperAdminUser()) return;
     const modal = document.getElementById('securityLogsModal');
     if (modal) modal.style.display = 'flex';
     const tbody = document.getElementById('securityLogsTableBody');
@@ -3512,37 +3521,40 @@ function switchTenant(tenantId) {
     }
 }
 
-// Add SuperAdmin check on load (Only superadmin/admin53 gets super admin privileges)
-function checkSuperAdminUI() {
-    let isSuper = false;
+// Add SuperAdmin check on load (Only superadmin gets super admin privileges)
+function isSuperAdminUser() {
     try {
-        const isSuperFlag = sessionStorage.getItem('isSuperAdmin');
+        if (sessionStorage.getItem('isSuperAdmin') === 'true') return true;
         const userStr = sessionStorage.getItem('staffUser');
         if (userStr) {
             const user = JSON.parse(userStr);
-            if (user && user.role === 'super_admin') {
-                isSuper = true;
-            }
+            if (user && user.role === 'super_admin') return true;
         }
-        if (isSuperFlag === 'true') {
-            isSuper = true;
-        }
-    } catch (e) {
-        console.error('Error checking super admin:', e);
-    }
+    } catch (e) {}
+    return false;
+}
+
+function checkSuperAdminUI() {
+    const isSuper = isSuperAdminUser();
 
     const btn = document.getElementById('manageClinicsBtn');
     const switcher = document.getElementById('tenantSwitcher');
+    const activityTabBtn = document.getElementById('activityLogsTabBtn');
+    const logsBtn = document.getElementById('securityLogsBtn');
 
     if (isSuper) {
         if (btn) btn.style.display = 'inline-flex';
         if (switcher) switcher.style.display = 'inline-block';
+        if (activityTabBtn) activityTabBtn.style.display = 'inline-block';
+        if (logsBtn) logsBtn.style.display = 'inline-block';
         if (window.dbAPI && window.dbAPI.db) {
             loadTenantsList().catch(console.error);
         }
     } else {
         if (btn) btn.style.display = 'none';
         if (switcher) switcher.style.display = 'none';
+        if (activityTabBtn) activityTabBtn.style.display = 'none';
+        if (logsBtn) logsBtn.style.display = 'none';
     }
 }
 
