@@ -356,7 +356,35 @@
                 </div>
             </div>
 
-            <!-- Provision New Clinic Form Card -->
+            <!-- SuperAdmin Quick-Access Navigation Bar + Global Clinic Scope Filter -->
+            <div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 0.85rem 1.15rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.85rem; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05); position: sticky; top: 10px; z-index: 50;">
+                <div style="display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center;" id="saSectionNavGroup">
+                    <button type="button" class="sa-nav-pill" data-sec="clinics" onclick="switchSuperAdminSection('clinics')" style="background: #8B5CF6; color: #FFFFFF; border: 1.5px solid #8B5CF6; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-hospital"></i> Active Clinics
+                    </button>
+                    <button type="button" class="sa-nav-pill" data-sec="add-clinic" onclick="switchSuperAdminSection('add-clinic')" style="background: #F8FAFC; color: #475569; border: 1.5px solid #E2E8F0; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-plus-circle"></i> Add Clinic
+                    </button>
+                    <button type="button" class="sa-nav-pill" data-sec="audit" onclick="switchSuperAdminSection('audit')" style="background: #F8FAFC; color: #475569; border: 1.5px solid #E2E8F0; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-clipboard-list"></i> Audit &amp; Activity Logs
+                    </button>
+                    <button type="button" class="sa-nav-pill" data-sec="analytics" onclick="switchSuperAdminSection('analytics')" style="background: #F8FAFC; color: #475569; border: 1.5px solid #E2E8F0; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-chart-line"></i> Traffic Analytics
+                    </button>
+                    <button type="button" class="sa-nav-pill" data-sec="campaigns" onclick="switchSuperAdminSection('campaigns')" style="background: #F8FAFC; color: #475569; border: 1.5px solid #E2E8F0; padding: 0.5rem 0.95rem; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-paper-plane"></i> Email Campaigns
+                    </button>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-filter" style="color: #8B5CF6; font-size: 0.85rem;"></i>
+                    <select id="saTenantFilter" onchange="filterSuperAdminAnalyticsAndLogs(this.value)" class="form-input" style="height: 38px; min-width: 220px; font-weight: 700; font-size: 0.82rem; border-radius: 10px; border: 1.5px solid #CBD5E1; padding: 0 0.75rem; color: #0F172A; background: #F8FAFC; cursor: pointer;">
+                        <option value="all">🌐 All Clinic Practices (Global)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- SECTION: ADD NEW CLINIC -->
+            <div id="saSection_add-clinic" class="sa-section-panel" style="display: none;">
             <div class="sa-card">
                 <div class="sa-card-header">
                     <h2><i class="fas fa-plus-circle" style="color: #8B5CF6;"></i> Add New Clinic Practice</h2>
@@ -436,13 +464,21 @@
                 </form>
             </div>
 
-            <!-- Existing Clinics List Card -->
+            </div><!-- /saSection_add-clinic -->
+
+            <!-- SECTION: ACTIVE CLINIC PRACTICES -->
+            <div id="saSection_clinics" class="sa-section-panel" style="display: block;">
             <div class="sa-card">
                 <div class="sa-card-header">
                     <h2><i class="fas fa-hospital" style="color: #8B5CF6;"></i> Active Clinic Practices</h2>
-                    <button onclick="loadAllTenants()" class="btn-portal-back" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; cursor: pointer;">
-                        <i class="fas fa-sync-alt"></i> Refresh List
-                    </button>
+                    <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <button type="button" onclick="switchSuperAdminSection('add-clinic')" class="btn-primary" style="background: #8B5CF6; color: white; font-size: 0.78rem; font-weight: 800; padding: 0.4rem 0.85rem; border-radius: 8px; border: none; cursor: pointer;">
+                            <i class="fas fa-plus"></i> Add New Clinic
+                        </button>
+                        <button onclick="loadAllTenants()" class="btn-portal-back" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; cursor: pointer;">
+                            <i class="fas fa-sync-alt"></i> Refresh List
+                        </button>
+                    </div>
                 </div>
 
                 <div id="saTenantsContainer">
@@ -453,25 +489,10 @@
                 </div>
             </div>
 
-            <!-- Scope Analytics & Logs Filter Bar -->
-            <div style="background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 1rem 1.4rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.04);">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 36px; height: 36px; border-radius: 10px; background: #EDE9FE; color: #7C3AED; display: flex; align-items: center; justify-content: center; font-size: 1.1rem;">
-                        <i class="fas fa-filter"></i>
-                    </div>
-                    <div>
-                        <strong style="font-size: 0.95rem; color: #0F172A; display: block;">Scope Analytics, Logs &amp; Campaigns</strong>
-                        <span style="font-size: 0.78rem; color: #64748B;">Filter route clicks and Google user authentication history</span>
-                    </div>
-                </div>
-                <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <select id="saTenantFilter" onchange="filterSuperAdminAnalyticsAndLogs(this.value)" class="form-input" style="height: 40px; min-width: 250px; font-weight: 700; border-radius: 10px; border: 1.5px solid #CBD5E1; padding: 0 0.85rem; color: #0F172A; background: #F8FAFC; cursor: pointer;">
-                        <option value="all">🌐 All Clinic Practices (Global)</option>
-                    </select>
-                </div>
-            </div>
+            </div><!-- /saSection_clinics -->
 
-            <!-- VISITOR COUNT & ROUTE-WISE TRAFFIC ANALYTICS CARD -->
+            <!-- SECTION: TRAFFIC ANALYTICS -->
+            <div id="saSection_analytics" class="sa-section-panel" style="display: none;">
             <div class="sa-card">
                 <div class="sa-card-header">
                     <div>
@@ -502,7 +523,10 @@
                 </div>
             </div>
 
-            <!-- System Activity Logs & Captured Marketing Leads Card -->
+            </div><!-- /saSection_analytics -->
+
+            <!-- SECTION: AUDIT TRAIL & ACTIVITY LOGS -->
+            <div id="saSection_audit" class="sa-section-panel" style="display: none;">
             <div class="sa-card">
                 <div class="sa-card-header" style="flex-wrap: wrap; gap: 1rem;">
                     <div>
@@ -618,7 +642,11 @@
                     </div>
                 </div>
 
-            <!-- 1-CLICK DAILY PATIENT ENGAGEMENT & EMAIL MARKETING ENGINE -->
+            </div><!-- /audit sa-card -->
+            </div><!-- /saSection_audit -->
+
+            <!-- SECTION: 1-CLICK EMAIL CAMPAIGNS -->
+            <div id="saSection_campaigns" class="sa-section-panel" style="display: none;">
             <div class="sa-card" id="cardEmailMarketingEngine" style="border: 2px solid #C4B5FD; box-shadow: 0 10px 25px -5px rgba(139, 92, 246, 0.15);">
                 <div class="sa-card-header" style="background: linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%);">
                     <div>
@@ -731,6 +759,8 @@
                 </div>
 
             </div>
+
+            </div><!-- /saSection_campaigns -->
 
             <!-- EMAIL PREVIEW MODAL -->
             <div id="saEmailPreviewModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 100000; align-items: center; justify-content: center; padding: 1rem; box-sizing: border-box; backdrop-filter: blur(6px);">
@@ -2013,6 +2043,31 @@
 
         // --- SECURITY / ACCESS LOGS & MARKETING LEADS HUB ---
         window.allMarketingLeads = [];
+
+        function switchSuperAdminSection(section) {
+            const targetSec = section || 'clinics';
+            document.querySelectorAll('.sa-section-panel').forEach(p => {
+                p.style.display = (p.id === 'saSection_' + targetSec) ? 'block' : 'none';
+            });
+            document.querySelectorAll('.sa-nav-pill').forEach(btn => {
+                const isActive = btn.getAttribute('data-sec') === targetSec;
+                btn.style.background = isActive ? '#8B5CF6' : '#F8FAFC';
+                btn.style.color = isActive ? '#FFFFFF' : '#475569';
+                btn.style.borderColor = isActive ? '#8B5CF6' : '#E2E8F0';
+                btn.style.fontWeight = isActive ? '800' : '700';
+            });
+            try { sessionStorage.setItem('sa_active_section', targetSec); } catch(e) {}
+        }
+
+        // Restore last active SuperAdmin section on load
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                const saved = sessionStorage.getItem('sa_active_section');
+                if (saved && document.getElementById('saSection_' + saved)) {
+                    switchSuperAdminSection(saved);
+                }
+            } catch(e) {}
+        });
 
         function switchLogsTab(tab) {
             const btnLogs = document.getElementById('tabBtnLogs');

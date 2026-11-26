@@ -4,7 +4,7 @@
  * Features: Instant auto-update, Network-First strategy for deployments, Cache-First for static CDNs, offline fallback.
  */
 
-const CACHE_NAME = 'dental-clinic-v47.8.1';
+const CACHE_NAME = 'dental-clinic-v47.8.2';
 
 const ASSETS = [
     './',
