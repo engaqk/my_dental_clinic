@@ -26,11 +26,14 @@ class DatabaseAPI {
 
         const queryId = urlParams.get('c') || urlParams.get('clinic') || urlParams.get('tenant') || '';
         const urlSlug = queryId || pathId || hashId || '';
-        const storedSlug = (sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || '').toLowerCase().trim();
-        const validStored = (storedSlug && storedSlug !== 'default' && storedSlug !== 'null' && storedSlug !== 'undefined') ? storedSlug : '';
 
-        // Explicit URL slug always takes precedence; if URL has no slug, persist the existing stored slug across navigation
-        const resolvedSlug = (urlSlug || validStored || 'default').toLowerCase().trim();
+        // Explicit URL slug is required; if no slug is in the URL, ALWAYS load the default website
+        const resolvedSlug = (urlSlug || 'default').toLowerCase().trim();
+        if (!urlSlug) {
+            sessionStorage.setItem('activeTenantSlug', 'default');
+            localStorage.setItem('activeTenantId', 'default');
+            try { document.cookie = 'clinic_tenant=default; path=/; max-age=31536000'; } catch(e){}
+        }
 
         this.tenantId = resolvedSlug;
         this.cacheVersion = '1.0.0';

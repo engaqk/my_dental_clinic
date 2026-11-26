@@ -15,8 +15,12 @@
                 const last = segs[segs.length - 1];
                 const q = new URLSearchParams(window.location.search).get('c') || new URLSearchParams(window.location.search).get('clinic') || new URLSearchParams(window.location.search).get('tenant');
                 const urlSlug = q || (last && !last.includes('.') && last !== 'api' && last !== 'superadmin' ? last : '');
-                const storedSlug = sessionStorage.getItem('activeTenantSlug') || localStorage.getItem('activeTenantId') || '';
-                const tid = (urlSlug || (storedSlug && storedSlug !== 'default' ? storedSlug : 'default')).toLowerCase().trim();
+                const tid = (urlSlug || 'default').toLowerCase().trim();
+                if (!urlSlug) {
+                    sessionStorage.setItem('activeTenantSlug', 'default');
+                    localStorage.setItem('activeTenantId', 'default');
+                    try { document.cookie = 'clinic_tenant=default; path=/; max-age=31536000'; } catch(e){}
+                }
                 const cached = JSON.parse(localStorage.getItem('clinicSettings_' + tid) || 'null');
                 
                 let clinicName = 'Smile Dental Clinic';
